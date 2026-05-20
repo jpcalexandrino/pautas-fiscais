@@ -19,10 +19,22 @@ function validatePassword(password: string): boolean {
   return specialCharRegex.test(password);
 }
 
+function mapFromDb(dbRow: any): any {
+  if (!dbRow) return null;
+  return {
+    id: dbRow.sk_usuario,
+    name: dbRow.nome,
+    email: dbRow.email,
+    role: dbRow.perfil,
+    active: dbRow.ativo,
+    created_at: dbRow.criado_em,
+  };
+}
+
 export async function getAll(req: Request, res: Response) {
   try {
     const result = await UserRepository.getAll();
-    res.json(result.rows);
+    res.json(result.rows.map(mapFromDb));
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -34,7 +46,7 @@ export async function getById(req: Request, res: Response) {
     if (!result) {
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
-    res.json(result);
+    res.json(mapFromDb(result));
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -92,9 +104,9 @@ export async function create(req: AuthRequest, res: Response) {
 
     const password = generateRandomPassword();
 
-    const result = await UserRepository.create({ name, email, password, role });
+    const result = await UserRepository.create({ nome: name, email, senha_hash: password, perfil: role });
     res.status(201).json({
-      ...result.rows[0],
+      ...mapFromDb(result.rows[0]),
       tempPassword: password
     });
   } catch (error: any) {
@@ -118,12 +130,12 @@ export async function update(req: AuthRequest, res: Response) {
 
     // Check if email is already taken by another user
     const existing = await UserRepository.findByEmail(email);
-    if (existing && String(existing.id) !== String(id)) {
+    if (existing && String(existing.sk_usuario) !== String(id)) {
       return res.status(400).json({ error: 'Este e-mail já está sendo usado por outro usuário' });
     }
 
     // Update basic fields
-    const result = await UserRepository.update(id, { name, email, role, active });
+    const result = await UserRepository.update(id, { nome: name, email, perfil: role, ativo: active });
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
@@ -138,7 +150,7 @@ export async function update(req: AuthRequest, res: Response) {
       await UserRepository.updatePassword(id, password);
     }
 
-    res.json(result.rows[0]);
+    res.json(mapFromDb(result.rows[0]));
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

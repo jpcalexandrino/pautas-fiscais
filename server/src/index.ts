@@ -44,6 +44,19 @@ async function init(): Promise<void> {
     await FaturaRepository.createTable();
     await ClientRepository.createTable();
     await EquipmentRepository.createTable();
+    
+    // Seed default admin if no users exist
+    const usersResult = await UserRepository.getAll();
+    if ((usersResult.rowCount || 0) === 0) {
+      await UserRepository.create({
+        nome: 'Administrador',
+        email: 'admin@admin.com',
+        senha_hash: 'Admin#1234',
+        perfil: 'admin'
+      });
+      console.log('Default admin user seeded: admin@admin.com / Admin#1234');
+    }
+    
     console.log('Database initialized');
 
     app.listen(PORT, () => {

@@ -1,10 +1,49 @@
 import { Request, Response } from 'express';
 import ClientRepository from '../repositories/ClientRepository';
 
+function mapToDb(client: any): any {
+  if (!client) return null;
+  return {
+    sk_cliente: client.id,
+    nk_uc: client.uc_number,
+    nome: client.name,
+    distribuidora: client.distributor,
+    subgrupo: client.subgroup,
+    nk_cnpj: client.cnpj,
+    email_contato: client.contact_email,
+    cep: client.cep,
+    uf: client.uf,
+    cidade: client.city,
+    endereco: client.address,
+    numero: client.number,
+    complemento: client.complement,
+  };
+}
+
+function mapFromDb(dbRow: any): any {
+  if (!dbRow) return null;
+  return {
+    id: dbRow.sk_cliente,
+    uc_number: dbRow.nk_uc,
+    name: dbRow.nome,
+    distributor: dbRow.distribuidora,
+    subgroup: dbRow.subgrupo,
+    cnpj: dbRow.nk_cnpj,
+    contact_email: dbRow.email_contato,
+    cep: dbRow.cep,
+    uf: dbRow.uf,
+    city: dbRow.cidade,
+    address: dbRow.endereco,
+    number: dbRow.numero,
+    complement: dbRow.complemento,
+    created_at: dbRow.criado_em,
+  };
+}
+
 export async function getAll(req: Request, res: Response) {
   try {
     const result = await ClientRepository.getAll();
-    res.json(result.rows);
+    res.json(result.rows.map(mapFromDb));
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -16,7 +55,7 @@ export async function getById(req: Request, res: Response) {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Cliente não encontrado' });
     }
-    res.json(result.rows[0]);
+    res.json(mapFromDb(result.rows[0]));
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -24,13 +63,14 @@ export async function getById(req: Request, res: Response) {
 
 export async function create(req: Request, res: Response) {
   try {
-    const existing = await ClientRepository.findByUcOrCnpj(req.body.uc_number);
+    const mappedBody = mapToDb(req.body);
+    const existing = await ClientRepository.findByUcOrCnpj(mappedBody.nk_uc);
     if (existing.rows.length > 0) {
       return res.status(409).json({ error: 'Cliente já cadastrado com mesmo Número da UC' });
     }
 
-    const result = await ClientRepository.create(req.body);
-    res.status(201).json(result.rows[0]);
+    const result = await ClientRepository.create(mappedBody);
+    res.status(201).json(mapFromDb(result.rows[0]));
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -43,13 +83,14 @@ export async function bulkCreate(req: Request, res: Response) {
     const skipped: any[] = [];
 
     for (const client of clients) {
-      const existing = await ClientRepository.findByUcOrCnpj(client.uc_number);
+      const mappedClient = mapToDb(client);
+      const existing = await ClientRepository.findByUcOrCnpj(mappedClient.nk_uc);
       if (existing.rows.length > 0) {
         skipped.push({ client, reason: 'duplicado' });
         continue;
       }
-      const result = await ClientRepository.create(client);
-      createdRows.push(result.rows[0]);
+      const result = await ClientRepository.create(mappedClient);
+      createdRows.push(mapFromDb(result.rows[0]));
     }
 
     res.status(201).json({ created: createdRows, skipped });
@@ -60,16 +101,17 @@ export async function bulkCreate(req: Request, res: Response) {
 
 export async function update(req: Request, res: Response) {
   try {
-    const existing = await ClientRepository.findByUcOrCnpjExcludingId(req.params.id as string, req.body.uc_number);
+    const mappedBody = mapToDb(req.body);
+    const existing = await ClientRepository.findByUcOrCnpjExcludingId(req.params.id as string, mappedBody.nk_uc);
     if (existing.rows.length > 0) {
       return res.status(409).json({ error: 'Já existe outro cliente com mesmo Número da UC' });
     }
 
-    const result = await ClientRepository.update(req.params.id as string, req.body);
+    const result = await ClientRepository.update(req.params.id as string, mappedBody);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Cliente não encontrado' });
     }
-    res.json(result.rows[0]);
+    res.json(mapFromDb(result.rows[0]));
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

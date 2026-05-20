@@ -4,8 +4,8 @@ import { QueryResult } from 'pg';
 class FaturaRepository {
   async createTable(): Promise<QueryResult> {
     const queryText = `
-      CREATE TABLE IF NOT EXISTS faturas (
-        id SERIAL PRIMARY KEY,
+      CREATE TABLE IF NOT EXISTS fato_faturas (
+        sk_fatura SERIAL PRIMARY KEY,
         nome_do_site TEXT,
         nome_do_cliente TEXT,
         fonte TEXT,
@@ -59,10 +59,9 @@ class FaturaRepository {
         servicos_iluminacao_publica_rs NUMERIC,
         tarifa_servicos_iluminacao_publica NUMERIC,
         medida_servicos_iluminacao_publica NUMERIC,
-        D_E_L_E_T_ BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        soft_delete BOOLEAN DEFAULT FALSE,
+        criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
-      ALTER TABLE faturas ADD COLUMN IF NOT EXISTS D_E_L_E_T_ BOOLEAN DEFAULT FALSE;
     `;
     return db.query(queryText);
   }
@@ -91,7 +90,7 @@ class FaturaRepository {
     });
 
     const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
-    const queryText = `INSERT INTO faturas (${fields.join(', ')}) VALUES (${placeholders}) RETURNING *`;
+    const queryText = `INSERT INTO fato_faturas (${fields.join(', ')}) VALUES (${placeholders}) RETURNING *`;
     
     return db.query(queryText, values);
   }
@@ -118,8 +117,8 @@ class FaturaRepository {
 
     if (cleanNF !== '') {
       const queryNF = `
-        SELECT * FROM faturas
-        WHERE instalacao = $1 AND numero_nf = $2 AND D_E_L_E_T_ = false
+        SELECT * FROM fato_faturas
+        WHERE instalacao = $1 AND numero_nf = $2 AND soft_delete = false
       `;
       const resultNF = await db.query(queryNF, [cleanInstalacao, cleanNF]);
       if ((resultNF.rowCount || 0) > 0) {
@@ -128,8 +127,8 @@ class FaturaRepository {
     }
 
     const queryMonth = `
-      SELECT * FROM faturas
-      WHERE instalacao = $1 AND D_E_L_E_T_ = false
+      SELECT * FROM fato_faturas
+      WHERE instalacao = $1 AND soft_delete = false
     `;
     const resultMonth = await db.query(queryMonth, [cleanInstalacao]);
 
@@ -148,15 +147,15 @@ class FaturaRepository {
     if (ids.length === 0) {
       return db.query('SELECT 1');
     }
-    return db.query('UPDATE faturas SET D_E_L_E_T_ = true WHERE id = ANY($1::int[])', [ids]);
+    return db.query('UPDATE fato_faturas SET soft_delete = true WHERE sk_fatura = ANY($1::int[])', [ids]);
   }
 
   async getAll(): Promise<QueryResult> {
-    return db.query('SELECT * FROM faturas WHERE D_E_L_E_T_ = false ORDER BY created_at DESC');
+    return db.query('SELECT * FROM fato_faturas WHERE soft_delete = false ORDER BY criado_em DESC');
   }
 
   async deleteAll(): Promise<QueryResult> {
-    return db.query('DELETE FROM faturas');
+    return db.query('DELETE FROM fato_faturas');
   }
 }
 

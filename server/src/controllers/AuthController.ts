@@ -33,6 +33,18 @@ function validatePassword(password: string): boolean {
   return specialCharRegex.test(password);
 }
 
+function mapFromDb(dbRow: any): any {
+  if (!dbRow) return null;
+  return {
+    id: dbRow.sk_usuario,
+    name: dbRow.nome,
+    email: dbRow.email,
+    role: dbRow.perfil,
+    active: dbRow.ativo,
+    created_at: dbRow.criado_em,
+  };
+}
+
 export async function login(req: Request, res: Response) {
   try {
     const { email, password } = req.body;
@@ -46,11 +58,11 @@ export async function login(req: Request, res: Response) {
       return res.status(401).json({ error: 'Credenciais inválidas' });
     }
 
-    if (!user.active) {
+    if (!user.ativo) {
       return res.status(403).json({ error: 'Usuário desativado. Contate o administrador.' });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password!);
+    const isPasswordValid = await bcrypt.compare(password, user.senha_hash!);
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Credenciais inválidas' });
     }
@@ -58,7 +70,7 @@ export async function login(req: Request, res: Response) {
     const forcePasswordChange = isTemporaryPassword(password);
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      { id: user.sk_usuario, email: user.email, role: user.perfil },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
     );
@@ -66,12 +78,7 @@ export async function login(req: Request, res: Response) {
     res.json({
       token,
       forcePasswordChange,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      user: mapFromDb(user),
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -87,7 +94,7 @@ export async function me(req: AuthRequest, res: Response) {
     if (!user) {
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
-    res.json(user);
+    res.json(mapFromDb(user));
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -96,7 +103,7 @@ export async function me(req: AuthRequest, res: Response) {
 export async function getAll(req: Request, res: Response) {
   try {
     const result = await UserRepository.getAll();
-    res.json(result.rows);
+    res.json(result.rows.map(mapFromDb));
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -104,8 +111,9 @@ export async function getAll(req: Request, res: Response) {
 
 export async function create(req: Request, res: Response) {
   try {
-    const result = await UserRepository.create(req.body);
-    res.status(201).json(result.rows[0]);
+    const { name, email, password, role } = req.body;
+    const result = await UserRepository.create({ nome: name, email, senha_hash: password, perfil: role });
+    res.status(201).json(mapFromDb(result.rows[0]));
   } catch (error: any) {
     if (error.code === '23505') {
       return res.status(409).json({ error: 'E-mail já cadastrado' });
@@ -120,7 +128,7 @@ export async function update(req: Request, res: Response) {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
-    res.json(result.rows[0]);
+    res.json(mapFromDb(result.rows[0]));
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -150,7 +158,7 @@ export async function changePassword(req: AuthRequest, res: Response) {
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
 
-    const isPasswordValid = await bcrypt.compare(currentPassword, user.password!);
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.senha_hash!);
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Senha atual incorreta' });
     }
@@ -171,5 +179,4 @@ export async function remove(req: Request, res: Response) {
   }
 }
 
-// Keep the module.exports compatible name if needed, but here we use named exports
 export { remove as delete };

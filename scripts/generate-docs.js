@@ -209,7 +209,7 @@ function buildDocument() {
   
   children.push(createMetaInfo("Projeto", "Plataforma de Auditoria e Eficiência Energética"));
   children.push(createMetaInfo("Autor", "Equipe de Engenharia de Software"));
-  children.push(createMetaInfo("Versão", "1.0.0"));
+  children.push(createMetaInfo("Versão", "1.1.0"));
   children.push(createMetaInfo("Data de Geração", new Date().toLocaleDateString('pt-BR')));
   children.push(createMetaInfo("Status", "Documento Homologado"));
   
@@ -241,22 +241,26 @@ function buildDocument() {
   ));
 
   children.push(createH2("2.1 Tecnologias do Backend"));
-  children.push(createBulletPoint(" Runtime moderno e performático para o desenvolvimento backend.", "Node.js (v24.15):"));
-  children.push(createBulletPoint(" Framework minimalista e eficiente para construção das rotas e controladores HTTP.", "Express.js:"));
+  children.push(createBulletPoint(" Runtime moderno e performático para o desenvolvimento backend.", "Node.js (v24.15.0):"));
+  children.push(createBulletPoint(" Framework robusto e flexível para construção das rotas e controladores HTTP.", "Express.js (v5.2.1):"));
   children.push(createBulletPoint(" Linguagem tipada que eleva a robustez e previne erros comuns durante a codificação.", "TypeScript (v5.8.2):"));
-  children.push(createBulletPoint(" Banco de dados relacional que suporta alta carga de transações e consultas complexas.", "PostgreSQL:"));
-  children.push(createBulletPoint(" Ferramenta de execução e transpilação rápida de arquivos TypeScript para desenvolvimento.", "tsx (watch mode):"));
-  children.push(createBulletPoint(" Criptografia de senhas usando hashing SHA-256 salteado.", "Bcrypt.js:"));
+  children.push(createBulletPoint(" Banco de dados relacional que suporta alta carga de transações e consultas complexas.", "PostgreSQL (pg v8.20.0):"));
+  children.push(createBulletPoint(" Ferramenta de execução e transpilação rápida de arquivos TypeScript para desenvolvimento.", "tsx (v4.19.3):"));
+  children.push(createBulletPoint(" Criptografia de senhas usando hashing com salt (10 rounds).", "Bcryptjs (v3.0.3):"));
+  children.push(createBulletPoint(" Padrão de autenticação segura e stateless com tempo de expiração de 7 dias.", "JWT (jsonwebtoken v9.0.3):"));
+  children.push(createBulletPoint(" Biblioteca para disparo de relatórios técnicos em anexo por e-mail via conexão SMTP.", "Nodemailer (v8.0.7):"));
   children.push(createBulletPoint(" Integração com a API de LLM da Groq (Llama-3.3-70b-versatile) para a geração automatizada de insights.", "Integração Groq:"));
 
   children.push(createH2("2.2 Tecnologias do Frontend"));
-  children.push(createBulletPoint(" Biblioteca declarativa para renderização de interfaces reativas baseadas em componentes.", "React (v19.0):"));
-  children.push(createBulletPoint(" Ferramenta de build ultra-rápida baseada em ESBuild.", "Vite:"));
-  children.push(createBulletPoint(" Roteador com segurança de tipos (Type-safe router) que facilita o gerenciamento de rotas complexas.", "TanStack React Router:"));
-  children.push(createBulletPoint(" Gerenciamento de estado assíncrono e cacheamento de requisições de API.", "TanStack React Query:"));
-  children.push(createBulletPoint(" Framework de estilos em CSS utilitário para layouts limpos e responsivos.", "TailwindCSS (v4.0):"));
-  children.push(createBulletPoint(" Componentes visuais acessíveis e consistentes baseados no Radix UI e estilizados via Tailwind.", "Shadcn UI:"));
-  children.push(createBulletPoint(" Geração de PDFs complexos diretamente no navegador a partir de componentes React JSX.", "@react-pdf/renderer:"));
+  children.push(createBulletPoint(" Biblioteca declarativa para renderização de interfaces reativas baseadas em componentes.", "React (v19.2.5):"));
+  children.push(createBulletPoint(" Ferramenta de build ultra-rápida baseada em ESBuild e Rollup.", "Vite (v8.0.10):"));
+  children.push(createBulletPoint(" Roteador com segurança de tipos (Type-safe router) integrado com o plugin Vite correspondente.", "TanStack React Router (v1.169.2):"));
+  children.push(createBulletPoint(" Gerenciamento de estado assíncrono e cacheamento reativo de requisições.", "TanStack React Query (v5.100.9):"));
+  children.push(createBulletPoint(" Framework de estilos em CSS utilitário para layouts limpos e responsivos.", "TailwindCSS (v4.2.4):"));
+  children.push(createBulletPoint(" Componentes visuais acessíveis e consistentes baseados no Radix UI e estilizados via Tailwind.", "Shadcn UI (v4.7.0):"));
+  children.push(createBulletPoint(" Família tipográfica moderna carregada de forma otimizada no layout da aplicação.", "Inter Variable (@fontsource-variable/inter):"));
+  children.push(createBulletPoint(" Geração de PDFs complexos diretamente no navegador a partir de componentes React JSX.", "@react-pdf/renderer (v4.5.1):"));
+  children.push(createBulletPoint(" Bibliotecas para manipulação e parser de dados brutos de planilhas locais.", "XLSX & PapaParse:"));
 
   children.push(new Paragraph({ children: [new PageBreak()] }));
 
@@ -266,8 +270,8 @@ function buildDocument() {
     "O banco de dados PostgreSQL armazena as entidades de usuários, clientes (unidades consumidoras), equipamentos físicos (inventário de carga) e faturas elétricas. A seguir são detalhados os esquemas de cada tabela."
   ));
 
-  // Tabela: users
-  children.push(createH2("3.1 Tabela: users"));
+  // Tabela: dim_usuarios
+  children.push(createH2("3.1 Tabela: dim_usuarios"));
   children.push(createBodyParagraph("Armazena as credenciais de acesso dos usuários à plataforma Audit Energy."));
   
   const tableUsers = new Table({
@@ -282,15 +286,15 @@ function buildDocument() {
       }),
       new TableRow({
         children: [
-          createTableCell("id", false, 20, true),
+          createTableCell("sk_usuario", false, 20, true),
           createTableCell("SERIAL", false, 25),
           createTableCell("NOT NULL", false, 15),
-          createTableCell("Chave primária autoincrementada", false, 40)
+          createTableCell("Chave primária autoincrementada (Surrogate Key)", false, 40)
         ]
       }),
       new TableRow({
         children: [
-          createTableCell("name", false, 20, true),
+          createTableCell("nome", false, 20, true),
           createTableCell("TEXT", false, 25),
           createTableCell("NOT NULL", false, 15),
           createTableCell("Nome completo do usuário", false, 40)
@@ -306,7 +310,7 @@ function buildDocument() {
       }),
       new TableRow({
         children: [
-          createTableCell("password", false, 20, true),
+          createTableCell("senha_hash", false, 20, true),
           createTableCell("TEXT", false, 25),
           createTableCell("NOT NULL", false, 15),
           createTableCell("Hash da senha (bcrypt)", false, 40)
@@ -314,7 +318,7 @@ function buildDocument() {
       }),
       new TableRow({
         children: [
-          createTableCell("role", false, 20, true),
+          createTableCell("perfil", false, 20, true),
           createTableCell("TEXT", false, 25),
           createTableCell("DEFAULT 'user'", false, 15),
           createTableCell("Papel de autorização ('admin' ou 'user')", false, 40)
@@ -322,7 +326,7 @@ function buildDocument() {
       }),
       new TableRow({
         children: [
-          createTableCell("active", false, 20, true),
+          createTableCell("ativo", false, 20, true),
           createTableCell("BOOLEAN", false, 25),
           createTableCell("DEFAULT true", false, 15),
           createTableCell("Indica se o cadastro está ativo no sistema", false, 40)
@@ -330,7 +334,7 @@ function buildDocument() {
       }),
       new TableRow({
         children: [
-          createTableCell("created_at", false, 20, true),
+          createTableCell("criado_em", false, 20, true),
           createTableCell("TIMESTAMP", false, 25),
           createTableCell("DEFAULT NOW()", false, 15),
           createTableCell("Data e hora de criação do usuário", false, 40)
@@ -341,9 +345,26 @@ function buildDocument() {
   children.push(tableUsers);
   children.push(new Paragraph({ spacing: { before: 100, after: 100 } }));
 
-  // Tabela: clients
-  children.push(createH2("3.2 Tabela: clients"));
+  // Tabela: dim_clientes
+  children.push(createH2("3.2 Tabela: dim_clientes"));
   children.push(createBodyParagraph("Armazena as Unidades Consumidoras de energia. Cada registro representa um local de auditoria."));
+
+  const clientsCols = [
+    { col: "sk_cliente", type: "SERIAL", nullity: "NOT NULL", desc: "Chave primária autoincrementada (Surrogate Key)", bold: true },
+    { col: "nk_uc", type: "TEXT", nullity: "NULL", desc: "Número da Unidade Consumidora (Natural Key / Identificador Único)" },
+    { col: "nome", type: "TEXT", nullity: "NOT NULL", desc: "Razão Social ou Nome do Site do Cliente" },
+    { col: "distribuidora", type: "TEXT", nullity: "NULL", desc: "Distribuidora de energia (ex: Light, Enel)" },
+    { col: "subgrupo", type: "TEXT", nullity: "NULL", desc: "Subgrupo de tensão tarifária (ex: A4, B3)" },
+    { col: "nk_cnpj", type: "TEXT", nullity: "NULL", desc: "CNPJ da Unidade Consumidora (Natural Key)" },
+    { col: "email_contato", type: "TEXT", nullity: "NULL", desc: "E-mail de contato para envio do relatório PDF" },
+    { col: "cep", type: "TEXT", nullity: "NULL", desc: "CEP do local de consumo" },
+    { col: "uf", type: "TEXT", nullity: "NULL", desc: "Estado (UF) do local de consumo" },
+    { col: "cidade", type: "TEXT", nullity: "NULL", desc: "Cidade do local de consumo" },
+    { col: "endereco", type: "TEXT", nullity: "NULL", desc: "Logradouro/Rua do endereço do site" },
+    { col: "numero", type: "TEXT", nullity: "NULL", desc: "Número do local no endereço" },
+    { col: "complemento", type: "TEXT", nullity: "NULL", desc: "Complemento do endereço do site" },
+    { col: "criado_em", type: "TIMESTAMP", nullity: "DEFAULT NOW()", desc: "Data e hora de criação do registro da UC" }
+  ];
 
   const tableClients = new Table({
     rows: [
@@ -355,78 +376,34 @@ function buildDocument() {
           createTableCell("Descrição", true, 40)
         ]
       }),
-      new TableRow({
+      ...clientsCols.map(c => new TableRow({
         children: [
-          createTableCell("id", false, 20, true),
-          createTableCell("SERIAL", false, 25),
-          createTableCell("NOT NULL", false, 15),
-          createTableCell("Chave primária autoincrementada", false, 40)
+          createTableCell(c.col, false, 20, c.bold || false),
+          createTableCell(c.type, false, 25),
+          createTableCell(c.nullity, false, 15),
+          createTableCell(c.desc, false, 40)
         ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("uc_number", false, 20, true),
-          createTableCell("TEXT", false, 25),
-          createTableCell("NULL", false, 15),
-          createTableCell("Número da Unidade Consumidora (Identificador Único)", false, 40)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("name", false, 20, true),
-          createTableCell("TEXT", false, 25),
-          createTableCell("NOT NULL", false, 15),
-          createTableCell("Razão Social ou Nome do Site do Cliente", false, 40)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("distributor", false, 20, true),
-          createTableCell("TEXT", false, 25),
-          createTableCell("NULL", false, 15),
-          createTableCell("Distribuidora de energia (ex: Light, Enel)", false, 40)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("subgroup", false, 20, true),
-          createTableCell("TEXT", false, 25),
-          createTableCell("NULL", false, 15),
-          createTableCell("Subgrupo de tensão tarifária (ex: A4, B3)", false, 40)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("cnpj", false, 20, true),
-          createTableCell("TEXT", false, 25),
-          createTableCell("NULL", false, 15),
-          createTableCell("CNPJ da Unidade Consumidora", false, 40)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("contact_email", false, 20, true),
-          createTableCell("TEXT", false, 25),
-          createTableCell("NULL", false, 15),
-          createTableCell("E-mail de contato para envio do relatório PDF", false, 40)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("cep / uf / city", false, 20, true),
-          createTableCell("TEXT", false, 25),
-          createTableCell("NULL", false, 15),
-          createTableCell("Dados de localização e endereço do site", false, 40)
-        ]
-      })
+      }))
     ]
   });
   children.push(tableClients);
   children.push(new Paragraph({ spacing: { before: 100, after: 100 } }));
 
-  // Tabela: equipment
-  children.push(createH2("3.3 Tabela: equipment"));
+  // Tabela: dim_equipamentos
+  children.push(createH2("3.3 Tabela: dim_equipamentos"));
   children.push(createBodyParagraph("Contém o inventário de dispositivos elétricos de campo associados a um determinado cliente/UC."));
+
+  const equipmentCols = [
+    { col: "sk_equipamento", type: "SERIAL", nullity: "NOT NULL", desc: "Chave primária autoincrementada (Surrogate Key)", bold: true },
+    { col: "fk_cliente", type: "INTEGER", nullity: "NOT NULL", desc: "Chave estrangeira referenciando dim_clientes(sk_cliente) ON DELETE CASCADE" },
+    { col: "nome", type: "TEXT", nullity: "NOT NULL", desc: "Nome do equipamento (ex: Motor 15 CV)" },
+    { col: "potencia_w", type: "NUMERIC", nullity: "DEFAULT 0", desc: "Potência nominal do dispositivo em Watts" },
+    { col: "horas_uso_dia", type: "NUMERIC", nullity: "DEFAULT 0", desc: "Estimativa de uso diário em horas" },
+    { col: "wh_dia", type: "NUMERIC", nullity: "DEFAULT 0", desc: "Consumo estimado diário em Watt-hora" },
+    { col: "quantidade", type: "INTEGER", nullity: "DEFAULT 1", desc: "Quantidade de unidades idênticas do equipamento" },
+    { col: "tarifa", type: "NUMERIC", nullity: "DEFAULT 0", desc: "Custo tarifário aplicado por kWh (R$)" },
+    { col: "criado_em", type: "TIMESTAMP", nullity: "DEFAULT NOW()", desc: "Data e hora de criação do cadastro do equipamento" }
+  ];
 
   const tableEquipment = new Table({
     rows: [
@@ -438,72 +415,83 @@ function buildDocument() {
           createTableCell("Descrição / Relacionamento", true, 40)
         ]
       }),
-      new TableRow({
+      ...equipmentCols.map(c => new TableRow({
         children: [
-          createTableCell("id", false, 20, true),
-          createTableCell("SERIAL", false, 25),
-          createTableCell("NOT NULL", false, 15),
-          createTableCell("Chave primária", false, 40)
+          createTableCell(c.col, false, 20, c.bold || false),
+          createTableCell(c.type, false, 25),
+          createTableCell(c.nullity, false, 15),
+          createTableCell(c.desc, false, 40)
         ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("client_id", false, 20, true),
-          createTableCell("INTEGER", false, 25),
-          createTableCell("NOT NULL", false, 15),
-          createTableCell("Chave estrangeira referenciando clients(id)", false, 40)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("name", false, 20, true),
-          createTableCell("TEXT", false, 25),
-          createTableCell("NOT NULL", false, 15),
-          createTableCell("Nome do equipamento (ex: Motor 15 CV)", false, 40)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("power_w", false, 20, true),
-          createTableCell("NUMERIC", false, 25),
-          createTableCell("DEFAULT 0", false, 15),
-          createTableCell("Potência nominal do dispositivo em Watts", false, 40)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("hours_per_day", false, 20, true),
-          createTableCell("NUMERIC", false, 25),
-          createTableCell("DEFAULT 0", false, 15),
-          createTableCell("Estimativa de uso diário em horas", false, 40)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("quantity", false, 20, true),
-          createTableCell("INTEGER", false, 25),
-          createTableCell("DEFAULT 1", false, 15),
-          createTableCell("Quantidade de unidades idênticas do equipamento", false, 40)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("tariff", false, 20, true),
-          createTableCell("NUMERIC", false, 25),
-          createTableCell("DEFAULT 0", false, 15),
-          createTableCell("Custo tarifário aplicado por kWh (R$)", false, 40)
-        ]
-      })
+      }))
     ]
   });
   children.push(tableEquipment);
   children.push(new Paragraph({ spacing: { before: 100, after: 100 } }));
 
-  // Tabela: faturas
-  children.push(createH2("3.4 Tabela: faturas"));
+  // Tabela: fato_faturas
+  children.push(createH2("3.4 Tabela: fato_faturas"));
   children.push(createBodyParagraph(
     "Esta tabela possui grande dimensionalidade de colunas para suportar todos os campos que podem ser extraídos de planilhas complexas de auditoria energética ou da API PowerHub da Way2."
   ));
+
+  const faturasCols = [
+    { col: "sk_fatura", type: "SERIAL", nullity: "NOT NULL", desc: "Chave primária autoincrementada (Surrogate Key)", bold: true },
+    { col: "nome_do_site", type: "TEXT", nullity: "NULL", desc: "Nome identificador da planta/instalação" },
+    { col: "nome_do_cliente", type: "TEXT", nullity: "NULL", desc: "Razão social do cliente associado" },
+    { col: "fonte", type: "TEXT", nullity: "NULL", desc: "Origem da fatura ('Excel', 'CSV', 'PowerHUB')" },
+    { col: "modalidade_tarifaria", type: "TEXT", nullity: "NULL", desc: "Modalidade tarifária (ex: Verde, Azul, Convencional)" },
+    { col: "data_insercao", type: "DATE", nullity: "NULL", desc: "Data em que a fatura foi importada" },
+    { col: "nome_concessionaria", type: "TEXT", nullity: "NULL", desc: "Distribuidora de energia concessionária" },
+    { col: "cnpj_concessionaria", type: "TEXT", nullity: "NULL", desc: "CNPJ da concessionária de energia" },
+    { col: "endereco", type: "TEXT", nullity: "NULL", desc: "Endereço de cobrança da fatura" },
+    { col: "cep", type: "TEXT", nullity: "NULL", desc: "CEP da instalação da fatura" },
+    { col: "cidade", type: "TEXT", nullity: "NULL", desc: "Cidade da instalação da fatura" },
+    { col: "uf", type: "TEXT", nullity: "NULL", desc: "Estado da instalação da fatura" },
+    { col: "cnpj", type: "TEXT", nullity: "NULL", desc: "CNPJ do cliente/consumidor na fatura" },
+    { col: "impostos_rs", type: "NUMERIC", nullity: "NULL", desc: "Custo total consolidado de impostos (R$)" },
+    { col: "instalacao", type: "TEXT", nullity: "NULL", desc: "Número de instalação físico (referência com nk_uc)" },
+    { col: "mes_referencia", type: "TEXT", nullity: "NULL", desc: "Mês/Ano de referência da fatura (ex: '03/2026')" },
+    { col: "data_leitura_atualizada", type: "DATE", nullity: "NULL", desc: "Data da leitura atual dos medidores" },
+    { col: "data_leitura_anterior", type: "DATE", nullity: "NULL", desc: "Data da leitura anterior dos medidores" },
+    { col: "data_leitura_proxima", type: "DATE", nullity: "NULL", desc: "Data prevista para a próxima leitura" },
+    { col: "mes_consumo", type: "TEXT", nullity: "NULL", desc: "Mês de consumo referente à fatura" },
+    { col: "data_vencimento", type: "DATE", nullity: "NULL", desc: "Data de vencimento da fatura" },
+    { col: "data_emissao", type: "DATE", nullity: "NULL", desc: "Data de emissão da fatura" },
+    { col: "valor_total_rs", type: "NUMERIC", nullity: "NULL", desc: "Custo total financeiro consolidado da fatura (R$)" },
+    { col: "classe", type: "TEXT", nullity: "NULL", desc: "Classe da unidade consumidora (ex: Industrial, Comercial)" },
+    { col: "subclasse", type: "TEXT", nullity: "NULL", desc: "Subclasse da unidade consumidora" },
+    { col: "subgrupo", type: "TEXT", nullity: "NULL", desc: "Subgrupo de tensão tarifária (ex: A4, B3)" },
+    { col: "codigo_barras", type: "TEXT", nullity: "NULL", desc: "Código de barras da fatura para pagamento" },
+    { col: "numero_nf", type: "TEXT", nullity: "NULL", desc: "Número da Nota Fiscal da fatura" },
+    { col: "consumo_tusd_fora_ponta_rs", type: "NUMERIC", nullity: "NULL", desc: "Valor faturado da TUSD Fora Ponta (R$)" },
+    { col: "tarifa_consumo_tusd_fora_ponta", type: "NUMERIC", nullity: "NULL", desc: "Tarifa unitária aplicada à TUSD Fora Ponta" },
+    { col: "medida_consumo_tusd_fora_ponta", type: "NUMERIC", nullity: "NULL", desc: "Consumo medido em kWh para TUSD Fora Ponta" },
+    { col: "consumo_te_fora_ponta_rs", type: "NUMERIC", nullity: "NULL", desc: "Valor faturado da TE Fora Ponta (R$)" },
+    { col: "tarifa_consumo_te_fora_ponta", type: "NUMERIC", nullity: "NULL", desc: "Tarifa unitária aplicada à TE Fora Ponta" },
+    { col: "medida_consumo_te_fora_ponta", type: "NUMERIC", nullity: "NULL", desc: "Consumo medido em kWh para TE Fora Ponta" },
+    { col: "consumo_te_adicional_bandeira_amarela_rs", type: "NUMERIC", nullity: "NULL", desc: "Custo adicional de bandeira amarela na TE (R$)" },
+    { col: "tarifa_consumo_te_adicional_bandeira_amarela", type: "NUMERIC", nullity: "NULL", desc: "Tarifa de adicional de bandeira amarela" },
+    { col: "medida_consumo_te_adicional_bandeira_amarela", type: "NUMERIC", nullity: "NULL", desc: "Consumo medido em kWh sob bandeira amarela" },
+    { col: "multa_rs", type: "NUMERIC", nullity: "NULL", desc: "Valor cobrado de multa por atraso na fatura (R$)" },
+    { col: "juros_mora_rs", type: "NUMERIC", nullity: "NULL", desc: "Valor cobrado de juros de mora (R$)" },
+    { col: "atualizacao_monetaria_rs", type: "NUMERIC", nullity: "NULL", desc: "Valor cobrado de atualização monetária (R$)" },
+    { col: "ressarcimento_rs", type: "NUMERIC", nullity: "NULL", desc: "Valor de ressarcimento por danos/falhas (R$)" },
+    { col: "outros_rs", type: "NUMERIC", nullity: "NULL", desc: "Outros custos e encargos adicionais (R$)" },
+    { col: "aliquota_icms", type: "NUMERIC", nullity: "NULL", desc: "Alíquota de ICMS aplicada na fatura (%)" },
+    { col: "base_calculo_icms_rs", type: "NUMERIC", nullity: "NULL", desc: "Base de cálculo para ICMS (R$)" },
+    { col: "custo_icms_rs", type: "NUMERIC", nullity: "NULL", desc: "Custo total do ICMS destacado (R$)" },
+    { col: "aliquota_cofins", type: "NUMERIC", nullity: "NULL", desc: "Alíquota de COFINS aplicada (%)" },
+    { col: "base_calculo_cofins_rs", type: "NUMERIC", nullity: "NULL", desc: "Base de cálculo para COFINS (R$)" },
+    { col: "custo_cofins_rs", type: "NUMERIC", nullity: "NULL", desc: "Custo total do COFINS destacado (R$)" },
+    { col: "aliquota_pis_pasep", type: "NUMERIC", nullity: "NULL", desc: "Alíquota de PIS/PASEP aplicada (%)" },
+    { col: "base_calculo_pis_pasep_rs", type: "NUMERIC", nullity: "NULL", desc: "Base de cálculo para PIS/PASEP (R$)" },
+    { col: "custo_pis_pasep_rs", type: "NUMERIC", nullity: "NULL", desc: "Custo total do PIS/PASEP destacado (R$)" },
+    { col: "servicos_iluminacao_publica_rs", type: "NUMERIC", nullity: "NULL", desc: "Valor da taxa de iluminação pública (R$)" },
+    { col: "tarifa_servicos_iluminacao_publica", type: "NUMERIC", nullity: "NULL", desc: "Tarifa unitária da taxa de iluminação pública" },
+    { col: "medida_servicos_iluminacao_publica", type: "NUMERIC", nullity: "NULL", desc: "Medida associada à iluminação pública" },
+    { col: "soft_delete", type: "BOOLEAN", nullity: "DEFAULT FALSE", desc: "Flag de exclusão lógica (soft delete)" },
+    { col: "criado_em", type: "TIMESTAMP", nullity: "DEFAULT NOW()", desc: "Data e hora de criação do registro no banco" }
+  ];
 
   const tableFaturas = new Table({
     rows: [
@@ -515,94 +503,14 @@ function buildDocument() {
           createTableCell("Detalhamento do Campo", true, 45)
         ]
       }),
-      new TableRow({
+      ...faturasCols.map(c => new TableRow({
         children: [
-          createTableCell("id", false, 20, true),
-          createTableCell("SERIAL", false, 20),
-          createTableCell("NOT NULL", false, 15),
-          createTableCell("Chave primária do sistema", false, 45)
+          createTableCell(c.col, false, 20, c.bold || false),
+          createTableCell(c.type, false, 20),
+          createTableCell(c.nullity, false, 15),
+          createTableCell(c.desc, false, 45)
         ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("nome_do_site", false, 20, true),
-          createTableCell("TEXT", false, 20),
-          createTableCell("NULL", false, 15),
-          createTableCell("Nome identificador da planta/instalação", false, 45)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("nome_do_cliente", false, 20, true),
-          createTableCell("TEXT", false, 20),
-          createTableCell("NULL", false, 15),
-          createTableCell("Razão social do cliente associado", false, 45)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("fonte", false, 20, true),
-          createTableCell("TEXT", false, 20),
-          createTableCell("NULL", false, 15),
-          createTableCell("Origem da fatura ('Excel', 'CSV', 'PowerHUB')", false, 45)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("instalacao", false, 20, true),
-          createTableCell("TEXT", false, 20),
-          createTableCell("NULL", false, 15),
-          createTableCell("Número de instalação físico (referência com uc_number)", false, 45)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("mes_referencia", false, 20, true),
-          createTableCell("TEXT", false, 20),
-          createTableCell("NULL", false, 15),
-          createTableCell("Mês de faturamento (ex: '03/2026')", false, 45)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("valor_total_rs", false, 20, true),
-          createTableCell("NUMERIC", false, 20),
-          createTableCell("NULL", false, 15),
-          createTableCell("Custo financeiro consolidado da fatura (R$)", false, 45)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("medida_consumo_tusd_fora_ponta", false, 20, true),
-          createTableCell("NUMERIC", false, 20),
-          createTableCell("NULL", false, 15),
-          createTableCell("Consumo medido em kWh do componente TUSD Fora Ponta", false, 45)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("medida_consumo_te_fora_ponta", false, 20, true),
-          createTableCell("NUMERIC", false, 20),
-          createTableCell("NULL", false, 15),
-          createTableCell("Consumo medido em kWh do componente TE Fora Ponta", false, 45)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("custo_icms_rs / cofins_rs / pis_pasep_rs", false, 20, true),
-          createTableCell("NUMERIC", false, 20),
-          createTableCell("NULL", false, 15),
-          createTableCell("Detalhamento de tributos e tarifas de impostos da fatura", false, 45)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("D_E_L_E_T_", false, 20, true),
-          createTableCell("BOOLEAN", false, 20),
-          createTableCell("DEFAULT FALSE", false, 15),
-          createTableCell("Campo de exclusão lógica (soft delete) para reimportações", false, 45)
-        ]
-      })
+      }))
     ]
   });
   children.push(tableFaturas);
@@ -617,6 +525,41 @@ function buildDocument() {
 
   children.push(createH2("4.1 Tabela de Rotas da API"));
   
+  const routesData = [
+    // Auth
+    { method: "POST", endpoint: "/api/auth/login", auth: "Público", action: "Autentica credenciais do usuário e retorna token JWT." },
+    { method: "GET", endpoint: "/api/auth/me", auth: "JWT Required", action: "Recupera dados do perfil do usuário logado na sessão." },
+    { method: "POST", endpoint: "/api/auth/change-password", auth: "JWT Required", action: "Altera a senha do próprio usuário logado." },
+    // Users
+    { method: "GET", endpoint: "/api/users", auth: "JWT Required", action: "Lista todos os usuários cadastrados na plataforma (Acesso Admin)." },
+    { method: "GET", endpoint: "/api/users/:id", auth: "JWT Required", action: "Obtém detalhes cadastrais de um usuário específico (Acesso Admin)." },
+    { method: "POST", endpoint: "/api/users", auth: "JWT Required", action: "Cria um novo usuário gerando senha temporária (Acesso Admin)." },
+    { method: "PUT", endpoint: "/api/users/:id", auth: "JWT Required", action: "Atualiza os dados de cadastro de um usuário (Acesso Admin)." },
+    { method: "DELETE", endpoint: "/api/users/:id", auth: "JWT Required", action: "Exclui permanentemente o registro de um usuário (Acesso Admin)." },
+    { method: "POST", endpoint: "/api/users/:id/reset-password", auth: "JWT Required", action: "Reseta a senha de um usuário gerando senha temporária (Acesso Admin)." },
+    // Clients
+    { method: "GET", endpoint: "/api/clients", auth: "JWT Required", action: "Lista todas as Unidades Consumidoras cadastradas." },
+    { method: "GET", endpoint: "/api/clients/:id", auth: "JWT Required", action: "Recupera detalhes técnicos de uma Unidade Consumidora específica." },
+    { method: "POST", endpoint: "/api/clients", auth: "JWT Required", action: "Cria uma nova Unidade Consumidora no banco de dados." },
+    { method: "POST", endpoint: "/api/clients/bulk", auth: "JWT Required", action: "Importação e criação de múltiplas Unidades Consumidoras em lote." },
+    { method: "PUT", endpoint: "/api/clients/:id", auth: "JWT Required", action: "Atualiza os dados técnicos/cadastrais de uma UC." },
+    { method: "DELETE", endpoint: "/api/clients/:id", auth: "JWT Required", action: "Exclui uma UC e todos os seus dados vinculados em cascata." },
+    // Equipment
+    { method: "GET", endpoint: "/api/equipment/client/:clientId", auth: "JWT Required", action: "Lista o inventário de carga completo de uma UC específica." },
+    { method: "POST", endpoint: "/api/equipment", auth: "JWT Required", action: "Cadastra um novo equipamento elétrico no inventário da UC." },
+    { method: "PUT", endpoint: "/api/equipment/:id", auth: "JWT Required", action: "Atualiza especificações de potência/uso de um equipamento." },
+    { method: "DELETE", endpoint: "/api/equipment/:id", auth: "JWT Required", action: "Remove permanentemente um equipamento do inventário." },
+    // Faturas
+    { method: "GET", endpoint: "/api/faturas", auth: "JWT Required", action: "Recupera o histórico completo de faturas persistidas no banco." },
+    { method: "POST", endpoint: "/api/faturas", auth: "JWT Required", action: "Salva ou atualiza uma fatura individual (detecção de duplicidade/soft delete)." },
+    { method: "POST", endpoint: "/api/faturas/upload", auth: "JWT Required", action: "Recebe arquivos planilhas de faturas (XLSX, CSV) via multipart para parser." },
+    { method: "POST", endpoint: "/api/faturas/sync-powerhub", auth: "JWT Required", action: "Sincroniza faturas seletivas integrando diretamente com o PowerHub da Way2." },
+    { method: "DELETE", endpoint: "/api/faturas", auth: "JWT Required", action: "Exclusão administrativa (limpeza técnica) de todas as faturas persistidas." },
+    // AI & Email
+    { method: "POST", endpoint: "/api/ai/optimize", auth: "JWT Required", action: "Consome os dados de consumo e inventário no Groq para obter recomendações." },
+    { method: "POST", endpoint: "/api/email/send-pdf", auth: "JWT Required", action: "Envia o relatório gerado em anexo PDF (Multipart) via e-mail (Nodemailer)." }
+  ];
+
   const tableRoutes = new Table({
     rows: [
       new TableRow({
@@ -627,78 +570,14 @@ function buildDocument() {
           createTableCell("Ação Realizada", true, 43)
         ]
       }),
-      new TableRow({
+      ...routesData.map(r => new TableRow({
         children: [
-          createTableCell("POST", false, 12, true, AlignmentType.CENTER),
-          createTableCell("/api/auth/register", false, 30),
-          createTableCell("Público", false, 15, false, AlignmentType.CENTER),
-          createTableCell("Cadastra um novo usuário no banco de dados.", false, 43)
+          createTableCell(r.method, false, 12, true, AlignmentType.CENTER),
+          createTableCell(r.endpoint, false, 30),
+          createTableCell(r.auth, false, 15, false, AlignmentType.CENTER),
+          createTableCell(r.action, false, 43)
         ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("POST", false, 12, true, AlignmentType.CENTER),
-          createTableCell("/api/auth/login", false, 30),
-          createTableCell("Público", false, 15, false, AlignmentType.CENTER),
-          createTableCell("Autentica credenciais e gera o Token JWT para a sessão.", false, 43)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("GET", false, 12, true, AlignmentType.CENTER),
-          createTableCell("/api/clients", false, 30),
-          createTableCell("JWT Required", false, 15, false, AlignmentType.CENTER),
-          createTableCell("Recupera a lista completa de clientes cadastrados.", false, 43)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("POST", false, 12, true, AlignmentType.CENTER),
-          createTableCell("/api/clients", false, 30),
-          createTableCell("JWT Required", false, 15, false, AlignmentType.CENTER),
-          createTableCell("Cria ou atualiza um cliente em lote.", false, 43)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("POST", false, 12, true, AlignmentType.CENTER),
-          createTableCell("/api/equipment", false, 30),
-          createTableCell("JWT Required", false, 15, false, AlignmentType.CENTER),
-          createTableCell("Cadastra ou atualiza equipamento no inventário de um cliente.", false, 43)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("POST", false, 12, true, AlignmentType.CENTER),
-          createTableCell("/api/faturas/upload", false, 30),
-          createTableCell("JWT Required", false, 15, false, AlignmentType.CENTER),
-          createTableCell("Faz upload físico e parseia planilhas de faturas (XLSX, CSV).", false, 43)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("POST", false, 12, true, AlignmentType.CENTER),
-          createTableCell("/api/faturas/sync", false, 30),
-          createTableCell("JWT Required", false, 15, false, AlignmentType.CENTER),
-          createTableCell("Sincroniza faturas diretamente a partir da API PowerHub.", false, 43)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("POST", false, 12, true, AlignmentType.CENTER),
-          createTableCell("/api/ai/optimize", false, 30),
-          createTableCell("JWT Required", false, 15, false, AlignmentType.CENTER),
-          createTableCell("Envia dados de consumo para Groq LLM e retorna conselhos de eficiência.", false, 43)
-        ]
-      }),
-      new TableRow({
-        children: [
-          createTableCell("POST", false, 12, true, AlignmentType.CENTER),
-          createTableCell("/api/email/send-pdf", false, 30),
-          createTableCell("Público", false, 15, false, AlignmentType.CENTER),
-          createTableCell("Recebe o arquivo PDF em binário (Multipart) e envia via Nodemailer.", false, 43)
-        ]
-      })
+      }))
     ]
   });
   children.push(tableRoutes);
@@ -739,7 +618,7 @@ function buildDocument() {
 
   children.push(createH2("5.1 Páginas do Sistema"));
   children.push(createBulletPoint(" Ponto de entrada após login. Apresenta indicadores consolidados de faturamento, consumo global em kWh, carga tributária média e gráficos de gastos por distribuidora e histórico de consumo.", "HomePage:"));
-  children.push(createBulletPoint(" Tela de controle de acesso segura. Implementa a autenticação com JWT e redireciona usuários não autenticados das rotas privadas.", "LoginPage:"));
+  children.push(createBulletPoint(" Tela de controle de acesso segura. Implementa a autenticação com JWT e redireciona usuários não autenticados das rotas privadas. Se a senha de login for detectada como temporária (iniciada com 'Tmp#'), o sistema força a imediata exibição do formulário de redefinição de senha obrigatória.", "LoginPage:"));
   children.push(createBulletPoint(" Exibe e gerencia a listagem das Unidades Consumidoras. Fornece diálogos de cadastro, edição e importação em lote de clientes.", "ClientsPage:"));
   children.push(createBulletPoint(" Mapeamento do inventário físico associado a cada UC. Permite cadastrar potência, tempo de uso e quantidades para simular o consumo teórico.", "EquipmentPage:"));
   children.push(createBulletPoint(" Fornece os controles para carregar planilhas locais e invocar a sincronização remota via API PowerHub.", "ImportPage:"));
@@ -776,11 +655,12 @@ function buildDocument() {
   children.push(createBulletPoint(" Painel de estatísticas agregadas das faturas da sessão (total faturado, consumo kWh, impostos).", "DataStats:"));
   children.push(createBulletPoint(" Tabela de dados de pré-visualização das planilhas importadas na sessão corrente.", "DataTable:"));
   children.push(createBulletPoint(" Permite ocultar ou exibir dinamicamente colunas de faturas na tabela para facilitar a análise.", "ColumnCustomizer:"));
+  children.push(createBulletPoint(" Diálogo modal contendo checkboxes para selecionar quais colunas técnicas devem estar visíveis ou ocultas no grid de visualização.", "TableColumnFilter:"));
   children.push(createBulletPoint(" Paginação reativa para tabelas de grande volume.", "DataPagination:"));
 
   children.push(createH3("Estrutura do Relatório PDF (pdf/document)"));
   children.push(createBodyParagraph(
-    "O Audit Energy gera relatórios ricos em formato PDF no cliente. Para manter o código modular, o componente principal PDFDocument é composto por 12 sub-módulos especializados:"
+    "O Audit Energy gera relatórios ricos em formato PDF no cliente. Para manter o código modular, o componente principal PDFDocument é composto por sub-módulos especializados:"
   ));
   children.push(createBulletPoint(" Renderiza o cabeçalho oficial com dados da UC, distribuidora, número NF e período de faturamento.", "PDFHeader:"));
   children.push(createBulletPoint(" Renderiza o rodapé com numeração de páginas e termos de confidencialidade.", "PDFFooter:"));
@@ -794,6 +674,9 @@ function buildDocument() {
   children.push(createBulletPoint(" Renderiza a linha do tempo ou histórico de consumo das faturas anteriores.", "TimelineBlock:"));
   children.push(createBulletPoint(" Bloco formatado em Markdown que renderiza as sugestões de economia geradas pelo LLaMA.", "AIInsights:"));
   children.push(createBulletPoint(" Helper de estilização de títulos de seções internas do PDF.", "SectionTitle:"));
+  children.push(createBulletPoint(" Painel interativo para pré-visualizar as páginas geradas em tempo real antes de exportar ou enviar.", "PDFPreview:"));
+  children.push(createBulletPoint(" Estado neutro exibido quando nenhuma fatura ou período de faturamento foi selecionado.", "PDFEmptyState:"));
+  children.push(createBulletPoint(" Card resumo que exibe informações consolidadas da UC a ser exportada para o PDF.", "PDFReportCard:"));
 
   children.push(createH2("5.3 Provedores de Contexto (Contexts)"));
   children.push(createBulletPoint(" Gerencia o token JWT e sessões, mantendo o estado de login e autenticação privada.", "AuthContext:"));
@@ -801,6 +684,12 @@ function buildDocument() {
   children.push(createBulletPoint(" Controla as seleções temporárias de linhas da tabela para ações em lote no painel de relatórios.", "PDFContext:"));
   children.push(createBulletPoint(" Implementa caixas de diálogo flutuantes, modais de confirmação de exclusões e toasts customizados.", "AlertContext:"));
   children.push(createBulletPoint(" Gerencia configurações globais da aplicação frontend (ex: tema escuro/claro).", "AppContext:"));
+
+  children.push(createH2("5.4 Hooks Customizados (TanStack Query)"));
+  children.push(createBulletPoint(" Encapsula consultas de busca, inserção, atualização e exclusão de Unidades Consumidoras com invalidação automática de cache.", "useClients:"));
+  children.push(createBulletPoint(" Gerencia o inventário de equipamentos por UC, sincronizando atualizações de carga no banco de dados.", "useEquipment:"));
+  children.push(createBulletPoint(" Abstrai a listagem histórica, inserção individual, upload de planilhas e sincronização PowerHub.", "useFaturas:"));
+  children.push(createBulletPoint(" Controla operações administrativas de listagem, criação, redefinição de senha e exclusão de usuários.", "useUsers:"));
 
   children.push(new Paragraph({ children: [new PageBreak()] }));
 

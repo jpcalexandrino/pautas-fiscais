@@ -2,20 +2,20 @@ import db from '../config/db';
 import { QueryResult } from 'pg';
 
 export interface ClientRow {
-  id?: number;
-  uc_number?: string;
-  name: string;
-  distributor?: string;
-  subgroup?: string;
-  cnpj?: string;
-  contact_email?: string;
+  sk_cliente?: number;
+  nk_uc?: string;
+  nome: string;
+  distribuidora?: string;
+  subgrupo?: string;
+  nk_cnpj?: string;
+  email_contato?: string;
   cep?: string;
   uf?: string;
-  city?: string;
-  address?: string;
-  number?: string;
-  complement?: string;
-  created_at?: Date;
+  cidade?: string;
+  endereco?: string;
+  numero?: string;
+  complemento?: string;
+  criado_em?: Date;
 }
 
 class ClientRepository {
@@ -29,86 +29,86 @@ class ClientRepository {
 
   async createTable(): Promise<QueryResult> {
     const queryText = `
-      CREATE TABLE IF NOT EXISTS clients (
-        id SERIAL PRIMARY KEY,
-        uc_number TEXT,
-        name TEXT NOT NULL,
-        distributor TEXT,
-        subgroup TEXT,
-        cnpj TEXT,
-        contact_email TEXT,
+      CREATE TABLE IF NOT EXISTS dim_clientes (
+        sk_cliente SERIAL PRIMARY KEY,
+        nk_uc TEXT,
+        nome TEXT NOT NULL,
+        distribuidora TEXT,
+        subgrupo TEXT,
+        nk_cnpj TEXT,
+        email_contato TEXT,
         cep TEXT,
         uf TEXT,
-        city TEXT,
-        address TEXT,
-        number TEXT,
-        complement TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        cidade TEXT,
+        endereco TEXT,
+        numero TEXT,
+        complemento TEXT,
+        criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `;
     return db.query(queryText);
   }
 
-  async findByUcOrCnpj(uc_number?: string): Promise<QueryResult> {
-    const normalizedUc = this.normalizeUniqueValue(uc_number);
+  async findByUcOrCnpj(nk_uc?: string): Promise<QueryResult> {
+    const normalizedUc = this.normalizeUniqueValue(nk_uc);
     const conditions: string[] = [];
     const values: any[] = [];
 
     if (normalizedUc) {
-      conditions.push(`regexp_replace(lower(uc_number), '[^0-9a-z]', '', 'g') = $${values.length + 1}`);
+      conditions.push(`regexp_replace(lower(nk_uc), '[^0-9a-z]', '', 'g') = $${values.length + 1}`);
       values.push(normalizedUc);
     }
 
     if (conditions.length === 0) {
-      return db.query('SELECT * FROM clients WHERE false');
+      return db.query('SELECT * FROM dim_clientes WHERE false');
     }
 
-    const queryText = `SELECT * FROM clients WHERE ${conditions.join(' OR ')}`;
+    const queryText = `SELECT * FROM dim_clientes WHERE ${conditions.join(' OR ')}`;
     return db.query(queryText, values);
   }
 
-  async findByUcOrCnpjExcludingId(id: string | number, uc_number?: string): Promise<QueryResult> {
-    const normalizedUc = this.normalizeUniqueValue(uc_number);
+  async findByUcOrCnpjExcludingId(id: string | number, nk_uc?: string): Promise<QueryResult> {
+    const normalizedUc = this.normalizeUniqueValue(nk_uc);
     const conditions: string[] = [];
     const values: any[] = [id];
 
     if (normalizedUc) {
-      conditions.push(`regexp_replace(lower(uc_number), '[^0-9a-z]', '', 'g') = $${values.length + 1}`);
+      conditions.push(`regexp_replace(lower(nk_uc), '[^0-9a-z]', '', 'g') = $${values.length + 1}`);
       values.push(normalizedUc);
     }
 
     if (conditions.length === 0) {
-      return db.query('SELECT * FROM clients WHERE false');
+      return db.query('SELECT * FROM dim_clientes WHERE false');
     }
 
-    const queryText = `SELECT * FROM clients WHERE id <> $1 AND (${conditions.join(' OR ')})`;
+    const queryText = `SELECT * FROM dim_clientes WHERE sk_cliente <> $1 AND (${conditions.join(' OR ')})`;
     return db.query(queryText, values);
   }
 
   async getAll(): Promise<QueryResult> {
-    return db.query('SELECT * FROM clients ORDER BY name ASC');
+    return db.query('SELECT * FROM dim_clientes ORDER BY nome ASC');
   }
 
   async getById(id: string | number): Promise<QueryResult> {
-    return db.query('SELECT * FROM clients WHERE id = $1', [id]);
+    return db.query('SELECT * FROM dim_clientes WHERE sk_cliente = $1', [id]);
   }
 
   async create(client: ClientRow): Promise<QueryResult> {
     const {
-      uc_number, name, distributor, subgroup, cnpj,
-      contact_email, cep, uf, city, address, number, complement
+      nk_uc, nome, distribuidora, subgrupo, nk_cnpj,
+      email_contato, cep, uf, cidade, endereco, numero, complemento
     } = client;
     const queryText = `
-      INSERT INTO clients (
-        uc_number, name, distributor, subgroup, cnpj, 
-        contact_email, cep, uf, city, address, number, complement
+      INSERT INTO dim_clientes (
+        nk_uc, nome, distribuidora, subgrupo, nk_cnpj, 
+        email_contato, cep, uf, cidade, endereco, numero, complemento
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *;
     `;
     return db.query(queryText, [
-      uc_number, name, distributor, subgroup, cnpj,
-      contact_email, cep, uf, city, address, number, complement
+      nk_uc, nome, distribuidora, subgrupo, nk_cnpj,
+      email_contato, cep, uf, cidade, endereco, numero, complemento
     ]);
   }
 
@@ -119,9 +119,9 @@ class ClientRepository {
 
     const COLS = 12;
     const clientValues = clients.map(c => [
-      String(c.uc_number || ''), c.name || '', c.distributor || '', c.subgroup || '',
-      String(c.cnpj || ''), c.contact_email || '', c.cep || '', c.uf || '',
-      c.city || '', c.address || '', String(c.number || ''), c.complement || ''
+      String(c.nk_uc || ''), c.nome || '', c.distribuidora || '', c.subgrupo || '',
+      String(c.nk_cnpj || ''), c.email_contato || '', c.cep || '', c.uf || '',
+      c.cidade || '', c.endereco || '', String(c.numero || ''), c.complemento || ''
     ]);
 
     let placeholders = '';
@@ -134,9 +134,9 @@ class ClientRepository {
     });
 
     const queryText = `
-      INSERT INTO clients (
-        uc_number, name, distributor, subgroup, cnpj, 
-        contact_email, cep, uf, city, address, number, complement
+      INSERT INTO dim_clientes (
+        nk_uc, nome, distribuidora, subgrupo, nk_cnpj, 
+        email_contato, cep, uf, cidade, endereco, numero, complemento
       )
       VALUES ${placeholders}
       RETURNING *;
@@ -146,25 +146,25 @@ class ClientRepository {
 
   async update(id: string | number, client: ClientRow): Promise<QueryResult> {
     const {
-      uc_number, name, distributor, subgroup, cnpj,
-      contact_email, cep, uf, city, address, number, complement
+      nk_uc, nome, distribuidora, subgrupo, nk_cnpj,
+      email_contato, cep, uf, cidade, endereco, numero, complemento
     } = client;
     const queryText = `
-      UPDATE clients
-      SET uc_number = $1, name = $2, distributor = $3, subgroup = $4, cnpj = $5, 
-          contact_email = $6, cep = $7, uf = $8, city = $9, address = $10, 
-          number = $11, complement = $12
-      WHERE id = $13
+      UPDATE dim_clientes
+      SET nk_uc = $1, nome = $2, distribuidora = $3, subgrupo = $4, nk_cnpj = $5, 
+          email_contato = $6, cep = $7, uf = $8, cidade = $9, endereco = $10, 
+          numero = $11, complemento = $12
+      WHERE sk_cliente = $13
       RETURNING *;
     `;
     return db.query(queryText, [
-      uc_number, name, distributor, subgroup, cnpj,
-      contact_email, cep, uf, city, address, number, complement, id
+      nk_uc, nome, distribuidora, subgrupo, nk_cnpj,
+      email_contato, cep, uf, cidade, endereco, numero, complemento, id
     ]);
   }
 
   async delete(id: string | number): Promise<QueryResult> {
-    return db.query('DELETE FROM clients WHERE id = $1', [id]);
+    return db.query('DELETE FROM dim_clientes WHERE sk_cliente = $1', [id]);
   }
 }
 

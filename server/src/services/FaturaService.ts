@@ -179,8 +179,8 @@ class FaturaService {
         const clientRes = await ClientRepository.findByUcOrCnpj(fatura.instalacao);
         if (clientRes.rows.length > 0) {
           const client = clientRes.rows[0];
-          fatura.nome_do_site = client.name;
-          fatura.nome_do_cliente = client.name;
+          fatura.nome_do_site = client.nome;
+          fatura.nome_do_cliente = client.nome;
         }
       } catch (error) {
         console.error('Erro ao buscar cliente para padronizar o nome:', error);
@@ -204,7 +204,7 @@ class FaturaService {
     }
 
     const idsToDelete = matches
-      .map(match => Number(match.id))
+      .map(match => Number(match.sk_fatura))
       .filter(id => Number.isFinite(id));
 
     if (idsToDelete.length > 0) {

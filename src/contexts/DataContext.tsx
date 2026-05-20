@@ -131,7 +131,7 @@ export function mapFromDb(dbRow: any): FaturaRow {
   };
 
   const mapped: any = {
-    id: dbRow.id
+    id: dbRow.sk_fatura
   };
   for (const [dbKey, jsKey] of Object.entries(mapping)) {
     let value = dbRow[dbKey];
