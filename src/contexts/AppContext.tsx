@@ -1,0 +1,42 @@
+import React, { createContext, useContext, ReactNode } from 'react';
+import { APP_CONFIG, CSV_FIELDS } from '../utils/constants';
+
+interface AppContextType {
+  appName: string;
+  appVersion: string;
+  appDescription: string;
+  locale: string;
+  currency: string;
+  csvFields: typeof CSV_FIELDS;
+}
+
+const AppContext = createContext<AppContextType | null>(null);
+
+/**
+ * Provê variáveis globais da aplicação reutilizáveis em todos os componentes
+ */
+export function AppProvider({ children }: { children: ReactNode }) {
+  const value: AppContextType = {
+    // Config da aplicação
+    appName: APP_CONFIG.name,
+    appVersion: APP_CONFIG.version,
+    appDescription: APP_CONFIG.description,
+    locale: APP_CONFIG.locale,
+    currency: APP_CONFIG.currency,
+
+    // Definições dos campos
+    csvFields: CSV_FIELDS,
+  };
+
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+}
+
+export function useApp() {
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error('useApp deve ser usado dentro de um AppProvider');
+  }
+  return context;
+}
+
+export default AppContext;
