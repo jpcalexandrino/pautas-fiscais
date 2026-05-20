@@ -59,8 +59,8 @@ class FaturaRepository {
         servicos_iluminacao_publica_rs NUMERIC,
         tarifa_servicos_iluminacao_publica NUMERIC,
         medida_servicos_iluminacao_publica NUMERIC,
-        soft_delete BOOLEAN DEFAULT FALSE,
-        criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        D_E_L_E_T_ VARCHAR(1) DEFAULT '',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `;
     return db.query(queryText);
@@ -111,24 +111,12 @@ class FaturaRepository {
     return clean;
   }
 
-  async findActiveMatches(instalacao: string, mes_referencia: string, numero_nf: string): Promise<any[]> {
+  async findActiveMatches(instalacao: string, mes_referencia: string): Promise<any[]> {
     const cleanInstalacao = String(instalacao || '').trim();
-    const cleanNF = String(numero_nf || '').trim();
-
-    if (cleanNF !== '') {
-      const queryNF = `
-        SELECT * FROM fato_faturas
-        WHERE instalacao = $1 AND numero_nf = $2 AND soft_delete = false
-      `;
-      const resultNF = await db.query(queryNF, [cleanInstalacao, cleanNF]);
-      if ((resultNF.rowCount || 0) > 0) {
-        return resultNF.rows;
-      }
-    }
 
     const queryMonth = `
       SELECT * FROM fato_faturas
-      WHERE instalacao = $1 AND soft_delete = false
+      WHERE instalacao = $1 AND D_E_L_E_T_ <> '*'
     `;
     const resultMonth = await db.query(queryMonth, [cleanInstalacao]);
 
@@ -138,8 +126,8 @@ class FaturaRepository {
     return resultMonth.rows.filter(row => this.normalizeMonth(row.mes_referencia) === targetMonthNormalized);
   }
 
-  async checkExists(instalacao: string, mes_referencia: string, numero_nf: string): Promise<boolean> {
-    const matches = await this.findActiveMatches(instalacao, mes_referencia, numero_nf);
+  async checkExists(instalacao: string, mes_referencia: string): Promise<boolean> {
+    const matches = await this.findActiveMatches(instalacao, mes_referencia);
     return matches.length > 0;
   }
 
@@ -147,11 +135,11 @@ class FaturaRepository {
     if (ids.length === 0) {
       return db.query('SELECT 1');
     }
-    return db.query('UPDATE fato_faturas SET soft_delete = true WHERE sk_fatura = ANY($1::int[])', [ids]);
+    return db.query("UPDATE fato_faturas SET D_E_L_E_T_ = '*' WHERE sk_fatura = ANY($1::int[])", [ids]);
   }
 
   async getAll(): Promise<QueryResult> {
-    return db.query('SELECT * FROM fato_faturas WHERE soft_delete = false ORDER BY criado_em DESC');
+    return db.query("SELECT * FROM fato_faturas WHERE D_E_L_E_T_ <> '*' ORDER BY created_at DESC");
   }
 
   async deleteAll(): Promise<QueryResult> {

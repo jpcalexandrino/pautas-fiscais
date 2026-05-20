@@ -36,7 +36,7 @@ function mapFromDb(dbRow: any): any {
     address: dbRow.endereco,
     number: dbRow.numero,
     complement: dbRow.complemento,
-    created_at: dbRow.criado_em,
+    created_at: dbRow.created_at,
   };
 }
 

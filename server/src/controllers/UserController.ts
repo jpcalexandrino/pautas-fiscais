@@ -27,7 +27,7 @@ function mapFromDb(dbRow: any): any {
     email: dbRow.email,
     role: dbRow.perfil,
     active: dbRow.ativo,
-    created_at: dbRow.criado_em,
+    created_at: dbRow.created_at,
   };
 }
 

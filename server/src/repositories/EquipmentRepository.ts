@@ -10,7 +10,7 @@ export interface EquipmentRow {
   wh_dia?: number;
   quantidade?: number;
   tarifa?: number;
-  criado_em?: Date;
+  created_at?: Date;
 }
 
 class EquipmentRepository {
@@ -25,7 +25,7 @@ class EquipmentRepository {
         wh_dia NUMERIC DEFAULT 0,
         quantidade INTEGER DEFAULT 1,
         tarifa NUMERIC DEFAULT 0,
-        criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `;
     return db.query(queryText);

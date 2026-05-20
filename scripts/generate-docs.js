@@ -334,7 +334,7 @@ function buildDocument() {
       }),
       new TableRow({
         children: [
-          createTableCell("criado_em", false, 20, true),
+          createTableCell("created_at", false, 20, true),
           createTableCell("TIMESTAMP", false, 25),
           createTableCell("DEFAULT NOW()", false, 15),
           createTableCell("Data e hora de criação do usuário", false, 40)
@@ -363,7 +363,7 @@ function buildDocument() {
     { col: "endereco", type: "TEXT", nullity: "NULL", desc: "Logradouro/Rua do endereço do site" },
     { col: "numero", type: "TEXT", nullity: "NULL", desc: "Número do local no endereço" },
     { col: "complemento", type: "TEXT", nullity: "NULL", desc: "Complemento do endereço do site" },
-    { col: "criado_em", type: "TIMESTAMP", nullity: "DEFAULT NOW()", desc: "Data e hora de criação do registro da UC" }
+    { col: "created_at", type: "TIMESTAMP", nullity: "DEFAULT NOW()", desc: "Data e hora de criação do registro da UC" }
   ];
 
   const tableClients = new Table({
@@ -402,7 +402,7 @@ function buildDocument() {
     { col: "wh_dia", type: "NUMERIC", nullity: "DEFAULT 0", desc: "Consumo estimado diário em Watt-hora" },
     { col: "quantidade", type: "INTEGER", nullity: "DEFAULT 1", desc: "Quantidade de unidades idênticas do equipamento" },
     { col: "tarifa", type: "NUMERIC", nullity: "DEFAULT 0", desc: "Custo tarifário aplicado por kWh (R$)" },
-    { col: "criado_em", type: "TIMESTAMP", nullity: "DEFAULT NOW()", desc: "Data e hora de criação do cadastro do equipamento" }
+    { col: "created_at", type: "TIMESTAMP", nullity: "DEFAULT NOW()", desc: "Data e hora de criação do cadastro do equipamento" }
   ];
 
   const tableEquipment = new Table({
@@ -489,8 +489,8 @@ function buildDocument() {
     { col: "servicos_iluminacao_publica_rs", type: "NUMERIC", nullity: "NULL", desc: "Valor da taxa de iluminação pública (R$)" },
     { col: "tarifa_servicos_iluminacao_publica", type: "NUMERIC", nullity: "NULL", desc: "Tarifa unitária da taxa de iluminação pública" },
     { col: "medida_servicos_iluminacao_publica", type: "NUMERIC", nullity: "NULL", desc: "Medida associada à iluminação pública" },
-    { col: "soft_delete", type: "BOOLEAN", nullity: "DEFAULT FALSE", desc: "Flag de exclusão lógica (soft delete)" },
-    { col: "criado_em", type: "TIMESTAMP", nullity: "DEFAULT NOW()", desc: "Data e hora de criação do registro no banco" }
+    { col: "D_E_L_E_T_", type: "VARCHAR(1)", nullity: "DEFAULT ''", desc: "Flag de exclusão lógica (contém '*' se deletado)" },
+    { col: "created_at", type: "TIMESTAMP", nullity: "DEFAULT NOW()", desc: "Data e hora de criação do registro no banco" }
   ];
 
   const tableFaturas = new Table({

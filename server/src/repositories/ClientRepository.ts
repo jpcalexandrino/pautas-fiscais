@@ -15,7 +15,7 @@ export interface ClientRow {
   endereco?: string;
   numero?: string;
   complemento?: string;
-  criado_em?: Date;
+  created_at?: Date;
 }
 
 class ClientRepository {
@@ -43,7 +43,7 @@ class ClientRepository {
         endereco TEXT,
         numero TEXT,
         complemento TEXT,
-        criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `;
     return db.query(queryText);

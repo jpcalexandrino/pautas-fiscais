@@ -189,8 +189,7 @@ class FaturaService {
 
     const matches = await FaturaRepository.findActiveMatches(
       fatura.instalacao,
-      fatura.mes_referencia,
-      fatura.numero_nf || ''
+      fatura.mes_referencia
     );
 
     if (matches.length === 0) {

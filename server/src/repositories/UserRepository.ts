@@ -21,7 +21,7 @@ class UserRepository {
         senha_hash TEXT NOT NULL,
         perfil TEXT DEFAULT 'user',
         ativo BOOLEAN DEFAULT true,
-        criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `;
     return db.query(queryText);
@@ -34,7 +34,7 @@ class UserRepository {
   }
 
   async findById(id: string | number): Promise<UserRow | null> {
-    const result = await db.query('SELECT sk_usuario, nome, email, perfil, ativo, criado_em FROM dim_usuarios WHERE sk_usuario = $1', [id]);
+    const result = await db.query('SELECT sk_usuario, nome, email, perfil, ativo, created_at FROM dim_usuarios WHERE sk_usuario = $1', [id]);
     return (result.rows[0] as UserRow) || null;
   }
 
@@ -44,7 +44,7 @@ class UserRepository {
   }
 
   async getAll(): Promise<QueryResult> {
-    return db.query('SELECT sk_usuario, nome, email, perfil, ativo, criado_em FROM dim_usuarios ORDER BY nome ASC');
+    return db.query('SELECT sk_usuario, nome, email, perfil, ativo, created_at FROM dim_usuarios ORDER BY nome ASC');
   }
 
   async create(user: UserRow): Promise<QueryResult> {
@@ -53,7 +53,7 @@ class UserRepository {
     const queryText = `
       INSERT INTO dim_usuarios (nome, email, senha_hash, perfil)
       VALUES ($1, $2, $3, $4)
-      RETURNING sk_usuario, nome, email, perfil, ativo, criado_em;
+      RETURNING sk_usuario, nome, email, perfil, ativo, created_at;
     `;
     return db.query(queryText, [nome, email, hashedPassword, perfil || 'user']);
   }
@@ -64,7 +64,7 @@ class UserRepository {
       UPDATE dim_usuarios
       SET nome = $1, email = $2, perfil = $3, ativo = $4
       WHERE sk_usuario = $5
-      RETURNING sk_usuario, nome, email, perfil, ativo, criado_em;
+      RETURNING sk_usuario, nome, email, perfil, ativo, created_at;
     `;
     return db.query(queryText, [nome, email, perfil, ativo, id]);
   }

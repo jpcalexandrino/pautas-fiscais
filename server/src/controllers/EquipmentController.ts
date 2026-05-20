@@ -26,7 +26,7 @@ function mapFromDb(dbRow: any): any {
     wh_per_day: dbRow.wh_dia,
     quantity: dbRow.quantidade,
     tariff: dbRow.tarifa,
-    created_at: dbRow.criado_em,
+    created_at: dbRow.created_at,
   };
 }
 
