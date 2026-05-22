@@ -7,6 +7,9 @@
     "dev": "vite",
     "server": "tsx server/src/index.ts",
     "build": "tsc && vite build",
+    "build:server": "cd server && npm run build",
+    "build:all": "npm run build && npm run build:server",
+    "start": "cd server && node dist/index.js",
     "lint": "eslint .",
     "preview": "vite preview",
     "type-check": "tsc --noEmit"

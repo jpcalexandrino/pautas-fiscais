@@ -8,7 +8,11 @@ import { AuthRequest } from '../middleware/authMiddleware';
 
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
-const JWT_SECRET = process.env.JWT_SECRET || 'audit-energy-secret-key-2026';
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET is not defined in the environment variables');
+}
+const JWT_SECRET = process.env.JWT_SECRET!;
+
 const JWT_EXPIRES_IN = '7d';
 const TEMP_PASSWORD_PREFIX = 'Tmp#';
 
@@ -19,7 +23,7 @@ function isTemporaryPassword(password: string): boolean {
 // Password complexity validation: minimum 8 characters, at least 1 uppercase letter, at least 1 number, at least 1 special character
 function validatePassword(password: string): boolean {
   if (!password || password.length < 8) return false;
-  
+
   // At least one uppercase letter
   const hasUppercase = /[A-Z]/.test(password);
   if (!hasUppercase) return false;

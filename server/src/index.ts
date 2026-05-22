@@ -22,8 +22,14 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 const app: Application = express();
 app.disable('x-powered-by');
 const PORT = process.env.PORT || 3001;
+const isProduction = process.env.NODE_ENV === 'production';
 
-app.use(cors());
+// CORS: restrito em produção, aberto em desenvolvimento
+app.use(cors(
+  isProduction
+    ? { origin: process.env.CORS_ORIGIN || false }
+    : { origin: true }
+));
 app.use(express.json());
 
 // Public routes
@@ -37,6 +43,17 @@ app.use('/api/users', authMiddleware, userRoutes);
 app.use('/api/ai', authMiddleware, aiRoutes);
 app.use('/api/email', emailRoutes);
 
+// Em produção, servir o frontend buildado pelo Vite
+if (isProduction) {
+  const clientDistPath = path.join(__dirname, '../../dist');
+  app.use(express.static(clientDistPath));
+
+  // SPA fallback — qualquer rota que não seja /api retorna index.html
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+}
+
 // Database initialization
 async function init(): Promise<void> {
   try {
@@ -44,7 +61,7 @@ async function init(): Promise<void> {
     await FaturaRepository.createTable();
     await ClientRepository.createTable();
     await EquipmentRepository.createTable();
-    
+
     // Seed default admin if no users exist
     const usersResult = await UserRepository.getAll();
     if ((usersResult.rowCount || 0) === 0) {
@@ -56,7 +73,7 @@ async function init(): Promise<void> {
       });
       console.log('Default admin user seeded: admin@admin.com / Admin#1234');
     }
-    
+
     console.log('Database initialized');
 
     app.listen(PORT, () => {

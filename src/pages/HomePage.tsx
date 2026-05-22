@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import {
-  Upload, ArrowRight, Sun, Moon, Sunrise,
-  Building2, Receipt, Database, BarChart3, Users2
+  Upload, ArrowRight, Sun, Moon, Sunrise, Database, BarChart3, Users2,
+  DollarSign,
+  Zap,
+  File
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface QuickAccessItem {
   icon: LucideIcon;
@@ -115,69 +117,85 @@ export default function HomePage() {
       {/* KPI Stats Cards */}
       <section className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="border-border/50 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
-            <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 opacity-70" />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Clientes Ativos</CardTitle>
-              <Building2 className="h-4 w-4 text-blue-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-semibold tracking-tighter">
+          {/* Clientes Ativos */}
+          <Card className="shadow-sm hover:shadow-md transition-all">
+            <CardHeader>
+              <CardDescription className="flex items-center justify-between">
+                Clientes Ativos
+              </CardDescription>
+              <CardTitle className="text-3xl font-bold tabular-nums tracking-tighter">
                 {stats.isLoading ? '...' : stats.clientCount}
+              </CardTitle>
+            </CardHeader>
+            <CardFooter className="flex-col items-start gap-1 text-sm">
+              <div className="flex items-center gap-1 font-medium">
+                Cadastrados no sistema <Users2 className="h-3.5 w-3.5" />
               </div>
-              <p className="text-[10px] font-semibold text-muted-foreground mt-1 flex items-center gap-1">
-                Clientes cadastrados no sistema
-              </p>
-            </CardContent>
+              <div className="text-muted-foreground text-xs">
+                Total de clientes registrados
+              </div>
+            </CardFooter>
           </Card>
 
-          <Card className="border-border/50 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
-            <div className="absolute top-0 left-0 w-1 h-full bg-purple-500 opacity-70" />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Faturas Analisadas</CardTitle>
-              <Receipt className="h-4 w-4 text-purple-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-semibold tracking-tighter">
+          {/* Faturas Analisadas */}
+          <Card className="shadow-sm hover:shadow-md transition-all">
+            <CardHeader>
+              <CardDescription className="flex items-center justify-between">
+                Faturas Analisadas
+              </CardDescription>
+              <CardTitle className="text-3xl font-bold tabular-nums tracking-tighter">
                 {stats.isLoading ? '...' : stats.faturaCount}
+              </CardTitle>
+            </CardHeader>
+            <CardFooter className="flex-col items-start gap-1 text-sm">
+              <div className="flex items-center gap-1 font-medium">
+                Registros importados <File className="h-3.5 w-3.5" />
               </div>
-              <p className="text-[10px] font-bold text-muted-foreground mt-1">
-                Total de registros importados
-              </p>
-            </CardContent>
+              <div className="text-muted-foreground text-xs">
+                Total de faturas no sistema
+              </div>
+            </CardFooter>
           </Card>
 
-          <Card className="border-border/50 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
-            <div className="absolute top-0 left-0 w-1 h-full bg-amber-500 opacity-70" />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Energia Total</CardTitle>
-              <BarChart3 className="h-4 w-4 text-amber-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-semibold tracking-tighter flex items-baseline gap-1">
+          {/* Energia Total */}
+          <Card className="shadow-sm hover:shadow-md transition-all">
+            <CardHeader>
+              <CardDescription className="flex items-center justify-between">
+                Energia Total
+              </CardDescription>
+              <CardTitle className="text-2xl font-bold tabular-nums tracking-tighter flex items-baseline gap-1.5">
                 {stats.isLoading ? '...' : stats.totalKwh.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
-                <span className="text-xs font-bold text-muted-foreground">kWh</span>
+                <span className="text-sm font-semibold text-muted-foreground">kWh</span>
+              </CardTitle>
+            </CardHeader>
+            <CardFooter className="flex-col items-start gap-1 text-sm">
+              <div className="flex items-center gap-1 font-medium">
+                Consumo mapeado <Zap className="h-3.5 w-3.5" />
               </div>
-              <p className="text-[10px] font-bold text-muted-foreground mt-1">
-                Consumo total identificado
-              </p>
-            </CardContent>
+              <div className="text-muted-foreground text-xs">
+                Consumo total identificado nas faturas
+              </div>
+            </CardFooter>
           </Card>
 
-          <Card className="border-border/50 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
-            <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500 opacity-70" />
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Volume Financeiro</CardTitle>
-              <Database className="h-4 w-4 text-emerald-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-semibold tracking-tighter text-emerald-600 dark:text-emerald-400">
+          {/* Volume Financeiro */}
+          <Card className="shadow-sm hover:shadow-md transition-all">
+            <CardHeader>
+              <CardDescription className="flex items-center justify-between">
+                Volume Financeiro
+              </CardDescription>
+              <CardTitle className="text-2xl font-bold tabular-nums tracking-tighter">
                 {stats.isLoading ? '...' : stats.totalValor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </CardTitle>
+            </CardHeader>
+            <CardFooter className="flex-col items-start gap-1 text-sm">
+              <div className="flex items-center gap-1 font-medium">
+                Valor total em faturas <DollarSign className="h-3.5 w-3.5" />
               </div>
-              <p className="text-[10px] font-bold text-muted-foreground mt-1">
-                Valor total mapeado em faturas
-              </p>
-            </CardContent>
+              <div className="text-muted-foreground text-xs">
+                Valor total mapeado no sistema
+              </div>
+            </CardFooter>
           </Card>
         </div>
       </section>

@@ -21,7 +21,7 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
-const API_URL = 'http://localhost:3001/api/auth';
+const API_URL = `${import.meta.env.VITE_API_URL}/auth`;
 
 interface AuthProviderProps {
   children: ReactNode;

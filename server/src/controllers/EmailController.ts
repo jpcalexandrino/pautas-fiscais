@@ -193,7 +193,7 @@ export async function sendPDF(req: AuthRequest, res: Response) {
               <!-- Assinatura -->
               <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #f1f5f9;">
                 <p style="margin: 0; font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Enviado por</p>
-                <p style="margin: 4px 0 0 0; font-size: 14px; font-weight: 600; color: #0f172a;">${user.name}</p>
+                <p style="margin: 4px 0 0 0; font-size: 14px; font-weight: 600; color: #0f172a;">${user.nome}</p>
                 <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748b;">${user.email}</p>
               </div>
             </div>
@@ -219,7 +219,7 @@ export async function sendPDF(req: AuthRequest, res: Response) {
         content: file.buffer,
       },
       senderInfo: {
-        name: user.name,
+        name: user.nome,
         email: user.email,
       },
     });

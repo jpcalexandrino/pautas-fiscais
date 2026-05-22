@@ -3,9 +3,12 @@ import jwt from 'jsonwebtoken';
 import path from 'path';
 import dotenv from 'dotenv';
 
-dotenv.config({ path: path.join(__dirname, '../../.env') });
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
-const JWT_SECRET = process.env.JWT_SECRET || 'audit-energy-secret-key-2026';
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET is not defined in the environment variables');
+}
+const JWT_SECRET = process.env.JWT_SECRET!;
 
 export interface AuthRequest extends Request {
   userId?: string | number;
