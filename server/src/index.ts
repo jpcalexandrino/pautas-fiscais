@@ -17,7 +17,7 @@ import ClientRepository from './repositories/ClientRepository';
 import EquipmentRepository from './repositories/EquipmentRepository';
 import UserRepository from './repositories/UserRepository';
 
-dotenv.config({ path: path.join(__dirname, '../.env') });
+dotenv.config({ path: path.join(__dirname, '../.env.development') });
 
 const app: Application = express();
 app.disable('x-powered-by');

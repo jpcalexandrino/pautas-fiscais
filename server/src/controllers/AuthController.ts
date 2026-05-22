@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 import UserRepository from '../repositories/UserRepository';
 import { AuthRequest } from '../middleware/authMiddleware';
 
-dotenv.config({ path: path.join(__dirname, '../../.env') });
+dotenv.config({ path: path.join(__dirname, '../../.env.development') });
 
 if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET is not defined in the environment variables');
