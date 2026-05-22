@@ -34,7 +34,7 @@ export const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDelete,
     role: '',
     status: ''
   });
-  
+
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' | null }>({
     key: 'name',
     direction: 'asc',
@@ -55,10 +55,10 @@ export const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDelete,
     .filter(user => {
       const nameMatch = (user.name || '').toLowerCase().includes(filters.name.toLowerCase());
       const emailMatch = (user.email || '').toLowerCase().includes(filters.email.toLowerCase());
-      
+
       const roleStr = user.role === 'admin' ? 'administrador' : 'usuário comum';
       const roleMatch = roleStr.toLowerCase().includes(filters.role.toLowerCase());
-      
+
       const statusStr = user.active !== false ? 'ativo' : 'inativo';
       const statusMatch = statusStr.toLowerCase().includes(filters.status.toLowerCase());
 
@@ -97,7 +97,7 @@ export const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDelete,
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              {isAdmin && <TableHead className="w-[50px]"></TableHead>}
+              {isAdmin && <TableHead className="w-12.5"></TableHead>}
               <TableHead>
                 <div className="flex items-center">
                   <TableColumnFilter
@@ -164,7 +164,7 @@ export const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDelete,
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="w-[160px]">
+                        <DropdownMenuContent align="start" className="w-40">
                           <DropdownMenuItem onClick={() => onEdit(user)}>
                             <Edit className="mr-2 h-4 w-4" />
                             Editar

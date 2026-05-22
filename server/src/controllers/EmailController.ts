@@ -26,10 +26,6 @@ export async function sendPDF(req: AuthRequest, res: Response) {
       return res.status(400).json({ error: 'Arquivo do relatório não encontrado.' });
     }
 
-    const testRecipient = 'jalexandrino@cervejariacidadeimperial.com.br';
-    const originalTo = to;
-    const recipient = testRecipient;
-
     const formattedBody = body
       ? body.replaceAll('\n', '<br>')
       : 'Segue em anexo o relatório detalhado da auditoria energética realizada.';
@@ -157,22 +153,6 @@ export async function sendPDF(req: AuthRequest, res: Response) {
 
             <!-- Content -->
             <div class="content">
-              <!-- Homologação Alert -->
-              <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 12px 16px; margin-bottom: 24px;">
-                <table cellpadding="0" cellspacing="0" border="0" width="100%">
-                  <tr>
-                    <td width="20" style="vertical-align: top; padding-right: 8px;">
-                      <span style="color: #16a34a; font-weight: bold; font-size: 14px;">ℹ</span>
-                    </td>
-                    <td style="font-size: 13px; color: #166534; line-height: 1.5; text-align: left;">
-                      <strong>Ambiente de Homologação:</strong> Este e-mail foi direcionado para <strong>${testRecipient}</strong> para fins de teste.
-                      <br>
-                      <span style="font-size: 11px; opacity: 0.85;">Destinatário original: ${originalTo}</span>
-                    </td>
-                  </tr>
-                </table>
-              </div>
-
               <div class="body-text">
                 ${formattedBody}
               </div>
@@ -210,7 +190,7 @@ export async function sendPDF(req: AuthRequest, res: Response) {
     `;
 
     await EmailService.sendPDFReport({
-      to: recipient,
+      to,
       subject: subject || 'Relatório de Auditoria Energética - Audit Energy',
       text: body || 'Olá, segue em anexo o seu relatório de auditoria energética.',
       html: htmlTemplate,

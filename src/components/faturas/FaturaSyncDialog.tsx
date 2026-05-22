@@ -65,6 +65,29 @@ export function FaturaSyncDialog({
     });
   };
 
+  const currentYear = new Date().getFullYear();
+
+  const years = Array.from(
+    { length: currentYear - 2023 + 1 },
+    (_, i) => 2023 + i
+  );
+
+  const months = [
+    { id: 'all', name: 'Todos os Meses' },
+    { id: '01', name: 'Janeiro' },
+    { id: '02', name: 'Fevereiro' },
+    { id: '03', name: 'Março' },
+    { id: '04', name: 'Abril' },
+    { id: '05', name: 'Maio' },
+    { id: '06', name: 'Junho' },
+    { id: '07', name: 'Julho' },
+    { id: '08', name: 'Agosto' },
+    { id: '09', name: 'Setembro' },
+    { id: '10', name: 'Outubro' },
+    { id: '11', name: 'Novembro' },
+    { id: '12', name: 'Dezembro' }
+  ];
+
   return (
     <Dialog open={open} onOpenChange={(val) => { onOpenChange(val); if (!val) setOpenCombobox(false); }}>
       <DialogContent className="sm:max-w-lg w-full bg-card border border-border">
@@ -150,19 +173,11 @@ export function FaturaSyncDialog({
                   <SelectValue placeholder="Selecione o Mês" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos os Meses</SelectItem>
-                  <SelectItem value="01">Janeiro</SelectItem>
-                  <SelectItem value="02">Fevereiro</SelectItem>
-                  <SelectItem value="03">Março</SelectItem>
-                  <SelectItem value="04">Abril</SelectItem>
-                  <SelectItem value="05">Maio</SelectItem>
-                  <SelectItem value="06">Junho</SelectItem>
-                  <SelectItem value="07">Julho</SelectItem>
-                  <SelectItem value="08">Agosto</SelectItem>
-                  <SelectItem value="09">Setembro</SelectItem>
-                  <SelectItem value="10">Outubro</SelectItem>
-                  <SelectItem value="11">Novembro</SelectItem>
-                  <SelectItem value="12">Dezembro</SelectItem>
+                  {months.map((month) => (
+                    <SelectItem key={month.id} value={month.id}>
+                      {month.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -177,17 +192,14 @@ export function FaturaSyncDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os Anos</SelectItem>
-                  <SelectItem value="2023">2023</SelectItem>
-                  <SelectItem value="2024">2024</SelectItem>
-                  <SelectItem value="2025">2025</SelectItem>
-                  <SelectItem value="2026">2026</SelectItem>
+                  {years.map((year => <SelectItem key={year} value={String(year)} > {year}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           {((syncMonth !== 'all' && syncYear === 'all') || (syncMonth === 'all' && syncYear !== 'all')) && (
-            <p className="text-xs text-amber-500 font-medium mt-1">
+            <p className="text-xs border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded-lg p-2">
               * Selecione tanto o mês quanto o ano para filtrar por um período específico, ou ambos como "Todos" para trazer todo o histórico.
             </p>
           )}
@@ -212,6 +224,6 @@ export function FaturaSyncDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
-    </Dialog>
+    </Dialog >
   );
 }

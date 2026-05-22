@@ -32,12 +32,12 @@ export default function LoginPage() {
     try {
       await login(email, password);
       toast.success('Login realizado com sucesso!', {
-        description: 'Bem-vindo ao sistema Audit Energy.',
+        description: 'Bem-vindo(a)!',
       });
       navigate({ to: '/' });
     } catch (err: any) {
-      toast.error('Falha no login', {
-        description: err.message || 'Verifique suas credenciais e tente novamente.',
+      toast.error('Ops!', {
+        description: err.message || 'E-mail ou senha incorretos.',
       });
     } finally {
       setIsLoading(false);
@@ -50,10 +50,7 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-120 animate-fade-in">
         {/* Logo Section */}
         <div className="flex flex-col items-center text-center mb-10">
-          {/* <div className="w-14 h-14 bg-primary rounded-full flex items-center justify-center mb-6"> */}
           <div className='mb-6'>
-            {/* <span className="text-background font-bold text-xl tracking-tighter">AE</span> */}
-            {/* <Zap className="size-8 fill-yellow-500 stroke-yellow-500" /> */}
             <img src={Logo} alt="Logo" className="size-18" />
           </div>
           <h1 className="text-3xl font-bold text-foreground tracking-tight mb-2">
@@ -68,8 +65,6 @@ export default function LoginPage() {
         <Card className="border-border shadow-sm">
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6 pt-4">
-
-
               {/* User Input */}
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
