@@ -36,8 +36,8 @@ export const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDelete,
   });
 
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' | null }>({
-    key: 'name',
-    direction: 'asc',
+    key: '',
+    direction: null,
   });
 
   const [currentPage, setCurrentPage] = useState(1);

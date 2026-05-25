@@ -17,12 +17,16 @@ import ClientRepository from './repositories/ClientRepository';
 import EquipmentRepository from './repositories/EquipmentRepository';
 import UserRepository from './repositories/UserRepository';
 
-dotenv.config({ path: path.join(__dirname, '../.env.development') });
-
 const app: Application = express();
 app.disable('x-powered-by');
 const PORT = process.env.PORT || 3001;
 const isProduction = process.env.NODE_ENV === 'production';
+
+if (!isProduction) {
+  dotenv.config({ path: path.join(__dirname, '../.env.development') });
+} else {
+  dotenv.config(); // Procura o .env padrão na produção
+}
 
 // CORS: restrito em produção, aberto em desenvolvimento
 app.use(cors(

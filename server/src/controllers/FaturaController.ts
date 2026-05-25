@@ -40,15 +40,6 @@ export async function getAll(req: Request, res: Response) {
   }
 }
 
-export async function clear(req: Request, res: Response) {
-  try {
-    await FaturaRepository.deleteAll();
-    res.json({ message: 'Todos os dados foram removidos' });
-  } catch (error: any) {
-    res.status(500).json({ error: 'Erro ao limpar dados', details: error.message });
-  }
-}
-
 export async function syncPowerHub(req: Request, res: Response) {
   try {
     const { installationId, referenceMonth } = req.body;
