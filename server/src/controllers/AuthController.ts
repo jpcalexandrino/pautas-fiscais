@@ -1,17 +1,8 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import path from 'path';
-import dotenv from 'dotenv';
 import UserRepository from '../repositories/UserRepository';
 import { AuthRequest } from '../middleware/authMiddleware';
-
-dotenv.config({ path: path.join(__dirname, '../../.env.development') });
-
-if (!process.env.JWT_SECRET) {
-  throw new Error('JWT_SECRET is not defined in the environment variables');
-}
-const JWT_SECRET = process.env.JWT_SECRET!;
 
 const JWT_EXPIRES_IN = '7d';
 const TEMP_PASSWORD_PREFIX = 'Tmp#';
@@ -72,6 +63,12 @@ export async function login(req: Request, res: Response) {
     }
 
     const forcePasswordChange = isTemporaryPassword(password);
+
+    const JWT_SECRET = process.env.JWT_SECRET;
+    if (!JWT_SECRET) {
+      console.error('Erro de Servidor: JWT_SECRET não está definido.');
+      return res.status(500).json({ error: 'Erro de configuração do servidor' });
+    }
 
     const token = jwt.sign(
       { id: user.sk_usuario, email: user.email, role: user.perfil },

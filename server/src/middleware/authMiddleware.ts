@@ -1,14 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import path from 'path';
-import dotenv from 'dotenv';
-
-dotenv.config({ path: path.join(__dirname, '../.env.development') });
-
-if (!process.env.JWT_SECRET) {
-  throw new Error('JWT_SECRET is not defined in the environment variables');
-}
-const JWT_SECRET = process.env.JWT_SECRET!;
 
 export interface AuthRequest extends Request {
   userId?: string | number;
@@ -16,6 +7,12 @@ export interface AuthRequest extends Request {
 }
 
 function authMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
+  const JWT_SECRET = process.env.JWT_SECRET;
+  if (!JWT_SECRET) {
+    console.error('Erro de Servidor: JWT_SECRET não está definido.');
+    return res.status(500).json({ error: 'Erro de configuração do servidor' });
+  }
+
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {

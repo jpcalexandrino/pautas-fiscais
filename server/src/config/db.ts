@@ -1,8 +1,5 @@
 import { Pool, QueryResult } from 'pg';
-import path from 'path';
-import dotenv from 'dotenv';
 
-dotenv.config({ path: path.join(__dirname, '../../.env.development') });
 
 const isProduction = process.env.NODE_ENV === 'production';
 

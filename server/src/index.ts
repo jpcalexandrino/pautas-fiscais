@@ -1,8 +1,8 @@
+import './config/env';
 import express from 'express';
 import type { Application } from 'express';
 import cors from 'cors';
 import path from 'path';
-import dotenv from 'dotenv';
 import faturaRoutes from './routes/faturaRoutes';
 import clientRoutes from './routes/clientRoutes';
 import equipmentRoutes from './routes/equipmentRoutes';
@@ -22,11 +22,6 @@ app.disable('x-powered-by');
 const PORT = process.env.PORT || 3001;
 const isProduction = process.env.NODE_ENV === 'production';
 
-if (!isProduction) {
-  dotenv.config({ path: path.join(__dirname, '../.env.development') });
-} else {
-  dotenv.config(); // Procura o .env padrão na produção
-}
 
 // CORS: restrito em produção, aberto em desenvolvimento
 app.use(cors(
