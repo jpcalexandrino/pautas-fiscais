@@ -1,0 +1,31 @@
+trigger:
+- DEVELOPER
+
+pr:
+- DEVELOPER
+
+pool:
+  vmImage: 'ubuntu-latest'
+  
+variables:
+- group: sonar-variables-client
+
+steps:
+- checkout: self
+
+- script: |
+    echo "📦 Instalando SonarScanner..."
+    wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+    unzip sonar-scanner-cli-5.0.1.3006-linux.zip
+  displayName: 'Install SonarScanner'
+
+- script: |
+    echo "🚀 Executando análise..."
+    ./sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner \
+      -Dsonar.projectKey=$(SONAR_PROJECT_KEY) \
+      -Dsonar.sources=. \
+      -Dsonar.host.url=$(SONAR_HOST_URL) \
+      -Dsonar.login=$(SONAR_TOKEN)
+  displayName: 'Run SonarScanner'
+  env:
+    SONAR_TOKEN: $(SONAR_TOKEN)
