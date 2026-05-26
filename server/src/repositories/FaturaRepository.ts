@@ -91,7 +91,7 @@ class FaturaRepository {
 
     const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
     const queryText = `INSERT INTO fato_faturas (${fields.join(', ')}) VALUES (${placeholders}) RETURNING *`;
-    
+
     return db.query(queryText, values);
   }
 
@@ -140,10 +140,6 @@ class FaturaRepository {
 
   async getAll(): Promise<QueryResult> {
     return db.query("SELECT * FROM fato_faturas WHERE D_E_L_E_T_ <> '*' ORDER BY created_at DESC");
-  }
-
-  async deleteAll(): Promise<QueryResult> {
-    return db.query('DELETE FROM fato_faturas');
   }
 }
 
