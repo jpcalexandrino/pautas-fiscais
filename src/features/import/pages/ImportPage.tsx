@@ -77,7 +77,7 @@ export default function ImportPage() {
               {fileName && (
                 <Badge variant="secondary" className="px-3 py-1 font-bold gap-2 rounded-full">
                   <FileSpreadsheet className="w-3.5 h-3.5" />
-                  <span className="truncate max-w-[250px]">{fileName}</span>
+                  <span className="truncate max-w-62.5">{fileName}</span>
                 </Badge>
               )}
             </div>

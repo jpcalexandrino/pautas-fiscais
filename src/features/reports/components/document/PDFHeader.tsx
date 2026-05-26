@@ -2,7 +2,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image } from '@react-pdf/renderer';
 import { theme } from '../../theme';
-import { formatDate, formatMesReferencia } from '@shared/utils/formatters';
+import { formatMesReferencia } from '@shared/utils/formatters';
 import logo from '@/assets/logoenergymax.png';
 
 const styles = StyleSheet.create({

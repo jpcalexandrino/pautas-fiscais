@@ -1,11 +1,10 @@
-import { theme } from '../theme';
 
 /**
  * Utilitários para geração de gráficos SVG nativos no React-PDF.
  * Focado em performance e nitidez.
  */
 
-export const generateLineChart = (data: number[], labels: string[], width: number = 500, height: number = 150) => {
+export const generateLineChart = (data: number[], width: number = 500, height: number = 150) => {
   const padding = 20;
   const chartWidth = width - padding * 2;
   const chartHeight = height - padding * 2;

@@ -78,7 +78,7 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ equipment, onEdi
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="w-[50px]"></TableHead>
+              <TableHead className="w-12.5"></TableHead>
               <TableHead>
                 <div className="flex items-center">
                   <TableColumnFilter
@@ -150,7 +150,7 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ equipment, onEdi
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-[160px] animate-in fade-in-0 zoom-in-95">
+                      <DropdownMenuContent align="start" className="w-40 animate-in fade-in-0 zoom-in-95">
                         <DropdownMenuItem onClick={() => onEdit(item)}>
                           <Edit className="mr-2 h-4 w-4 text-muted-foreground" />
                           Editar

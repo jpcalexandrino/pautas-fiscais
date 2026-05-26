@@ -98,7 +98,7 @@ export const ClientsTable: React.FC<ClientsTableProps> = ({ clients, onEdit, onD
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="w-[50px]"></TableHead>
+              <TableHead className="w-12.5"></TableHead>
               <TableHead>
                 <div className="flex items-center">
                   <TableColumnFilter
@@ -177,7 +177,7 @@ export const ClientsTable: React.FC<ClientsTableProps> = ({ clients, onEdit, onD
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-[160px]">
+                      <DropdownMenuContent align="start" className="w-40">
                         <DropdownMenuItem onClick={() => onEdit(client)}>
                           <Edit className="mr-2 h-4 w-4" />
                           Editar

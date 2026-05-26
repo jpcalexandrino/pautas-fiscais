@@ -169,7 +169,7 @@ export default function EquipmentPage() {
             clients={clients}
             selectedClientId={selectedClientId}
             onSelect={setSelectedClientId}
-            className="w-full sm:w-[280px]"
+            className="w-full sm:w-70"
           />
           <Button
             onClick={() => handleOpenModal()}
