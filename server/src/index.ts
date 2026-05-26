@@ -48,7 +48,7 @@ if (isProduction) {
   app.use(express.static(clientDistPath));
 
   // SPA fallback — qualquer rota que não seja /api retorna index.html
-  app.get('*', (_req, res) => {
+  app.get('/{*splat}', (_req, res) => {
     res.sendFile(path.join(clientDistPath, 'index.html'));
   });
 }

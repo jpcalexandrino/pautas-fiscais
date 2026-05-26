@@ -100,6 +100,7 @@ export default function PDFPage() {
 
     async function loadExtraData() {
       try {
+        console.log('Iniciando loadExtraData...');
         const { allClients, allHistoryFaturas } = await fetchInitialData();
         const equipMap: Record<string, any[]> = {};
         const prevMap: Record<string, any> = {};
@@ -108,9 +109,13 @@ export default function PDFPage() {
 
         const { apiFetch } = await import('../api/client');
 
+        console.log('Total de faturas selecionadas:', selectedData.length);
+
         for (const row of selectedData) {
           const key = getRowKey(row);
           const client = matchClientForFatura(row, allClients);
+
+          console.log(`Fatura UC: ${row.instalacao}, Cliente Encontrado:`, client ? client.name : 'Nenhum');
 
           if (client) {
             try {
@@ -121,7 +126,10 @@ export default function PDFPage() {
           }
 
           const prevRow = findPreviousMonthFatura(row, allHistoryFaturas);
-          if (prevRow) prevMap[key] = prevRow;
+          if (prevRow) {
+            prevMap[key] = prevRow;
+            console.log(`Fatura anterior encontrada para UC ${row.instalacao}:`, prevRow.mesReferencia);
+          }
 
           // Get history for charts (all faturas for this UC)
           const ucFaturaClean = String(row.instalacao || '').trim().replace(/^0+/, '');
@@ -135,6 +143,7 @@ export default function PDFPage() {
             });
 
           try {
+            console.log(`Requisitando sugestões de IA para UC: ${row.instalacao}...`);
             const response = await apiFetch('/ai/optimize', {
               method: 'POST',
               body: JSON.stringify({ 
@@ -147,6 +156,11 @@ export default function PDFPage() {
             if (response.ok) {
               const result = await response.json();
               sugMap[key] = result.suggestions;
+              console.log(`Sugestões de IA obtidas com sucesso para UC: ${row.instalacao}`);
+            } else {
+              const errData = await response.json().catch(() => ({}));
+              console.error(`Erro do servidor (/ai/optimize) para UC ${row.instalacao}:`, response.status, errData);
+              showAlert(`Erro ao obter sugestões para UC ${row.instalacao}: ${errData.details || errData.error || response.statusText}`, 'Erro de IA', 'error');
             }
           } catch (err) {
             console.error('Erro ao obter sugestões de IA:', err);
@@ -156,8 +170,9 @@ export default function PDFPage() {
         setPreviousMonthMap(prevMap);
         setHistoricalDataMap(histMap);
         setSuggestionsMap(sugMap);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Erro ao carregar dados extras:', err);
+        showAlert('Erro ao carregar dados extras: ' + err.message, 'Erro', 'error');
       }
     }
 
@@ -166,18 +181,51 @@ export default function PDFPage() {
     }
   }, [selectedData.length, getClients, getEquipmentByClient, rows]);
 
+  const getOrFetchSuggestions = async (row: any, key: string): Promise<string> => {
+    if (suggestionsMap[key]) {
+      return suggestionsMap[key];
+    }
+    try {
+      const { apiFetch } = await import('../api/client');
+      console.log(`Requisitando sugestão sob demanda para UC: ${row.instalacao}...`);
+      const response = await apiFetch('/ai/optimize', {
+        method: 'POST',
+        body: JSON.stringify({ 
+          fatura: row, 
+          equipment: equipmentMap[key] || [],
+          previousMonthData: previousMonthMap[key]
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const suggestions = result.suggestions;
+        setSuggestionsMap(prev => ({ ...prev, [key]: suggestions }));
+        console.log(`Sugestões de IA obtidas sob demanda para UC: ${row.instalacao}`);
+        return suggestions;
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        console.error(`Erro do servidor (/ai/optimize) sob demanda para UC ${row.instalacao}:`, response.status, errData);
+      }
+    } catch (err) {
+      console.error('Erro ao obter sugestões sob demanda:', err);
+    }
+    return '';
+  };
+
   const handleDownload = async (row: any, idx: number) => {
     try {
       setDownloading(prev => ({ ...prev, [idx]: true }));
       await saveRows([row]);
       const key = getRowKey(row);
+      const suggestions = await getOrFetchSuggestions(row, key);
       const { pdf } = await import('@react-pdf/renderer');
       const doc = (
         <PDFDocument
           data={row}
           equipment={equipmentMap[key] || []}
           previousMonthData={previousMonthMap[key]}
-          suggestions={suggestionsMap[key]}
+          suggestions={suggestions}
           historicalData={historicalDataMap[key] || []}
         />
       );
@@ -207,12 +255,13 @@ export default function PDFPage() {
       for (let i = 0; i < selectedData.length; i++) {
         const row = selectedData[i];
         const key = getRowKey(row);
+        const suggestions = await getOrFetchSuggestions(row, key);
         const doc = (
           <PDFDocument
             data={row}
             equipment={equipmentMap[key] || []}
             previousMonthData={previousMonthMap[key]}
-            suggestions={suggestionsMap[key]}
+            suggestions={suggestions}
           />
         );
         const blob = await pdf(doc).toBlob();
@@ -240,13 +289,14 @@ export default function PDFPage() {
       setSendingEmail(prev => ({ ...prev, [idx]: true }));
       await saveRows([row]);
       const key = getRowKey(row);
+      const suggestions = await getOrFetchSuggestions(row, key);
       const { pdf } = await import('@react-pdf/renderer');
       const doc = (
         <PDFDocument
           data={row}
           equipment={equipmentMap[key] || []}
           previousMonthData={previousMonthMap[key]}
-          suggestions={suggestionsMap[key]}
+          suggestions={suggestions}
           historicalData={historicalDataMap[key] || []}
         />
       );
@@ -286,12 +336,13 @@ export default function PDFPage() {
       for (let i = 0; i < selectedData.length; i++) {
         const row = selectedData[i];
         const key = getRowKey(row);
+        const suggestions = await getOrFetchSuggestions(row, key);
         const doc = (
           <PDFDocument
             data={row}
             equipment={equipmentMap[key] || []}
             previousMonthData={previousMonthMap[key]}
-            suggestions={suggestionsMap[key]}
+            suggestions={suggestions}
           />
         );
         const blob = await pdf(doc).toBlob();

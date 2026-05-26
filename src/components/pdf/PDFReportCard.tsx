@@ -57,6 +57,15 @@ export const PDFReportCard: React.FC<PDFReportCardProps> = ({
                 <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/40 border-none px-2 py-0 font-bold">
                   {formatCurrency(row.valorTotalRS)}
                 </Badge>
+                {suggestions ? (
+                  <Badge variant="secondary" className="bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/40 border-none px-2 py-0 font-bold">
+                    IA: Analisado
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/40 border-none px-2 py-0 font-bold animate-pulse">
+                    IA: Analisando...
+                  </Badge>
+                )}
               </div>
               <p className="text-[10px] text-muted-foreground mt-2 font-bold uppercase tracking-wider">
                 {row.nomeConcessionaria || '—'} • {calcularConsumoTotal(row)} kWh
