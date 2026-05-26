@@ -1,5 +1,5 @@
 import { createFileRoute, Navigate } from '@tanstack/react-router'
-import MainLayout from '@/layouts/MainLayout'
+import MainLayout from '@shared/components/layout/MainLayout'
 import { useAuth } from '@/contexts/AuthContext'
 import { Spinner } from '@/components/ui/spinner'
 

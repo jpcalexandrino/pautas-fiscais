@@ -1,5 +1,5 @@
-import React, { createContext, useContext, ReactNode } from 'react';
-import { APP_CONFIG, CSV_FIELDS } from '../utils/constants';
+import { createContext, useContext, type ReactNode } from 'react';
+import { APP_CONFIG, CSV_FIELDS } from '@shared/utils/constants';
 
 interface AppContextType {
   appName: string;

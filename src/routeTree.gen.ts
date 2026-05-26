@@ -12,13 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
-import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
-import { Route as AuthenticatedRelatorioRouteImport } from './routes/_authenticated/relatorio'
-import { Route as AuthenticatedImportacaoRouteImport } from './routes/_authenticated/importacao'
+import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
+import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedImportRouteImport } from './routes/_authenticated/import'
 import { Route as AuthenticatedFaturasRouteImport } from './routes/_authenticated/faturas'
-import { Route as AuthenticatedEquipamentosRouteImport } from './routes/_authenticated/equipamentos'
-import { Route as AuthenticatedDadosRouteImport } from './routes/_authenticated/dados'
-import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
+import { Route as AuthenticatedEquipmentRouteImport } from './routes/_authenticated/equipment'
+import { Route as AuthenticatedDataRouteImport } from './routes/_authenticated/data'
+import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -34,19 +34,19 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedUsuariosRoute = AuthenticatedUsuariosRouteImport.update({
-  id: '/usuarios',
-  path: '/usuarios',
+const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedRelatorioRoute = AuthenticatedRelatorioRouteImport.update({
-  id: '/relatorio',
-  path: '/relatorio',
+const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedImportacaoRoute = AuthenticatedImportacaoRouteImport.update({
-  id: '/importacao',
-  path: '/importacao',
+const AuthenticatedImportRoute = AuthenticatedImportRouteImport.update({
+  id: '/import',
+  path: '/import',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedFaturasRoute = AuthenticatedFaturasRouteImport.update({
@@ -54,56 +54,55 @@ const AuthenticatedFaturasRoute = AuthenticatedFaturasRouteImport.update({
   path: '/faturas',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedEquipamentosRoute =
-  AuthenticatedEquipamentosRouteImport.update({
-    id: '/equipamentos',
-    path: '/equipamentos',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedDadosRoute = AuthenticatedDadosRouteImport.update({
-  id: '/dados',
-  path: '/dados',
+const AuthenticatedEquipmentRoute = AuthenticatedEquipmentRouteImport.update({
+  id: '/equipment',
+  path: '/equipment',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
-  id: '/clientes',
-  path: '/clientes',
+const AuthenticatedDataRoute = AuthenticatedDataRouteImport.update({
+  id: '/data',
+  path: '/data',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
-  '/clientes': typeof AuthenticatedClientesRoute
-  '/dados': typeof AuthenticatedDadosRoute
-  '/equipamentos': typeof AuthenticatedEquipamentosRoute
+  '/clients': typeof AuthenticatedClientsRoute
+  '/data': typeof AuthenticatedDataRoute
+  '/equipment': typeof AuthenticatedEquipmentRoute
   '/faturas': typeof AuthenticatedFaturasRoute
-  '/importacao': typeof AuthenticatedImportacaoRoute
-  '/relatorio': typeof AuthenticatedRelatorioRoute
-  '/usuarios': typeof AuthenticatedUsuariosRoute
+  '/import': typeof AuthenticatedImportRoute
+  '/reports': typeof AuthenticatedReportsRoute
+  '/users': typeof AuthenticatedUsersRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
-  '/clientes': typeof AuthenticatedClientesRoute
-  '/dados': typeof AuthenticatedDadosRoute
-  '/equipamentos': typeof AuthenticatedEquipamentosRoute
+  '/clients': typeof AuthenticatedClientsRoute
+  '/data': typeof AuthenticatedDataRoute
+  '/equipment': typeof AuthenticatedEquipmentRoute
   '/faturas': typeof AuthenticatedFaturasRoute
-  '/importacao': typeof AuthenticatedImportacaoRoute
-  '/relatorio': typeof AuthenticatedRelatorioRoute
-  '/usuarios': typeof AuthenticatedUsuariosRoute
+  '/import': typeof AuthenticatedImportRoute
+  '/reports': typeof AuthenticatedReportsRoute
+  '/users': typeof AuthenticatedUsersRoute
   '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
-  '/_authenticated/clientes': typeof AuthenticatedClientesRoute
-  '/_authenticated/dados': typeof AuthenticatedDadosRoute
-  '/_authenticated/equipamentos': typeof AuthenticatedEquipamentosRoute
+  '/_authenticated/clients': typeof AuthenticatedClientsRoute
+  '/_authenticated/data': typeof AuthenticatedDataRoute
+  '/_authenticated/equipment': typeof AuthenticatedEquipmentRoute
   '/_authenticated/faturas': typeof AuthenticatedFaturasRoute
-  '/_authenticated/importacao': typeof AuthenticatedImportacaoRoute
-  '/_authenticated/relatorio': typeof AuthenticatedRelatorioRoute
-  '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
+  '/_authenticated/import': typeof AuthenticatedImportRoute
+  '/_authenticated/reports': typeof AuthenticatedReportsRoute
+  '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
@@ -111,35 +110,35 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
-    | '/clientes'
-    | '/dados'
-    | '/equipamentos'
+    | '/clients'
+    | '/data'
+    | '/equipment'
     | '/faturas'
-    | '/importacao'
-    | '/relatorio'
-    | '/usuarios'
+    | '/import'
+    | '/reports'
+    | '/users'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
-    | '/clientes'
-    | '/dados'
-    | '/equipamentos'
+    | '/clients'
+    | '/data'
+    | '/equipment'
     | '/faturas'
-    | '/importacao'
-    | '/relatorio'
-    | '/usuarios'
+    | '/import'
+    | '/reports'
+    | '/users'
     | '/'
   id:
     | '__root__'
     | '/_authenticated'
     | '/login'
-    | '/_authenticated/clientes'
-    | '/_authenticated/dados'
-    | '/_authenticated/equipamentos'
+    | '/_authenticated/clients'
+    | '/_authenticated/data'
+    | '/_authenticated/equipment'
     | '/_authenticated/faturas'
-    | '/_authenticated/importacao'
-    | '/_authenticated/relatorio'
-    | '/_authenticated/usuarios'
+    | '/_authenticated/import'
+    | '/_authenticated/reports'
+    | '/_authenticated/users'
     | '/_authenticated/'
   fileRoutesById: FileRoutesById
 }
@@ -171,25 +170,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/usuarios': {
-      id: '/_authenticated/usuarios'
-      path: '/usuarios'
-      fullPath: '/usuarios'
-      preLoaderRoute: typeof AuthenticatedUsuariosRouteImport
+    '/_authenticated/users': {
+      id: '/_authenticated/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AuthenticatedUsersRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/relatorio': {
-      id: '/_authenticated/relatorio'
-      path: '/relatorio'
-      fullPath: '/relatorio'
-      preLoaderRoute: typeof AuthenticatedRelatorioRouteImport
+    '/_authenticated/reports': {
+      id: '/_authenticated/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof AuthenticatedReportsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/importacao': {
-      id: '/_authenticated/importacao'
-      path: '/importacao'
-      fullPath: '/importacao'
-      preLoaderRoute: typeof AuthenticatedImportacaoRouteImport
+    '/_authenticated/import': {
+      id: '/_authenticated/import'
+      path: '/import'
+      fullPath: '/import'
+      preLoaderRoute: typeof AuthenticatedImportRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/faturas': {
@@ -199,49 +198,49 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFaturasRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/equipamentos': {
-      id: '/_authenticated/equipamentos'
-      path: '/equipamentos'
-      fullPath: '/equipamentos'
-      preLoaderRoute: typeof AuthenticatedEquipamentosRouteImport
+    '/_authenticated/equipment': {
+      id: '/_authenticated/equipment'
+      path: '/equipment'
+      fullPath: '/equipment'
+      preLoaderRoute: typeof AuthenticatedEquipmentRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/dados': {
-      id: '/_authenticated/dados'
-      path: '/dados'
-      fullPath: '/dados'
-      preLoaderRoute: typeof AuthenticatedDadosRouteImport
+    '/_authenticated/data': {
+      id: '/_authenticated/data'
+      path: '/data'
+      fullPath: '/data'
+      preLoaderRoute: typeof AuthenticatedDataRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/clientes': {
-      id: '/_authenticated/clientes'
-      path: '/clientes'
-      fullPath: '/clientes'
-      preLoaderRoute: typeof AuthenticatedClientesRouteImport
+    '/_authenticated/clients': {
+      id: '/_authenticated/clients'
+      path: '/clients'
+      fullPath: '/clients'
+      preLoaderRoute: typeof AuthenticatedClientsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
   }
 }
 
 interface AuthenticatedRouteChildren {
-  AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
-  AuthenticatedDadosRoute: typeof AuthenticatedDadosRoute
-  AuthenticatedEquipamentosRoute: typeof AuthenticatedEquipamentosRoute
+  AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
+  AuthenticatedDataRoute: typeof AuthenticatedDataRoute
+  AuthenticatedEquipmentRoute: typeof AuthenticatedEquipmentRoute
   AuthenticatedFaturasRoute: typeof AuthenticatedFaturasRoute
-  AuthenticatedImportacaoRoute: typeof AuthenticatedImportacaoRoute
-  AuthenticatedRelatorioRoute: typeof AuthenticatedRelatorioRoute
-  AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
+  AuthenticatedImportRoute: typeof AuthenticatedImportRoute
+  AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
+  AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedClientesRoute: AuthenticatedClientesRoute,
-  AuthenticatedDadosRoute: AuthenticatedDadosRoute,
-  AuthenticatedEquipamentosRoute: AuthenticatedEquipamentosRoute,
+  AuthenticatedClientsRoute: AuthenticatedClientsRoute,
+  AuthenticatedDataRoute: AuthenticatedDataRoute,
+  AuthenticatedEquipmentRoute: AuthenticatedEquipmentRoute,
   AuthenticatedFaturasRoute: AuthenticatedFaturasRoute,
-  AuthenticatedImportacaoRoute: AuthenticatedImportacaoRoute,
-  AuthenticatedRelatorioRoute: AuthenticatedRelatorioRoute,
-  AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
+  AuthenticatedImportRoute: AuthenticatedImportRoute,
+  AuthenticatedReportsRoute: AuthenticatedReportsRoute,
+  AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 

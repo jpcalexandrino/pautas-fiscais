@@ -13,7 +13,16 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@/components/ui": path.resolve(import.meta.dirname, "./src/shared/components/ui"),
+      "@/components/layout": path.resolve(import.meta.dirname, "./src/shared/components/layout"),
+      "@/components": path.resolve(import.meta.dirname, "./src/shared/components"),
+      "@/lib": path.resolve(import.meta.dirname, "./src/shared/lib"),
+      "@/utils": path.resolve(import.meta.dirname, "./src/shared/utils"),
+      "@/hooks": path.resolve(import.meta.dirname, "./src/shared/hooks"),
+      "@": path.resolve(import.meta.dirname, "./src"),
+      "@features": path.resolve(import.meta.dirname, "./src/features"),
+      "@shared": path.resolve(import.meta.dirname, "./src/shared"),
+      "@app": path.resolve(import.meta.dirname, "./src/app"),
     },
   },
 })
