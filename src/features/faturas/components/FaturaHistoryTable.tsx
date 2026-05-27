@@ -19,8 +19,16 @@ import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { TableColumnFilter } from '@features/data/components/TableColumnFilter';
-import { formatCurrency, formatMesReferencia, formatKWh } from '@shared/utils/formatters';
+import {
+  formatCurrency,
+  formatMesReferencia,
+  formatKWh,
+  formatDate,
+  formatPercentage,
+  formatNumber
+} from '@shared/utils/formatters';
 import { DataPagination } from '@features/data/components/DataPagination';
+import { CSV_FIELDS } from '@shared/utils/constants';
 
 interface FaturaHistoryTableProps {
   faturas: any[];
@@ -32,7 +40,10 @@ interface FaturaHistoryTableProps {
   onAction: (fatura: any, action: 'view' | 'download' | 'email') => void;
   generatingId: number | null;
   onClearFilters: () => void;
+  visibleColumns: string[];
 }
+
+export const DEFAULT_COLUMNS = ['nomeDoSite', 'nomeDoCliente', 'mesReferencia', 'instalacao', 'medidaConsumoTUSDForaPonta', 'valorTotalRS'];
 
 export const FaturaHistoryTable: React.FC<FaturaHistoryTableProps> = ({
   faturas,
@@ -43,7 +54,8 @@ export const FaturaHistoryTable: React.FC<FaturaHistoryTableProps> = ({
   onSortChange,
   onAction,
   generatingId,
-  onClearFilters
+  onClearFilters,
+  visibleColumns
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -58,6 +70,9 @@ export const FaturaHistoryTable: React.FC<FaturaHistoryTableProps> = ({
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedFaturas = faturas.slice(startIndex, startIndex + pageSize);
 
+  // Filter CSV_FIELDS to maintain original order of columns
+  const columnsToRender = CSV_FIELDS.filter(field => visibleColumns.includes(field.key));
+
   return (
     <div className="flex flex-col">
       <ScrollArea className="w-full">
@@ -65,83 +80,44 @@ export const FaturaHistoryTable: React.FC<FaturaHistoryTableProps> = ({
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="text-right w-5"></TableHead>
-              <TableHead className="w-50">
-                <div className="flex items-center">
-                  <TableColumnFilter
-                    columnName="Site"
-                    value={columnFilters.site}
-                    onChange={(v) => onFilterChange('site', v)}
-                    sortDirection={sortConfig.key === 'site' ? sortConfig.direction : null}
-                    onSort={(dir) => onSortChange('site', dir)}
-                    onClearAll={onClearFilters}
-                  >
-                    Site
-                  </TableColumnFilter>
-                </div>
-              </TableHead>
-              <TableHead>
-                <div className="flex items-center">
-                  <TableColumnFilter
-                    columnName="Cliente"
-                    value={columnFilters.client}
-                    onChange={(v) => onFilterChange('client', v)}
-                    sortDirection={sortConfig.key === 'client' ? sortConfig.direction : null}
-                    onSort={(dir) => onSortChange('client', dir)}
-                    onClearAll={onClearFilters}
-                  >
-                    Cliente
-                  </TableColumnFilter>
-                </div>
-              </TableHead>
-              <TableHead className="text-center">
-                <div className="flex items-center justify-center">
-                  <TableColumnFilter
-                    columnName="Mês"
-                    value={columnFilters.mes}
-                    onChange={(v) => onFilterChange('mes', v)}
-                    sortDirection={sortConfig.key === 'mes' ? sortConfig.direction : null}
-                    onSort={(dir) => onSortChange('mes', dir)}
-                    onClearAll={onClearFilters}
-                  >
-                    Mês Ref.
-                  </TableColumnFilter>
-                </div>
-              </TableHead>
-              <TableHead>
-                <div className="flex items-center">
-                  <TableColumnFilter
-                    columnName="Instalação"
-                    value={columnFilters.instalacao}
-                    onChange={(v) => onFilterChange('instalacao', v)}
-                    sortDirection={sortConfig.key === 'instalacao' ? sortConfig.direction : null}
-                    onSort={(dir) => onSortChange('instalacao', dir)}
-                    onClearAll={onClearFilters}
-                  >
-                    Instalação
-                  </TableColumnFilter>
-                </div>
-              </TableHead>
-              <TableHead className="text-right">
-                <div className="flex items-center justify-end">
-                  <TableColumnFilter
-                    columnName="Consumo"
-                    value={columnFilters.consumo}
-                    onChange={(v) => onFilterChange('consumo', v)}
-                    sortDirection={sortConfig.key === 'consumo' ? sortConfig.direction : null}
-                    onSort={(dir) => onSortChange('consumo', dir)}
-                    onClearAll={onClearFilters}
-                  >
-                    Consumo Total
-                  </TableColumnFilter>
-                </div>
-              </TableHead>
-              <TableHead className="text-right text-muted-foreground">Valor Total</TableHead>
+              {columnsToRender.map((field) => {
+                const colKey = field.key;
+                let thClass = '';
+                let containerClass = 'flex items-center';
+
+                if (colKey === 'nomeDoSite') {
+                  thClass = 'w-50';
+                } else if (colKey === 'mesReferencia') {
+                  thClass = 'text-center';
+                  containerClass = 'flex items-center justify-center';
+                } else if (field.type === 'currency' || field.type === 'number') {
+                  thClass = 'text-right';
+                  containerClass = 'flex items-center justify-end';
+                }
+
+                return (
+                  <TableHead key={colKey} className={thClass}>
+                    <div className={containerClass}>
+                      <TableColumnFilter
+                        columnName={field.label}
+                        value={columnFilters[colKey] || ''}
+                        onChange={(v) => onFilterChange(colKey, v)}
+                        sortDirection={sortConfig.key === colKey ? sortConfig.direction : null}
+                        onSort={(dir) => onSortChange(colKey, dir)}
+                        onClearAll={onClearFilters}
+                      >
+                        {field.label}
+                      </TableColumnFilter>
+                    </div>
+                  </TableHead>
+                );
+              })}
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow key="loading-row">
-                <TableCell colSpan={7} className="h-48 text-center">
+                <TableCell colSpan={columnsToRender.length + 1} className="h-48 text-center">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <Spinner className="w-8 h-8" />
                     <span className="text-sm text-muted-foreground">Carregando histórico...</span>
@@ -150,61 +126,114 @@ export const FaturaHistoryTable: React.FC<FaturaHistoryTableProps> = ({
               </TableRow>
             ) : paginatedFaturas.length === 0 ? (
               <TableRow key="empty-row">
-                <TableCell colSpan={7} className="h-48 text-center text-muted-foreground">
+                <TableCell colSpan={columnsToRender.length + 1} className="h-48 text-center text-muted-foreground">
                   Nenhuma fatura encontrada.
                 </TableCell>
               </TableRow>
             ) : (
               paginatedFaturas.map((fatura) => (
                 <TableRow key={fatura.id} className="group transition-colors hover:bg-muted/50">
-                  <TableCell className="text-left">
+                  <TableCell className="text-right py-3.5">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0 opacity-50 group-hover:opacity-100 transition-opacity">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-40 animate-in fade-in-0 zoom-in-95">
+                      <DropdownMenuContent align="start" className="w-44 animate-in fade-in-0 zoom-in-95">
                         <DropdownMenuItem
                           onClick={() => onAction(fatura, 'view')}
                           disabled={generatingId !== null}
+                          className="gap-2"
                         >
-                          {generatingId === fatura.id ? <Spinner className="mr-2 w-3 h-3" /> : <Eye className="mr-2 h-4 w-4 text-muted-foreground" />}
+                          {generatingId === fatura.id ? <Spinner className="w-3.5 h-3.5" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
                           Visualizar
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => onAction(fatura, 'download')}
                           disabled={generatingId !== null}
+                          className="gap-2"
                         >
-                          {generatingId === fatura.id ? <Spinner className="mr-2 w-3 h-3" /> : <Download className="mr-2 h-4 w-4 text-muted-foreground" />}
+                          {generatingId === fatura.id ? <Spinner className="w-3.5 h-3.5" /> : <Download className="h-4 w-4 text-muted-foreground" />}
                           Baixar PDF
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => onAction(fatura, 'email')}
                           disabled={generatingId !== null}
+                          className="gap-2"
                         >
-                          {generatingId === fatura.id ? <Spinner className="mr-2 w-3 h-3" /> : <Mail className="mr-2 h-4 w-4 text-muted-foreground" />}
+                          {generatingId === fatura.id ? <Spinner className="w-3.5 h-3.5" /> : <Mail className="h-4 w-4 text-muted-foreground" />}
                           Enviar por e-mail
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
-                  <TableCell className="font-medium">{fatura.nomeDoSite}</TableCell>
-                  <TableCell>{fatura.nomeDoCliente}</TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant="secondary">
-                      {formatMesReferencia(fatura.mesReferencia)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{fatura.instalacao}</TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    <Badge variant="secondary" className="tabular-nums bg-primary/50">
-                      {formatKWh(fatura.medidaConsumoTUSDForaPonta)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {formatCurrency(fatura.valorTotalRS)}
-                  </TableCell>
+                  {columnsToRender.map((field) => {
+                    const colKey = field.key;
+                    const value = fatura[colKey];
+
+                    // Custom rendering for existing columns to maintain styling:
+                    if (colKey === 'mesReferencia') {
+                      return (
+                        <TableCell key={colKey} className="text-center">
+                          <Badge variant="secondary">
+                            {formatMesReferencia(value)}
+                          </Badge>
+                        </TableCell>
+                      );
+                    }
+
+                    if (colKey === 'medidaConsumoTUSDForaPonta') {
+                      return (
+                        <TableCell key={colKey} className="text-right tabular-nums">
+                          <Badge variant="secondary" className="tabular-nums bg-primary/50">
+                            {formatKWh(value)}
+                          </Badge>
+                        </TableCell>
+                      );
+                    }
+
+                    if (colKey === 'valorTotalRS') {
+                      return (
+                        <TableCell key={colKey} className="text-right tabular-nums">
+                          {formatCurrency(value)}
+                        </TableCell>
+                      );
+                    }
+
+                    if (colKey === 'nomeDoSite') {
+                      return (
+                        <TableCell key={colKey} className="font-medium">
+                          {value}
+                        </TableCell>
+                      );
+                    }
+
+                    // General rendering for other dynamic columns based on field type
+                    const isNumeric = field.type === 'currency' || field.type === 'number' || field.type === 'percentage';
+                    let displayVal = value === undefined || value === null || value === '' ? '—' : String(value);
+
+                    if (value !== undefined && value !== null && value !== '') {
+                      if (field.type === 'currency') {
+                        displayVal = formatCurrency(value);
+                      } else if (field.type === 'percentage') {
+                        displayVal = formatPercentage(value);
+                      } else if (field.type === 'number') {
+                        displayVal = formatNumber(value);
+                      } else if (field.type === 'date') {
+                        displayVal = formatDate(value);
+                      }
+                    }
+
+                    return (
+                      <TableCell
+                        key={colKey}
+                        className={isNumeric ? 'text-right tabular-nums' : ''}
+                      >
+                        {displayVal}
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               ))
             )}

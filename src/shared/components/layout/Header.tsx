@@ -16,13 +16,39 @@ export function SiteHeader() {
   const location = useLocation()
   const pathnames = location.pathname.split("/").filter((x) => x)
 
+  switch (pathnames[0]) {
+    case "faturas":
+      pathnames[0] = "Faturas";
+      break;
+    case "import":
+      pathnames[0] = "Importação";
+      break;
+    case "data":
+      pathnames[0] = "Dados";
+      break;
+    case "reports":
+      pathnames[0] = "Relatórios";
+      break;
+    case "clients":
+      pathnames[0] = "Clientes";
+      break;
+    case "equipment":
+      pathnames[0] = "Equipamentos";
+      break;
+    case "users":
+      pathnames[0] = "Usuários";
+      break;
+    default:
+      break;
+  }
+
   return (
     <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
         <SidebarTrigger className="-ml-1" />
         <Separator
           orientation="vertical"
-          className="mx-2 data-[orientation=vertical]:h-4"
+          className="mx-2 data-[orientation=vertical]:h-8"
         />
         <Breadcrumb>
           <BreadcrumbList>

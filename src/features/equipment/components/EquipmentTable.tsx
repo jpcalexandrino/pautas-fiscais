@@ -19,15 +19,40 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { TableColumnFilter } from '@features/data/components/TableColumnFilter';
 import { Badge } from '@/components/ui/badge';
 import { DataPagination } from '@features/data/components/DataPagination';
+import { Spinner } from '@/components/ui/spinner';
 
 interface EquipmentTableProps {
   equipment: any[];
   onEdit: (item: any) => void;
   onDelete: (item: any) => void;
+  loading: boolean;
+  visibleColumns: string[];
 }
 
-export const EquipmentTable: React.FC<EquipmentTableProps> = ({ equipment, onEdit, onDelete }) => {
-  const [nameFilter, setNameFilter] = useState('');
+export const ALL_COLUMNS = [
+  { key: 'name', label: 'Equipamento' },
+  { key: 'power_w', label: 'Potência (W)' },
+  { key: 'hours_per_day', label: 'Horas/Dia' },
+  { key: 'quantity', label: 'Qtd' },
+  { key: 'kwh_dia', label: 'kWh/Dia' },
+  { key: 'kwh_mes', label: 'Consumo Mensal' },
+  { key: 'valor_estimado', label: 'Valor Estimado' }
+];
+
+const COLUMN_CONFIG: Record<string, { label: string; columnName: string; isNumeric: boolean }> = {
+  name: { label: 'Equipamento', columnName: 'Equipamento', isNumeric: false },
+  power_w: { label: 'Potência (W)', columnName: 'Potência', isNumeric: true },
+  hours_per_day: { label: 'Horas/Dia', columnName: 'Horas', isNumeric: true },
+  quantity: { label: 'Qtd', columnName: 'Qtd', isNumeric: true },
+  kwh_dia: { label: 'kWh/Dia', columnName: 'kWh/Dia', isNumeric: true },
+  kwh_mes: { label: 'Consumo Mensal', columnName: 'Consumo Mensal', isNumeric: true },
+  valor_estimado: { label: 'Valor Estimado', columnName: 'Valor Estimado', isNumeric: true }
+};
+
+export const DEFAULT_COLUMNS = ['name', 'power_w', 'hours_per_day', 'quantity', 'kwh_dia', 'kwh_mes', 'valor_estimado'];
+
+export const EquipmentTable: React.FC<EquipmentTableProps> = ({ equipment, onEdit, onDelete, loading, visibleColumns }) => {
+  const [filters, setFilters] = useState<Record<string, string>>({});
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' | null }>({
     key: '',
     direction: null,
@@ -36,14 +61,36 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ equipment, onEdi
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  const handleFilterChange = (key: string, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
   const handleSortChange = (key: string, direction: 'asc' | 'desc' | null) => {
     setSortConfig({ key, direction });
   };
 
+  const handleClearFilters = () => {
+    setFilters({});
+    setSortConfig({ key: '', direction: null });
+  };
+
   const filteredEquipment = equipment
-    .filter(item =>
-      (item.name || '').toLowerCase().includes(nameFilter.toLowerCase())
-    )
+    .filter(item => {
+      for (const [key, value] of Object.entries(filters)) {
+        if (!value) continue;
+        const cellValue = item[key];
+        if (key === 'valor_estimado') {
+          const formatted = (typeof cellValue === 'number'
+            ? cellValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+            : 'R$ 0,00').toLowerCase();
+          if (!formatted.includes(value.toLowerCase())) return false;
+          continue;
+        }
+        const strVal = String(cellValue || '').toLowerCase();
+        if (!strVal.includes(value.toLowerCase())) return false;
+      }
+      return true;
+    })
     .sort((a, b) => {
       if (!sortConfig.direction || !sortConfig.key) return 0;
 
@@ -65,12 +112,15 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ equipment, onEdi
   // Reset to first page when filtering or data changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [filteredEquipment.length, nameFilter]);
+  }, [filteredEquipment.length, filters]);
 
   const totalItems = filteredEquipment.length;
   const totalPages = Math.ceil(totalItems / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedEquipment = filteredEquipment.slice(startIndex, startIndex + pageSize);
+
+  // Filter ALL_COLUMNS to preserve original order
+  const columnsToRender = ALL_COLUMNS.filter(col => visibleColumns.includes(col.key));
 
   return (
     <div className="flex flex-col">
@@ -79,68 +129,41 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ equipment, onEdi
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-12.5"></TableHead>
-              <TableHead>
-                <div className="flex items-center">
-                  <TableColumnFilter
-                    columnName="Equipamento"
-                    value={nameFilter}
-                    onChange={setNameFilter}
-                    sortDirection={sortConfig.key === 'name' ? sortConfig.direction : null}
-                    onSort={(dir) => handleSortChange('name', dir)}
-                  >
-                    Equipamento
-                  </TableColumnFilter>
-                </div>
-              </TableHead>
-              <TableHead className="text-right">
-                <div className="flex items-center justify-end">
-                  <TableColumnFilter
-                    columnName="Potência"
-                    value=""
-                    onChange={() => { }}
-                    sortDirection={sortConfig.key === 'power_w' ? sortConfig.direction : null}
-                    onSort={(dir) => handleSortChange('power_w', dir)}
-                  >
-                    Potência (W)
-                  </TableColumnFilter>
-                </div>
-              </TableHead>
+              {columnsToRender.map((col) => {
+                const config = COLUMN_CONFIG[col.key];
+                const alignmentClass = config.isNumeric ? 'text-right' : '';
+                const containerAlignmentClass = config.isNumeric ? 'flex items-center justify-end' : 'flex items-center';
 
-              <TableHead className="text-right">
-                <div className="flex items-center justify-end">
-                  <TableColumnFilter
-                    columnName="Horas"
-                    value=""
-                    onChange={() => { }}
-                    sortDirection={sortConfig.key === 'hours_per_day' ? sortConfig.direction : null}
-                    onSort={(dir) => handleSortChange('hours_per_day', dir)}
-                  >
-                    Horas/Dia
-                  </TableColumnFilter>
-                </div>
-              </TableHead>
-
-              <TableHead className="text-right">
-                <div className="flex items-center justify-end">
-                  <TableColumnFilter
-                    columnName="Qtd"
-                    value=""
-                    onChange={() => { }}
-                    sortDirection={sortConfig.key === 'quantity' ? sortConfig.direction : null}
-                    onSort={(dir) => handleSortChange('quantity', dir)}
-                  >
-                    Qtd
-                  </TableColumnFilter>
-                </div>
-              </TableHead>
-
-              <TableHead className="text-right text-muted-foreground">kWh/Dia</TableHead>
-              <TableHead className="text-right text-muted-foreground">Consumo Mensal</TableHead>
-              <TableHead className="text-right text-muted-foreground">Valor Estimado</TableHead>
+                return (
+                  <TableHead key={col.key} className={alignmentClass}>
+                    <div className={containerAlignmentClass}>
+                      <TableColumnFilter
+                        columnName={config.columnName}
+                        value={filters[col.key] || ''}
+                        onChange={(v) => handleFilterChange(col.key, v)}
+                        sortDirection={sortConfig.key === col.key ? sortConfig.direction : null}
+                        onSort={(dir) => handleSortChange(col.key, dir)}
+                        onClearAll={handleClearFilters}
+                      >
+                        {config.label}
+                      </TableColumnFilter>
+                    </div>
+                  </TableHead>
+                );
+              })}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedEquipment.length > 0 ? (
+            {loading ? (
+              <TableRow key="loading-row">
+                <TableCell colSpan={columnsToRender.length + 1} className="h-48 text-center">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <Spinner className="w-8 h-8" />
+                    <span className="text-sm text-muted-foreground">Carregando equipamentos...</span>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : paginatedEquipment.length > 0 ? (
               paginatedEquipment.map((item) => (
                 <TableRow key={item.id} className="group transition-colors hover:bg-muted/50">
                   <TableCell>
@@ -165,26 +188,52 @@ export const EquipmentTable: React.FC<EquipmentTableProps> = ({ equipment, onEdi
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
-                  <TableCell>{item.name}</TableCell>
-                  <TableCell className="text-right tabular-nums">{item.power_w}</TableCell>
-                  <TableCell className="text-right tabular-nums">{item.hours_per_day}</TableCell>
-                  <TableCell className="text-right tabular-nums">{item.quantity}</TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {typeof item.kwh_dia === 'number' ? item.kwh_dia.toFixed(2) : '0.00'}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Badge variant="secondary">
-                      {typeof item.kwh_mes === 'number' ? item.kwh_mes.toFixed(2) : '0.00'} kWh
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {typeof item.valor_estimado === 'number' ? item.valor_estimado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 0,00'}
-                  </TableCell>
+                  {columnsToRender.map((col) => {
+                    const colKey = col.key;
+                    if (colKey === 'name') {
+                      return <TableCell key={colKey}>{item.name}</TableCell>;
+                    }
+                    if (colKey === 'power_w') {
+                      return <TableCell key={colKey} className="text-right tabular-nums">{item.power_w}</TableCell>;
+                    }
+                    if (colKey === 'hours_per_day') {
+                      return <TableCell key={colKey} className="text-right tabular-nums">{item.hours_per_day}</TableCell>;
+                    }
+                    if (colKey === 'quantity') {
+                      return <TableCell key={colKey} className="text-right tabular-nums">{item.quantity}</TableCell>;
+                    }
+                    if (colKey === 'kwh_dia') {
+                      return (
+                        <TableCell key={colKey} className="text-right tabular-nums">
+                          {typeof item.kwh_dia === 'number' ? item.kwh_dia.toFixed(2) : '0.00'}
+                        </TableCell>
+                      );
+                    }
+                    if (colKey === 'kwh_mes') {
+                      return (
+                        <TableCell key={colKey} className="text-right">
+                          <Badge variant="secondary">
+                            {typeof item.kwh_mes === 'number' ? item.kwh_mes.toFixed(2) : '0.00'} kWh
+                          </Badge>
+                        </TableCell>
+                      );
+                    }
+                    if (colKey === 'valor_estimado') {
+                      return (
+                        <TableCell key={colKey} className="text-right tabular-nums">
+                          {typeof item.valor_estimado === 'number'
+                            ? item.valor_estimado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+                            : 'R$ 0,00'}
+                        </TableCell>
+                      );
+                    }
+                    return null;
+                  })}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={8} className="h-32 text-center">
+                <TableCell colSpan={columnsToRender.length + 1} className="h-32 text-center">
                   <div className="flex flex-col items-center justify-center text-muted-foreground gap-1">
                     <Cpu className="w-8 h-8 opacity-20 mb-2" />
                     <p className="font-medium">Nenhum equipamento encontrado</p>

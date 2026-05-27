@@ -27,9 +27,26 @@ interface UsersTableProps {
   loading: boolean;
   onDelete: (user: any) => void;
   isAdmin?: boolean;
+  visibleColumns: string[];
 }
 
-export const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDelete, loading, isAdmin = false }) => {
+export const ALL_COLUMNS = [
+  { key: 'name', label: 'Nome Completo' },
+  { key: 'email', label: 'E-mail' },
+  { key: 'role', label: 'Perfil de Acesso' },
+  { key: 'status', label: 'Status' }
+];
+
+const COLUMN_CONFIG: Record<string, { label: string; columnName: string }> = {
+  name: { label: 'Nome Completo', columnName: 'Nome' },
+  email: { label: 'E-mail', columnName: 'E-mail' },
+  role: { label: 'Perfil de Acesso', columnName: 'Perfil' },
+  status: { label: 'Status', columnName: 'Status' }
+};
+
+export const DEFAULT_COLUMNS = ['name', 'email', 'role', 'status'];
+
+export const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDelete, loading, isAdmin = false, visibleColumns }) => {
   const [filters, setFilters] = useState<Record<string, string>>({
     name: '',
     email: '',
@@ -93,6 +110,9 @@ export const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDelete,
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedUsers = filteredUsers.slice(startIndex, startIndex + pageSize);
 
+  // Filter ALL_COLUMNS to preserve original order
+  const columnsToRender = ALL_COLUMNS.filter(col => visibleColumns.includes(col.key));
+
   return (
     <div className="flex flex-col">
       <ScrollArea className="w-full">
@@ -100,140 +120,113 @@ export const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDelete,
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               {isAdmin && <TableHead className="w-12.5"></TableHead>}
-              <TableHead>
-                <div className="flex items-center">
-                  <TableColumnFilter
-                    columnName="Nome"
-                    value={filters.name}
-                    onChange={(v) => handleFilterChange('name', v)}
-                    sortDirection={sortConfig.key === 'name' ? sortConfig.direction : null}
-                    onSort={(dir) => handleSortChange('name', dir)}
-                  >
-                    Nome Completo
-                  </TableColumnFilter>
-                </div>
-              </TableHead>
-              <TableHead>
-                <div className="flex items-center">
-                  <TableColumnFilter
-                    columnName="E-mail"
-                    value={filters.email}
-                    onChange={(v) => handleFilterChange('email', v)}
-                    sortDirection={sortConfig.key === 'email' ? sortConfig.direction : null}
-                    onSort={(dir) => handleSortChange('email', dir)}
-                  >
-                    E-mail
-                  </TableColumnFilter>
-                </div>
-              </TableHead>
-              <TableHead>
-                <div className="flex items-center">
-                  <TableColumnFilter
-                    columnName="Perfil"
-                    value={filters.role}
-                    onChange={(v) => handleFilterChange('role', v)}
-                    sortDirection={sortConfig.key === 'role' ? sortConfig.direction : null}
-                    onSort={(dir) => handleSortChange('role', dir)}
-                  >
-                    Perfil de Acesso
-                  </TableColumnFilter>
-                </div>
-              </TableHead>
-              <TableHead>
-                <div className="flex items-center">
-                  <TableColumnFilter
-                    columnName="Status"
-                    value={filters.status}
-                    onChange={(v) => handleFilterChange('status', v)}
-                    sortDirection={sortConfig.key === 'status' ? sortConfig.direction : null}
-                    onSort={(dir) => handleSortChange('status', dir)}
-                  >
-                    Status
-                  </TableColumnFilter>
-                </div>
-              </TableHead>
+              {columnsToRender.map((col) => {
+                const config = COLUMN_CONFIG[col.key];
+                return (
+                  <TableHead key={col.key}>
+                    <div className="flex items-center">
+                      <TableColumnFilter
+                        columnName={config.columnName}
+                        value={filters[col.key]}
+                        onChange={(v) => handleFilterChange(col.key, v)}
+                        sortDirection={sortConfig.key === col.key ? sortConfig.direction : null}
+                        onSort={(dir) => handleSortChange(col.key, dir)}
+                      >
+                        {config.label}
+                      </TableColumnFilter>
+                    </div>
+                  </TableHead>
+                );
+              })}
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow key="loading-row">
-                <TableCell colSpan={7} className="h-48 text-center">
+                <TableCell colSpan={columnsToRender.length + (isAdmin ? 1 : 0)} className="h-48 text-center">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <Spinner className="w-8 h-8" />
-                    <span className="text-sm text-muted-foreground">Carregando usuários...
-                    </span>
+                    <span className="text-sm text-muted-foreground">Carregando usuários...</span>
                   </div>
                 </TableCell>
               </TableRow>
             ) : paginatedUsers.length === 0 ? (
               <TableRow key="empty-row">
-                <TableCell colSpan={7} className="h-48 text-center text-muted-foreground">
+                <TableCell colSpan={columnsToRender.length + (isAdmin ? 1 : 0)} className="h-48 text-center text-muted-foreground">
                   Nenhum usuário encontrado.
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedUsers.length > 0 ? (
-                paginatedUsers.map((user) => (
-                  <TableRow key={user.id} className="group transition-colors hover:bg-muted/50">
-                    {isAdmin && (
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0 opacity-50 group-hover:opacity-100 transition-opacity">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" className="w-40">
-                            <DropdownMenuItem onClick={() => onEdit(user)}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                              onClick={() => onDelete(user)}
-                            >
-                              <Trash className="mr-2 h-4 w-4" />
-                              Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    )}
-                    <TableCell className="font-medium text-foreground">{user.name}</TableCell>
-                    <TableCell className="text-muted-foreground">{user.email}</TableCell>
+              paginatedUsers.map((user) => (
+                <TableRow key={user.id} className="group transition-colors hover:bg-muted/50">
+                  {isAdmin && (
                     <TableCell>
-                      {user.role === 'admin' ? (
-                        <Badge variant="outline" className="gap-1 border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-400 font-semibold px-2 py-0.5">
-                          <Shield className="w-3 h-3" />
-                          Administrador
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="gap-1 border-slate-500/30 bg-slate-500/10 text-slate-700 dark:text-slate-400 font-semibold px-2 py-0.5">
-                          <User className="w-3 h-3" />
-                          Usuário Comum
-                        </Badge>
-                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0 opacity-50 group-hover:opacity-100 transition-opacity">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-40">
+                          <DropdownMenuItem onClick={() => onEdit(user)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                            onClick={() => onDelete(user)}
+                          >
+                            <Trash className="mr-2 h-4 w-4" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
-                    <TableCell>
-                      {user.active !== false ? (
-                        <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold px-2 py-0.5">
-                          Ativo
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400 font-semibold px-2 py-0.5">
-                          Inativo
-                        </Badge>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={isAdmin ? 5 : 4} className="h-24 text-center text-muted-foreground">
-                    Nenhum usuário encontrado com os filtros aplicados.
-                  </TableCell>
+                  )}
+                  {columnsToRender.map((col) => {
+                    if (col.key === 'name') {
+                      return <TableCell key={col.key} className="font-medium text-foreground">{user.name}</TableCell>;
+                    }
+                    if (col.key === 'email') {
+                      return <TableCell key={col.key} className="text-muted-foreground">{user.email}</TableCell>;
+                    }
+                    if (col.key === 'role') {
+                      return (
+                        <TableCell key={col.key}>
+                          {user.role === 'admin' ? (
+                            <Badge variant="outline" className="gap-1 border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-400 font-semibold px-2 py-0.5">
+                              <Shield className="w-3 h-3" />
+                              Administrador
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="gap-1 border-slate-500/30 bg-slate-500/10 text-slate-700 dark:text-slate-400 font-semibold px-2 py-0.5">
+                              <User className="w-3 h-3" />
+                              Usuário Comum
+                            </Badge>
+                          )}
+                        </TableCell>
+                      );
+                    }
+                    if (col.key === 'status') {
+                      return (
+                        <TableCell key={col.key}>
+                          {user.active !== false ? (
+                            <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold px-2 py-0.5">
+                              Ativo
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400 font-semibold px-2 py-0.5">
+                              Inativo
+                            </Badge>
+                          )}
+                        </TableCell>
+                      );
+                    }
+                    return null;
+                  })}
                 </TableRow>
-              ))}
+              ))
+            )}
           </TableBody>
         </Table>
         <ScrollBar orientation="horizontal" />

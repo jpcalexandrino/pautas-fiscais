@@ -13,30 +13,42 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CSV_FIELDS } from '@shared/utils/constants';
+import { cn } from '@/lib/utils';
+
+export interface CustomizerColumn {
+  key: string;
+  label: string;
+}
 
 interface ColumnCustomizerProps {
+  columns?: CustomizerColumn[];
   visibleColumns: string[];
   onToggleColumn: (columnKey: string) => void;
   onReset: () => void;
+  className?: string;
 }
 
 export const ColumnCustomizer: React.FC<ColumnCustomizerProps> = ({
+  columns,
   visibleColumns,
   onToggleColumn,
   onReset,
+  className,
 }) => {
+  const fields = columns || CSV_FIELDS;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2 h-9">
+        <Button variant="outline" size="sm" className={cn("gap-2 h-7", className)}>
           <Columns2 className="w-4 h-4" />
           Colunas
           <ChevronRight className="w-4 h-4 rotate-90" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56 p-1">
-        <ScrollArea className="h-[300px]">
-          {CSV_FIELDS.map((field) => (
+        <ScrollArea className={fields.length > 8 ? "h-75" : ""}>
+          {fields.map((field) => (
             <div
               key={field.key}
               className="relative flex cursor-pointer select-none items-center rounded-md px-2 py-2 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"

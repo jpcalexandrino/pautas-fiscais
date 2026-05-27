@@ -7,12 +7,13 @@ import { useEquipmentContext } from '@features/equipment/context/EquipmentContex
 import { useAlert } from '@/contexts/AlertContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { FaturaHistoryTable } from '../components/FaturaHistoryTable';
+import { FaturaHistoryTable, DEFAULT_COLUMNS } from '../components/FaturaHistoryTable';
+import { ColumnCustomizer } from '@features/data/components/ColumnCustomizer';
 import { formatMesReferencia, parseMesReferencia } from '@shared/utils/formatters';
 import PDFDocument from '@features/reports/components/PDFDocument';
-import ClientSelector from '@features/clients/components/ClientSelector';
 import { useFaturas } from '../hooks/useFaturas';
 import { FaturaSyncDialog } from '../components/FaturaSyncDialog';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 export default function FaturasPage() {
   const { getFaturas } = useFatura();
@@ -25,10 +26,37 @@ export default function FaturasPage() {
   const [loading, setLoading] = useState(true);
   const [generatingId, setGeneratingId] = useState<number | null>(null);
   const [clients, setClients] = useState<any[]>([]);
-  const [selectedClientId, setSelectedClientId] = useState<string | number>('');
 
   // Dialog State
   const [isSyncDialogOpen, setIsSyncDialogOpen] = useState(false);
+
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
+    const saved = localStorage.getItem('fatura_history_visible_columns');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // Fallback
+      }
+    }
+    return DEFAULT_COLUMNS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('fatura_history_visible_columns', JSON.stringify(visibleColumns));
+  }, [visibleColumns]);
+
+  const toggleColumn = (columnKey: string) => {
+    setVisibleColumns(prev =>
+      prev.includes(columnKey)
+        ? prev.filter(k => k !== columnKey)
+        : [...prev, columnKey]
+    );
+  };
+
+  const resetColumns = () => {
+    setVisibleColumns(DEFAULT_COLUMNS);
+  };
 
   const handleSyncPowerHub = async (params: { installationId: string; referenceMonth: string }) => {
     setIsSyncDialogOpen(false); // Close dialog
@@ -111,13 +139,7 @@ export default function FaturasPage() {
   }, [loadClients]);
 
 
-  const [columnFilters, setColumnFilters] = useState({
-    site: '',
-    client: '',
-    mes: '',
-    instalacao: '',
-    consumo: ''
-  });
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' | null }>({
     key: '',
     direction: null,
@@ -132,13 +154,7 @@ export default function FaturasPage() {
   };
 
   const handleClearFilters = () => {
-    setColumnFilters({
-      site: '',
-      client: '',
-      mes: '',
-      instalacao: '',
-      consumo: ''
-    });
+    setColumnFilters({});
     setSortConfig({
       key: '',
       direction: null,
@@ -147,27 +163,20 @@ export default function FaturasPage() {
 
   const filteredFaturas = faturas
     .filter(f => {
-      // Filtro por cliente selecionado
-      if (selectedClientId) {
-        const selectedClient = clients.find(c => String(c.id) === String(selectedClientId));
-        if (selectedClient) {
-          const cleanUC = (s: any) => String(s || '').trim().replace(/^0+/, '');
-          const faturaUC = cleanUC(f.instalacao);
-          const ucDB = cleanUC(selectedClient.uc_number);
+      for (const [key, value] of Object.entries(columnFilters)) {
+        if (!value) continue;
+        const cellValue = f[key];
 
-          const ucMatch = ucDB !== '' && faturaUC !== '' && ucDB === faturaUC;
-          if (!ucMatch) return false;
+        if (key === 'mesReferencia') {
+          const formattedMes = formatMesReferencia(cellValue).toLowerCase();
+          if (!formattedMes.includes(value.toLowerCase())) return false;
+          continue;
         }
+
+        const strVal = String(cellValue || '').toLowerCase();
+        if (!strVal.includes(value.toLowerCase())) return false;
       }
-
-
-      const siteMatch = (f.nomeDoSite || '').toLowerCase().includes(columnFilters.site.toLowerCase());
-      const clientMatch = (f.nomeDoCliente || '').toLowerCase().includes(columnFilters.client.toLowerCase());
-      const mesMatch = formatMesReferencia(f.mesReferencia).toLowerCase().includes(columnFilters.mes.toLowerCase());
-      const instMatch = (f.instalacao || '').toLowerCase().includes(columnFilters.instalacao.toLowerCase());
-      const consumoMatch = String(f.medidaConsumoTUSDForaPonta || '').toLowerCase().includes(columnFilters.consumo.toLowerCase());
-
-      return siteMatch && clientMatch && mesMatch && instMatch && consumoMatch;
+      return true;
     })
     .sort((a, b) => {
       if (!sortConfig.direction || !sortConfig.key) return 0;
@@ -175,28 +184,14 @@ export default function FaturasPage() {
       const multiplier = sortConfig.direction === 'asc' ? 1 : -1;
       const key = sortConfig.key;
 
-      let valA, valB;
+      let valA = a[key];
+      let valB = b[key];
 
-      if (key === 'site') {
-        valA = a.nomeDoSite || '';
-        valB = b.nomeDoSite || '';
-      } else if (key === 'client') {
-        valA = a.nomeDoCliente || '';
-        valB = b.nomeDoCliente || '';
-      } else if (key === 'mes') {
+      if (key === 'mesReferencia') {
         const dA = parseMesReferencia(a.mesReferencia);
         const dB = parseMesReferencia(b.mesReferencia);
         valA = dA ? dA.y * 12 + dA.m : 0;
         valB = dB ? dB.y * 12 + dB.m : 0;
-      } else if (key === 'instalacao') {
-        valA = a.instalacao || '';
-        valB = b.instalacao || '';
-      } else if (key === 'consumo') {
-        valA = Number(a.medidaConsumoTUSDForaPonta) || 0;
-        valB = Number(b.medidaConsumoTUSDForaPonta) || 0;
-      } else {
-        valA = a[key];
-        valB = b[key];
       }
 
       if (typeof valA === 'number' && typeof valB === 'number') {
@@ -331,15 +326,22 @@ export default function FaturasPage() {
           <p className="text-sm text-muted-foreground">Consulte faturas salvas no sistema e gere relatórios.</p>
         </div>
         <div className="flex items-center gap-2">
-          <ClientSelector
-            clients={clients}
-            selectedClientId={selectedClientId}
-            onSelect={setSelectedClientId}
-            className="w-full md:w-70"
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="icon" onClick={fetchFaturas} disabled={loading || syncing}>
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              Atualizar dados
+            </TooltipContent>
+          </Tooltip>
+          <ColumnCustomizer
+            visibleColumns={visibleColumns}
+            onToggleColumn={toggleColumn}
+            onReset={resetColumns}
+            className="h-8"
           />
-          <Button variant="outline" size="icon" onClick={fetchFaturas} disabled={loading || syncing}>
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
           <Button
             onClick={() => setIsSyncDialogOpen(true)}
             disabled={loading || syncing}
@@ -350,7 +352,6 @@ export default function FaturasPage() {
             <span>{syncing ? 'Sincronizando...' : 'Sincronizar PowerHub'}</span>
           </Button>
         </div>
-
       </div>
 
       <Card className="border-border shadow-md overflow-hidden">
@@ -365,6 +366,7 @@ export default function FaturasPage() {
             onAction={handleAction}
             generatingId={generatingId}
             onClearFilters={handleClearFilters}
+            visibleColumns={visibleColumns}
           />
         </CardContent>
       </Card>

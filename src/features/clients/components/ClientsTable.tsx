@@ -18,14 +18,35 @@ import {
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { TableColumnFilter } from '@features/data/components/TableColumnFilter';
 import { DataPagination } from '@features/data/components/DataPagination';
+import { Spinner } from '@/components/ui/spinner';
 
 interface ClientsTableProps {
   clients: any[];
   onEdit: (client: any) => void;
   onDelete: (client: any) => void;
+  loading: boolean;
+  visibleColumns: string[];
 }
 
-export const ClientsTable: React.FC<ClientsTableProps> = ({ clients, onEdit, onDelete }) => {
+export const ALL_COLUMNS = [
+  { key: 'uc_number', label: 'Código (UC)' },
+  { key: 'name', label: 'Nome / Descrição' },
+  { key: 'cnpj', label: 'CPF/CNPJ' },
+  { key: 'distributor', label: 'Distribuidora' },
+  { key: 'location', label: 'Localização' }
+];
+
+const COLUMN_CONFIG: Record<string, { label: string; columnName: string; filterKey: string }> = {
+  uc_number: { label: 'Código (UC)', columnName: 'Código', filterKey: 'uc' },
+  name: { label: 'Nome / Descrição', columnName: 'Nome', filterKey: 'name' },
+  cnpj: { label: 'CPF/CNPJ', columnName: 'Documento', filterKey: 'cnpj' },
+  distributor: { label: 'Distribuidora', columnName: 'Distribuidora', filterKey: 'distributor' },
+  location: { label: 'Localização', columnName: 'Localização', filterKey: 'location' }
+};
+
+export const DEFAULT_COLUMNS = ['uc_number', 'name', 'cnpj', 'distributor', 'location'];
+
+export const ClientsTable: React.FC<ClientsTableProps> = ({ clients, onEdit, onDelete, loading, visibleColumns }) => {
   const [filters, setFilters] = useState<Record<string, string>>({
     uc: '',
     name: '',
@@ -92,6 +113,9 @@ export const ClientsTable: React.FC<ClientsTableProps> = ({ clients, onEdit, onD
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedClients = filteredClients.slice(startIndex, startIndex + pageSize);
 
+  // Filter ALL_COLUMNS to preserve original order
+  const columnsToRender = ALL_COLUMNS.filter(col => visibleColumns.includes(col.key));
+
   return (
     <div className="flex flex-col">
       <ScrollArea className="w-full">
@@ -99,75 +123,37 @@ export const ClientsTable: React.FC<ClientsTableProps> = ({ clients, onEdit, onD
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-12.5"></TableHead>
-              <TableHead>
-                <div className="flex items-center">
-                  <TableColumnFilter
-                    columnName="Código"
-                    value={filters.uc}
-                    onChange={(v) => handleFilterChange('uc', v)}
-                    sortDirection={sortConfig.key === 'uc' ? sortConfig.direction : null}
-                    onSort={(dir) => handleSortChange('uc', dir)}
-                  >
-                    Código (UC)
-                  </TableColumnFilter>
-                </div>
-              </TableHead>
-              <TableHead>
-                <div className="flex items-center">
-                  <TableColumnFilter
-                    columnName="Nome"
-                    value={filters.name}
-                    onChange={(v) => handleFilterChange('name', v)}
-                    sortDirection={sortConfig.key === 'name' ? sortConfig.direction : null}
-                    onSort={(dir) => handleSortChange('name', dir)}
-                  >
-                    Nome / Descrição
-                  </TableColumnFilter>
-                </div>
-              </TableHead>
-              <TableHead>
-                <div className="flex items-center">
-                  <TableColumnFilter
-                    columnName="Documento"
-                    value={filters.cnpj}
-                    onChange={(v) => handleFilterChange('cnpj', v)}
-                    sortDirection={sortConfig.key === 'cnpj' ? sortConfig.direction : null}
-                    onSort={(dir) => handleSortChange('cnpj', dir)}
-                  >
-                    CPF/CNPJ
-                  </TableColumnFilter>
-                </div>
-              </TableHead>
-              <TableHead>
-                <div className="flex items-center">
-                  <TableColumnFilter
-                    columnName="Distribuidora"
-                    value={filters.distributor}
-                    onChange={(v) => handleFilterChange('distributor', v)}
-                    sortDirection={sortConfig.key === 'distributor' ? sortConfig.direction : null}
-                    onSort={(dir) => handleSortChange('distributor', dir)}
-                  >
-                    Distribuidora
-                  </TableColumnFilter>
-                </div>
-              </TableHead>
-              <TableHead>
-                <div className="flex items-center">
-                  <TableColumnFilter
-                    columnName="Localização"
-                    value={filters.location}
-                    onChange={(v) => handleFilterChange('location', v)}
-                    sortDirection={sortConfig.key === 'location' ? sortConfig.direction : null}
-                    onSort={(dir) => handleSortChange('location', dir)}
-                  >
-                    Localização
-                  </TableColumnFilter>
-                </div>
-              </TableHead>
+              {columnsToRender.map((col) => {
+                const config = COLUMN_CONFIG[col.key];
+                return (
+                  <TableHead key={col.key}>
+                    <div className="flex items-center">
+                      <TableColumnFilter
+                        columnName={config.columnName}
+                        value={filters[config.filterKey]}
+                        onChange={(v) => handleFilterChange(config.filterKey, v)}
+                        sortDirection={sortConfig.key === config.filterKey ? sortConfig.direction : null}
+                        onSort={(dir) => handleSortChange(config.filterKey, dir)}
+                      >
+                        {config.label}
+                      </TableColumnFilter>
+                    </div>
+                  </TableHead>
+                );
+              })}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedClients.length > 0 ? (
+            {loading ? (
+              <TableRow key="loading-row">
+                <TableCell colSpan={columnsToRender.length + 1} className="h-48 text-center">
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <Spinner className="w-8 h-8" />
+                    <span className="text-sm text-muted-foreground">Carregando clientes...</span>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : paginatedClients.length > 0 ? (
               paginatedClients.map((client) => (
                 <TableRow key={client.id} className="group transition-colors hover:bg-muted/50">
                   <TableCell>
@@ -192,16 +178,29 @@ export const ClientsTable: React.FC<ClientsTableProps> = ({ clients, onEdit, onD
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
-                  <TableCell>{client.uc_number}</TableCell>
-                  <TableCell>{client.name}</TableCell>
-                  <TableCell>{client.cnpj}</TableCell>
-                  <TableCell>{client.distributor}</TableCell>
-                  <TableCell>{`${client.city || ''} - ${client.uf || ''}`}</TableCell>
+                  {columnsToRender.map((col) => {
+                    if (col.key === 'uc_number') {
+                      return <TableCell key={col.key}>{client.uc_number}</TableCell>;
+                    }
+                    if (col.key === 'name') {
+                      return <TableCell key={col.key}>{client.name}</TableCell>;
+                    }
+                    if (col.key === 'cnpj') {
+                      return <TableCell key={col.key}>{client.cnpj}</TableCell>;
+                    }
+                    if (col.key === 'distributor') {
+                      return <TableCell key={col.key}>{client.distributor}</TableCell>;
+                    }
+                    if (col.key === 'location') {
+                      return <TableCell key={col.key}>{`${client.city || ''} - ${client.uf || ''}`}</TableCell>;
+                    }
+                    return null;
+                  })}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={columnsToRender.length + 1} className="h-24 text-center text-muted-foreground">
                   Nenhum cliente encontrado com os filtros aplicados.
                 </TableCell>
               </TableRow>

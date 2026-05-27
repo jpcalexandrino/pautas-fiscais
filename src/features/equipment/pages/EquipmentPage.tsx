@@ -7,10 +7,12 @@ import { useEquipmentContext } from '../context/EquipmentContext';
 import { useAlert } from '@/contexts/AlertContext';
 import { Button } from '@/components/ui/button';
 import ClientSelector from '@features/clients/components/ClientSelector';
-import { EquipmentTable } from '../components/EquipmentTable';
+import { EquipmentTable, ALL_COLUMNS, DEFAULT_COLUMNS } from '../components/EquipmentTable';
+import { ColumnCustomizer } from '@features/data/components/ColumnCustomizer';
 import { EquipmentDialog } from '../components/EquipmentDialog';
 import { EquipmentEmptyState } from '../components/EquipmentEmptyState';
 import { Card, CardContent } from '@/components/ui/card';
+import { Label } from '@/shared/components/ui/label';
 
 interface EquipmentFormData {
   name: string;
@@ -37,6 +39,34 @@ export default function EquipmentPage() {
     quantity: '1',
     tariff: '0.513',
   });
+
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
+    const saved = localStorage.getItem('equipment_visible_columns');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // Fallback
+      }
+    }
+    return DEFAULT_COLUMNS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('equipment_visible_columns', JSON.stringify(visibleColumns));
+  }, [visibleColumns]);
+
+  const toggleColumn = (columnKey: string) => {
+    setVisibleColumns(prev =>
+      prev.includes(columnKey)
+        ? prev.filter(k => k !== columnKey)
+        : [...prev, columnKey]
+    );
+  };
+
+  const resetColumns = () => {
+    setVisibleColumns(DEFAULT_COLUMNS);
+  };
 
   const loadClients = useCallback(async () => {
     const data = await getClients();
@@ -164,13 +194,16 @@ export default function EquipmentPage() {
             Gerencie o levantamento de carga detalhado por unidade consumidora.
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
-          <ClientSelector
-            clients={clients}
-            selectedClientId={selectedClientId}
-            onSelect={setSelectedClientId}
-            className="w-full sm:w-70"
-          />
+        <div className="flex items-center gap-2">
+          {selectedClientId && (
+            <ColumnCustomizer
+              columns={ALL_COLUMNS}
+              visibleColumns={visibleColumns}
+              onToggleColumn={toggleColumn}
+              onReset={resetColumns}
+              className="h-8"
+            />
+          )}
           <Button
             onClick={() => handleOpenModal()}
             disabled={!selectedClientId}
@@ -181,6 +214,19 @@ export default function EquipmentPage() {
         </div>
       </div>
 
+      {/* Painel de Filtros Dedicado */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-xl border border-border/80 bg-muted/20">
+        <div className="flex-1 max-w-sm space-y-1.5">
+          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Selecione o Cliente</Label>
+          <ClientSelector
+            clients={clients}
+            selectedClientId={selectedClientId}
+            onSelect={setSelectedClientId}
+            className="w-full"
+          />
+        </div>
+      </div>
+
       <Card className="border-border shadow-md overflow-hidden">
         <CardContent className="p-0">
           {!selectedClientId ? (
@@ -188,8 +234,10 @@ export default function EquipmentPage() {
           ) : (
             <EquipmentTable
               equipment={equipment}
+              loading={isLoading}
               onEdit={handleOpenModal}
               onDelete={handleDelete}
+              visibleColumns={visibleColumns}
             />
           )}
         </CardContent>

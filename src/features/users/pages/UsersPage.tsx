@@ -7,7 +7,8 @@ import { useAlert } from '@/contexts/AlertContext';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { UserDialog } from '../components/UserDialog';
-import { UsersTable } from '../components/UsersTable';
+import { UsersTable, ALL_COLUMNS, DEFAULT_COLUMNS } from '../components/UsersTable';
+import { ColumnCustomizer } from '@features/data/components/ColumnCustomizer';
 import { UsersEmptyState } from '../components/UsersEmptyState';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
@@ -36,6 +37,34 @@ export default function UsersPage() {
   const [createdUser, setCreatedUser] = useState<any | null>(null);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
+    const saved = localStorage.getItem('users_visible_columns');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // Fallback
+      }
+    }
+    return DEFAULT_COLUMNS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('users_visible_columns', JSON.stringify(visibleColumns));
+  }, [visibleColumns]);
+
+  const toggleColumn = (columnKey: string) => {
+    setVisibleColumns(prev =>
+      prev.includes(columnKey)
+        ? prev.filter(k => k !== columnKey)
+        : [...prev, columnKey]
+    );
+  };
+
+  const resetColumns = () => {
+    setVisibleColumns(DEFAULT_COLUMNS);
+  };
 
   const emptyForm = {
     name: '',
@@ -149,29 +178,31 @@ export default function UsersPage() {
           <h1 className="text-2xl font-bold tracking-tight">Usuários</h1>
           <p className="text-sm text-muted-foreground">Gerencie o controle de acesso e usuários do sistema.</p>
         </div>
-        {isAdmin && (
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
+          <ColumnCustomizer
+            columns={ALL_COLUMNS}
+            visibleColumns={visibleColumns}
+            onToggleColumn={toggleColumn}
+            onReset={resetColumns}
+          />
+          {isAdmin && (
             <Button size="sm" onClick={() => handleOpenModal()} className="gap-2">
               <Plus className="w-4 h-4" /> Novo Usuário
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <Card className="border-border shadow-md overflow-hidden">
         <CardContent className="p-0">
-          {isLoading ? (
-            <div className="py-20 text-center flex flex-col items-center justify-center gap-4">
-              <Spinner className="w-8 h-8" />
-              <p className="text-muted-foreground animate-pulse font-medium">Carregando usuários...</p>
-            </div>
-          ) : users.length > 0 ? (
+          {isLoading || loading || users.length > 0 ? (
             <UsersTable
               users={users}
-              loading={loading}
+              loading={isLoading || loading}
               onEdit={handleOpenModal}
               onDelete={handleDelete}
               isAdmin={isAdmin}
+              visibleColumns={visibleColumns}
             />
           ) : (
             <UsersEmptyState onNewUser={isAdmin ? () => handleOpenModal() : undefined} />
