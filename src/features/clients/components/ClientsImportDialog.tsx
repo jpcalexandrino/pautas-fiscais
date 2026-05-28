@@ -276,6 +276,7 @@ export const ClientsImportDialog: React.FC<ClientsImportDialogProps> = ({
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0 border-t pt-4">
+          <div className="flex items-center gap-2">
           <Button
             type="button"
             variant="outline"
@@ -304,6 +305,7 @@ export const ClientsImportDialog: React.FC<ClientsImportDialogProps> = ({
               </>
             )}
           </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
