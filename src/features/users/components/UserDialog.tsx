@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   Dialog,
   DialogContent,
@@ -130,13 +130,13 @@ export const UserDialog: React.FC<UserDialogProps> = ({
                 <Key className="w-4 h-4" /> Resetar Senha
               </Button>
             )}
-            <div className="flex gap-2 justify-end">
+            <div className="flex gap-2 justify-end ml-auto">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
               </Button>
               <Button type="submit" disabled={isLoading}>
                 {isLoading && <Spinner className="mr-2 h-4 w-4" />}
-                Salvar Usuário
+                Salvar
               </Button>
             </div>
           </DialogFooter>

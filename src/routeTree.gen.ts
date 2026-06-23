@@ -13,12 +13,11 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
-import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedRevisaoRouteImport } from './routes/_authenticated/revisao'
+import { Route as AuthenticatedProdutosRouteImport } from './routes/_authenticated/produtos'
 import { Route as AuthenticatedImportRouteImport } from './routes/_authenticated/import'
-import { Route as AuthenticatedFaturasRouteImport } from './routes/_authenticated/faturas'
-import { Route as AuthenticatedEquipmentRouteImport } from './routes/_authenticated/equipment'
-import { Route as AuthenticatedDataRouteImport } from './routes/_authenticated/data'
-import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
+import { Route as AuthenticatedDeParaRouteImport } from './routes/_authenticated/de-para'
+import { Route as AuthenticatedDadosRouteImport } from './routes/_authenticated/dados'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -39,9 +38,14 @@ const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
+const AuthenticatedRevisaoRoute = AuthenticatedRevisaoRouteImport.update({
+  id: '/revisao',
+  path: '/revisao',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedProdutosRoute = AuthenticatedProdutosRouteImport.update({
+  id: '/produtos',
+  path: '/produtos',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedImportRoute = AuthenticatedImportRouteImport.update({
@@ -49,46 +53,34 @@ const AuthenticatedImportRoute = AuthenticatedImportRouteImport.update({
   path: '/import',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedFaturasRoute = AuthenticatedFaturasRouteImport.update({
-  id: '/faturas',
-  path: '/faturas',
+const AuthenticatedDeParaRoute = AuthenticatedDeParaRouteImport.update({
+  id: '/de-para',
+  path: '/de-para',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedEquipmentRoute = AuthenticatedEquipmentRouteImport.update({
-  id: '/equipment',
-  path: '/equipment',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedDataRoute = AuthenticatedDataRouteImport.update({
-  id: '/data',
-  path: '/data',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
-  id: '/clients',
-  path: '/clients',
+const AuthenticatedDadosRoute = AuthenticatedDadosRouteImport.update({
+  id: '/dados',
+  path: '/dados',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
-  '/clients': typeof AuthenticatedClientsRoute
-  '/data': typeof AuthenticatedDataRoute
-  '/equipment': typeof AuthenticatedEquipmentRoute
-  '/faturas': typeof AuthenticatedFaturasRoute
+  '/dados': typeof AuthenticatedDadosRoute
+  '/de-para': typeof AuthenticatedDeParaRoute
   '/import': typeof AuthenticatedImportRoute
-  '/reports': typeof AuthenticatedReportsRoute
+  '/produtos': typeof AuthenticatedProdutosRoute
+  '/revisao': typeof AuthenticatedRevisaoRoute
   '/users': typeof AuthenticatedUsersRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
-  '/clients': typeof AuthenticatedClientsRoute
-  '/data': typeof AuthenticatedDataRoute
-  '/equipment': typeof AuthenticatedEquipmentRoute
-  '/faturas': typeof AuthenticatedFaturasRoute
+  '/dados': typeof AuthenticatedDadosRoute
+  '/de-para': typeof AuthenticatedDeParaRoute
   '/import': typeof AuthenticatedImportRoute
-  '/reports': typeof AuthenticatedReportsRoute
+  '/produtos': typeof AuthenticatedProdutosRoute
+  '/revisao': typeof AuthenticatedRevisaoRoute
   '/users': typeof AuthenticatedUsersRoute
   '/': typeof AuthenticatedIndexRoute
 }
@@ -96,12 +88,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
-  '/_authenticated/clients': typeof AuthenticatedClientsRoute
-  '/_authenticated/data': typeof AuthenticatedDataRoute
-  '/_authenticated/equipment': typeof AuthenticatedEquipmentRoute
-  '/_authenticated/faturas': typeof AuthenticatedFaturasRoute
+  '/_authenticated/dados': typeof AuthenticatedDadosRoute
+  '/_authenticated/de-para': typeof AuthenticatedDeParaRoute
   '/_authenticated/import': typeof AuthenticatedImportRoute
-  '/_authenticated/reports': typeof AuthenticatedReportsRoute
+  '/_authenticated/produtos': typeof AuthenticatedProdutosRoute
+  '/_authenticated/revisao': typeof AuthenticatedRevisaoRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
@@ -110,34 +101,31 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
-    | '/clients'
-    | '/data'
-    | '/equipment'
-    | '/faturas'
+    | '/dados'
+    | '/de-para'
     | '/import'
-    | '/reports'
+    | '/produtos'
+    | '/revisao'
     | '/users'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
-    | '/clients'
-    | '/data'
-    | '/equipment'
-    | '/faturas'
+    | '/dados'
+    | '/de-para'
     | '/import'
-    | '/reports'
+    | '/produtos'
+    | '/revisao'
     | '/users'
     | '/'
   id:
     | '__root__'
     | '/_authenticated'
     | '/login'
-    | '/_authenticated/clients'
-    | '/_authenticated/data'
-    | '/_authenticated/equipment'
-    | '/_authenticated/faturas'
+    | '/_authenticated/dados'
+    | '/_authenticated/de-para'
     | '/_authenticated/import'
-    | '/_authenticated/reports'
+    | '/_authenticated/produtos'
+    | '/_authenticated/revisao'
     | '/_authenticated/users'
     | '/_authenticated/'
   fileRoutesById: FileRoutesById
@@ -177,11 +165,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUsersRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/reports': {
-      id: '/_authenticated/reports'
-      path: '/reports'
-      fullPath: '/reports'
-      preLoaderRoute: typeof AuthenticatedReportsRouteImport
+    '/_authenticated/revisao': {
+      id: '/_authenticated/revisao'
+      path: '/revisao'
+      fullPath: '/revisao'
+      preLoaderRoute: typeof AuthenticatedRevisaoRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/produtos': {
+      id: '/_authenticated/produtos'
+      path: '/produtos'
+      fullPath: '/produtos'
+      preLoaderRoute: typeof AuthenticatedProdutosRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/import': {
@@ -191,55 +186,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedImportRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/faturas': {
-      id: '/_authenticated/faturas'
-      path: '/faturas'
-      fullPath: '/faturas'
-      preLoaderRoute: typeof AuthenticatedFaturasRouteImport
+    '/_authenticated/de-para': {
+      id: '/_authenticated/de-para'
+      path: '/de-para'
+      fullPath: '/de-para'
+      preLoaderRoute: typeof AuthenticatedDeParaRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/equipment': {
-      id: '/_authenticated/equipment'
-      path: '/equipment'
-      fullPath: '/equipment'
-      preLoaderRoute: typeof AuthenticatedEquipmentRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/data': {
-      id: '/_authenticated/data'
-      path: '/data'
-      fullPath: '/data'
-      preLoaderRoute: typeof AuthenticatedDataRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/clients': {
-      id: '/_authenticated/clients'
-      path: '/clients'
-      fullPath: '/clients'
-      preLoaderRoute: typeof AuthenticatedClientsRouteImport
+    '/_authenticated/dados': {
+      id: '/_authenticated/dados'
+      path: '/dados'
+      fullPath: '/dados'
+      preLoaderRoute: typeof AuthenticatedDadosRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
   }
 }
 
 interface AuthenticatedRouteChildren {
-  AuthenticatedClientsRoute: typeof AuthenticatedClientsRoute
-  AuthenticatedDataRoute: typeof AuthenticatedDataRoute
-  AuthenticatedEquipmentRoute: typeof AuthenticatedEquipmentRoute
-  AuthenticatedFaturasRoute: typeof AuthenticatedFaturasRoute
+  AuthenticatedDadosRoute: typeof AuthenticatedDadosRoute
+  AuthenticatedDeParaRoute: typeof AuthenticatedDeParaRoute
   AuthenticatedImportRoute: typeof AuthenticatedImportRoute
-  AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
+  AuthenticatedProdutosRoute: typeof AuthenticatedProdutosRoute
+  AuthenticatedRevisaoRoute: typeof AuthenticatedRevisaoRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedClientsRoute: AuthenticatedClientsRoute,
-  AuthenticatedDataRoute: AuthenticatedDataRoute,
-  AuthenticatedEquipmentRoute: AuthenticatedEquipmentRoute,
-  AuthenticatedFaturasRoute: AuthenticatedFaturasRoute,
+  AuthenticatedDadosRoute: AuthenticatedDadosRoute,
+  AuthenticatedDeParaRoute: AuthenticatedDeParaRoute,
   AuthenticatedImportRoute: AuthenticatedImportRoute,
-  AuthenticatedReportsRoute: AuthenticatedReportsRoute,
+  AuthenticatedProdutosRoute: AuthenticatedProdutosRoute,
+  AuthenticatedRevisaoRoute: AuthenticatedRevisaoRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }

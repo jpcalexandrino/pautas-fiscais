@@ -3,19 +3,20 @@ import express from 'express';
 import type { Application } from 'express';
 import cors from 'cors';
 import path from 'path';
-import faturaRoutes from './routes/faturaRoutes';
-import clientRoutes from './routes/clientRoutes';
-import equipmentRoutes from './routes/equipmentRoutes';
-import aiRoutes from './routes/aiRoutes';
 import authRoutes from './routes/authRoutes';
-import emailRoutes from './routes/emailRoutes';
 import userRoutes from './routes/userRoutes';
+import produtoRoutes from './routes/produtoRoutes';
+import estadoRoutes from './routes/estadoRoutes';
+import deParaRoutes from './routes/deParaRoutes';
+import pautaRoutes from './routes/pautaRoutes';
 import authMiddleware from './middleware/authMiddleware';
 
-import FaturaRepository from './repositories/FaturaRepository';
-import ClientRepository from './repositories/ClientRepository';
-import EquipmentRepository from './repositories/EquipmentRepository';
 import UserRepository from './repositories/UserRepository';
+import ProdutoRepository from './repositories/ProdutoRepository';
+import EstadoRepository from './repositories/EstadoRepository';
+import CalendarioRepository from './repositories/CalendarioRepository';
+import DeParaProdutoEstadoRepository from './repositories/DeParaProdutoEstadoRepository';
+import PautaFiscalRepository from './repositories/PautaFiscalRepository';
 
 const app: Application = express();
 app.disable('x-powered-by');
@@ -29,18 +30,17 @@ app.use(cors(
     ? { origin: process.env.CORS_ORIGIN || false }
     : { origin: true }
 ));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // Public routes
 app.use('/api/auth', authRoutes);
 
 // Protected routes
-app.use('/api/faturas', authMiddleware, faturaRoutes);
-app.use('/api/clients', authMiddleware, clientRoutes);
-app.use('/api/equipment', authMiddleware, equipmentRoutes);
 app.use('/api/users', authMiddleware, userRoutes);
-app.use('/api/ai', authMiddleware, aiRoutes);
-app.use('/api/email', emailRoutes);
+app.use('/api/produtos', authMiddleware, produtoRoutes);
+app.use('/api/estados', authMiddleware, estadoRoutes);
+app.use('/api/de-para', authMiddleware, deParaRoutes);
+app.use('/api/pautas', authMiddleware, pautaRoutes);
 
 // Em produção, servir o frontend buildado pelo Vite
 if (isProduction) {
@@ -57,9 +57,13 @@ if (isProduction) {
 async function init(): Promise<void> {
   try {
     await UserRepository.createTable();
-    await FaturaRepository.createTable();
-    await ClientRepository.createTable();
-    await EquipmentRepository.createTable();
+    await EstadoRepository.createTable();
+    await CalendarioRepository.createTable();
+    await ProdutoRepository.createTable();
+    await DeParaProdutoEstadoRepository.createTable();
+    await PautaFiscalRepository.createTable();
+    await EstadoRepository.seed();
+    await CalendarioRepository.seed();
 
     // Seed default admin if no users exist
     const usersResult = await UserRepository.getAll();

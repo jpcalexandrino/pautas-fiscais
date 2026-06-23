@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode } from 'react';
-import { APP_CONFIG, CSV_FIELDS } from '@shared/utils/constants';
+import { APP_CONFIG } from '@shared/utils/constants';
 
 interface AppContextType {
   appName: string;
@@ -7,7 +7,6 @@ interface AppContextType {
   appDescription: string;
   locale: string;
   currency: string;
-  csvFields: typeof CSV_FIELDS;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -23,9 +22,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     appDescription: APP_CONFIG.description,
     locale: APP_CONFIG.locale,
     currency: APP_CONFIG.currency,
-
-    // Definições dos campos
-    csvFields: CSV_FIELDS,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

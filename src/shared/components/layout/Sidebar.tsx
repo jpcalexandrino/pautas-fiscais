@@ -1,10 +1,11 @@
 import { Link, useLocation } from '@tanstack/react-router';
 import {
-  Home, FileUp, FileText,
-  Database, BarChart3, Package, Users2, User
+  Home, Database, Package, User,
+  ArrowLeftRight, ClipboardCheck, Upload,
+  TriangleAlert,
+  FileText
 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
-import { useFatura } from '@features/faturas/context/FaturaContext';
 import {
   Sidebar,
   SidebarContent,
@@ -22,6 +23,8 @@ import {
 import { NavUser } from './NavUser';
 import Logo from '@/assets/logo-em.png';
 import { useAuth } from '@/contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
+import { apiFetch } from '@/api/client';
 
 const navData = {
   mainNav: [
@@ -32,19 +35,23 @@ const navData = {
       ],
     },
     {
-      title: "Operações",
+      title: "Pautas Fiscais",
       items: [
-        { title: "Importação", url: "/import", icon: FileUp },
-        { title: "Dados", url: "/data", icon: Database },
-        { title: "Relatórios", url: "/reports", icon: BarChart3 },
-        { title: "Faturas", url: "/faturas", icon: FileText },
+        { title: "Importar PDF", url: "/import", icon: Upload },
+        { title: "Revisão", url: "/revisao", icon: ClipboardCheck },
+        { title: "Dados Pauta", url: "/dados", icon: Database },
       ],
     },
     {
       title: "Cadastros",
       items: [
-        { title: "Clientes", url: "/clients", icon: Users2 },
-        { title: "Equipamentos", url: "/equipment", icon: Package },
+        { title: "Produtos", url: "/produtos", icon: Package },
+        { title: "De-Para", url: "/de-para", icon: ArrowLeftRight },
+      ],
+    },
+    {
+      title: "Administração",
+      items: [
         { title: "Usuários", url: "/users", icon: User },
       ],
     },
@@ -53,10 +60,18 @@ const navData = {
 
 export default function AppSidebar() {
   const { appName } = useApp();
-  const { state } = useFatura();
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
-  const rows = state.rows;
+  const { data: pendentes = [] } = useQuery({
+    queryKey: ['pautas-pendentes'],
+    queryFn: async () => {
+      const res = await apiFetch('/pautas/pendentes');
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!localStorage.getItem('token'),
+    staleTime: 60_000,
+  });
   const location = useLocation();
   const { state: sidebarState } = useSidebar();
   const collapsed = sidebarState === 'collapsed';
@@ -68,8 +83,8 @@ export default function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link to="/">
-                <div className="flex items-center justify-center shrink-0 size-8">
-                  <img src={Logo} alt="Logo" />
+                <div className="flex items-center justify-center shrink-0 size-8 bg-primary dark:bg-primary rounded-md border border-primary dark:border-primary">
+                  <FileText className='text-white dark:text-white'/>
                 </div>
                 {!collapsed && (
                   <div className="grid flex-1 text-left text-sm leading-tight">
@@ -109,10 +124,8 @@ export default function AppSidebar() {
                           <Link to={item.url as any}>
                             <Icon className="size-4" />
                             <span>{item.title}</span>
-                            {item.url === '/data' && rows.length > 0 && !collapsed && (
-                              <SidebarMenuBadge>
-                                {rows.length}
-                              </SidebarMenuBadge>
+                            {item.url === '/revisao' && pendentes.length > 0 && !collapsed && (
+                              <SidebarMenuBadge className="text-amber-600"><TriangleAlert className="size-1" /></SidebarMenuBadge>
                             )}
                           </Link>
                         </SidebarMenuButton>

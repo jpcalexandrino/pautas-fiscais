@@ -1,14 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { MoreHorizontal, Edit, Trash, Shield, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,231 +8,141 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { TableColumnFilter } from '@features/data/components/TableColumnFilter';
-import { DataPagination } from '@features/data/components/DataPagination';
 import { Spinner } from '@/components/ui/spinner';
+import TableComponent from '@/components/Table';
+import { type ColumnDef } from '@tanstack/react-table';
+import { calculateColumnSizes } from '@/shared/utils/table';
 
-interface UsersTableProps {
-  users: any[];
-  onEdit: (user: any) => void;
-  loading: boolean;
-  onDelete: (user: any) => void;
-  isAdmin?: boolean;
-  visibleColumns: string[];
+interface User {
+  id: string | number;
+  name: string;
+  email: string;
+  role: 'admin' | 'user';
+  active: boolean;
 }
 
-export const ALL_COLUMNS = [
-  { key: 'name', label: 'Nome Completo' },
-  { key: 'email', label: 'E-mail' },
-  { key: 'role', label: 'Perfil de Acesso' },
-  { key: 'status', label: 'Status' }
-];
+interface UsersTableProps {
+  users: User[];
+  onEdit: (user: User) => void;
+  loading: boolean;
+  onDelete: (user: User) => void;
+  isAdmin?: boolean;
+}
 
-const COLUMN_CONFIG: Record<string, { label: string; columnName: string }> = {
-  name: { label: 'Nome Completo', columnName: 'Nome' },
-  email: { label: 'E-mail', columnName: 'E-mail' },
-  role: { label: 'Perfil de Acesso', columnName: 'Perfil' },
-  status: { label: 'Status', columnName: 'Status' }
-};
+export const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDelete, loading, isAdmin = false }) => {
+  const columns = useMemo<ColumnDef<any>[]>(() => {
+    const cols: ColumnDef<any>[] = [];
 
-export const DEFAULT_COLUMNS = ['name', 'email', 'role', 'status'];
+    if (isAdmin) {
+      cols.push({
+        id: 'actions',
+        header: 'Ações',
+        size: 100,
+        cell: ({ row }) => (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                aria-label="Abrir ações"
+                className="h-8 w-8 p-0 opacity-50 hover:opacity-100 transition-opacity"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-40">
+              <DropdownMenuItem onClick={() => onEdit(row.original)}>
+                <Edit className="mr-2 h-4 w-4" /> Editar
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                onClick={() => onDelete(row.original)}
+              >
+                <Trash className="mr-2 h-4 w-4" /> Excluir
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ),
+      });
+    }
 
-export const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDelete, loading, isAdmin = false, visibleColumns }) => {
-  const [filters, setFilters] = useState<Record<string, string>>({
-    name: '',
-    email: '',
-    role: '',
-    status: ''
-  });
-
-  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' | null }>({
-    key: '',
-    direction: null,
-  });
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-
-  const handleFilterChange = (key: string, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-  };
-
-  const handleSortChange = (key: string, direction: 'asc' | 'desc' | null) => {
-    setSortConfig({ key, direction });
-  };
-
-  const filteredUsers = users
-    .filter(user => {
-      const nameMatch = (user.name || '').toLowerCase().includes(filters.name.toLowerCase());
-      const emailMatch = (user.email || '').toLowerCase().includes(filters.email.toLowerCase());
-
-      const roleStr = user.role === 'admin' ? 'administrador' : 'usuário comum';
-      const roleMatch = roleStr.toLowerCase().includes(filters.role.toLowerCase());
-
-      const statusStr = user.active !== false ? 'ativo' : 'inativo';
-      const statusMatch = statusStr.toLowerCase().includes(filters.status.toLowerCase());
-
-      return nameMatch && emailMatch && roleMatch && statusMatch;
-    })
-    .sort((a, b) => {
-      if (!sortConfig.direction || !sortConfig.key) return 0;
-
-      const multiplier = sortConfig.direction === 'asc' ? 1 : -1;
-      const key = sortConfig.key;
-
-      let valA = a[key] || '';
-      let valB = b[key] || '';
-
-      if (key === 'status') {
-        valA = a.active !== false ? 'ativo' : 'inativo';
-        valB = b.active !== false ? 'ativo' : 'inativo';
+    cols.push(
+      {
+        accessorKey: 'name',
+        header: 'Nome Completo',
+        size: 200,
+        cell: ({ row }) => (
+          <Button
+            variant="link"
+            className="px-0 h-auto font-medium text-foreground hover:text-primary transition-colors text-left hover:no-underline"
+            onClick={() => onEdit(row.original)}
+          >
+            {row.original.name}
+          </Button>
+        ),
+      },
+      {
+        accessorKey: 'email',
+        header: 'E-mail',
+        size: 220,
+        cell: ({ row }) => <span className="text-muted-foreground">{row.original.email}</span>,
+      },
+      {
+        accessorKey: 'role',
+        header: 'Perfil de Acesso',
+        size: 160,
+        cell: ({ row }) =>
+          row.original.role === 'admin' ? (
+            <Badge variant="outline" className="gap-1 border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-400 font-semibold px-2 py-0.5">
+              <Shield className="w-3 h-3" /> Administrador
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="gap-1 border-slate-500/30 bg-slate-500/10 text-slate-700 dark:text-slate-400 font-semibold px-2 py-0.5">
+              <User className="w-3 h-3" /> Usuário Comum
+            </Badge>
+          ),
+      },
+      {
+        accessorKey: 'status',
+        header: 'Status',
+        size: 120,
+        cell: ({ row }) =>
+          row.original.active ? (
+            <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold px-2 py-0.5">
+              Ativo
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400 font-semibold px-2 py-0.5">
+              Inativo
+            </Badge>
+          ),
       }
+    );
 
-      return String(valA).localeCompare(String(valB)) * multiplier;
-    });
+    return calculateColumnSizes(cols, users);
+  }, [isAdmin, onEdit, onDelete, users]);
 
-  // Reset to first page when filtering or data changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filteredUsers.length, filters]);
-
-  const totalItems = filteredUsers.length;
-  const totalPages = Math.ceil(totalItems / pageSize);
-  const startIndex = (currentPage - 1) * pageSize;
-  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + pageSize);
-
-  // Filter ALL_COLUMNS to preserve original order
-  const columnsToRender = ALL_COLUMNS.filter(col => visibleColumns.includes(col.key));
+  if (loading && users.length === 0) {
+    return (
+      <div className="h-48 text-center flex flex-col items-center justify-center gap-2 border rounded-lg bg-sidebar/20 shadow-xs">
+        <Spinner className="w-8 h-8" />
+        <span className="text-sm text-muted-foreground">Carregando usuários...</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col">
-      <ScrollArea className="w-full">
-        <Table>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              {isAdmin && <TableHead className="w-12.5"></TableHead>}
-              {columnsToRender.map((col) => {
-                const config = COLUMN_CONFIG[col.key];
-                return (
-                  <TableHead key={col.key}>
-                    <div className="flex items-center">
-                      <TableColumnFilter
-                        columnName={config.columnName}
-                        value={filters[col.key]}
-                        onChange={(v) => handleFilterChange(col.key, v)}
-                        sortDirection={sortConfig.key === col.key ? sortConfig.direction : null}
-                        onSort={(dir) => handleSortChange(col.key, dir)}
-                      >
-                        {config.label}
-                      </TableColumnFilter>
-                    </div>
-                  </TableHead>
-                );
-              })}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow key="loading-row">
-                <TableCell colSpan={columnsToRender.length + (isAdmin ? 1 : 0)} className="h-48 text-center">
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <Spinner className="w-8 h-8" />
-                    <span className="text-sm text-muted-foreground">Carregando usuários...</span>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : paginatedUsers.length === 0 ? (
-              <TableRow key="empty-row">
-                <TableCell colSpan={columnsToRender.length + (isAdmin ? 1 : 0)} className="h-48 text-center text-muted-foreground">
-                  Nenhum usuário encontrado.
-                </TableCell>
-              </TableRow>
-            ) : (
-              paginatedUsers.map((user) => (
-                <TableRow key={user.id} className="group transition-colors hover:bg-muted/50">
-                  {isAdmin && (
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0 opacity-50 group-hover:opacity-100 transition-opacity">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="w-40">
-                          <DropdownMenuItem onClick={() => onEdit(user)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                            onClick={() => onDelete(user)}
-                          >
-                            <Trash className="mr-2 h-4 w-4" />
-                            Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  )}
-                  {columnsToRender.map((col) => {
-                    if (col.key === 'name') {
-                      return <TableCell key={col.key} className="font-medium text-foreground">{user.name}</TableCell>;
-                    }
-                    if (col.key === 'email') {
-                      return <TableCell key={col.key} className="text-muted-foreground">{user.email}</TableCell>;
-                    }
-                    if (col.key === 'role') {
-                      return (
-                        <TableCell key={col.key}>
-                          {user.role === 'admin' ? (
-                            <Badge variant="outline" className="gap-1 border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-400 font-semibold px-2 py-0.5">
-                              <Shield className="w-3 h-3" />
-                              Administrador
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="gap-1 border-slate-500/30 bg-slate-500/10 text-slate-700 dark:text-slate-400 font-semibold px-2 py-0.5">
-                              <User className="w-3 h-3" />
-                              Usuário Comum
-                            </Badge>
-                          )}
-                        </TableCell>
-                      );
-                    }
-                    if (col.key === 'status') {
-                      return (
-                        <TableCell key={col.key}>
-                          {user.active !== false ? (
-                            <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold px-2 py-0.5">
-                              Ativo
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400 font-semibold px-2 py-0.5">
-                              Inativo
-                            </Badge>
-                          )}
-                        </TableCell>
-                      );
-                    }
-                    return null;
-                  })}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
-      {totalItems > 0 && (
-        <DataPagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          pageSize={pageSize}
-          totalRows={totalItems}
-          onPageChange={setCurrentPage}
-          onPageSizeChange={setPageSize}
+    <div className="flex flex-col space-y-4">
+      <div className="overflow-hidden rounded-lg border border-border dark:border-white/15 bg-card shadow-xs flex-1 min-h-0 flex flex-col">
+        <TableComponent
+          tableId="users"
+          columns={columns}
+          data={users}
+          isLoading={loading}
+          paginate
+          defaultPageSize={20}
+          maxHeight="550px"
         />
-      )}
+      </div>
     </div>
   );
 };
