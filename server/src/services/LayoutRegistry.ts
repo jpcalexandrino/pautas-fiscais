@@ -51,6 +51,27 @@ export const LayoutRegistry: Record<string, UFLayout> = {
     getTableHeaders: (numCols: number) => {
       return Array.from({ length: numCols }).map((_, i) => `COLUNA_${i + 1}`);
     }
+  },
+  PB: {
+    guideline: 'Tabelas estruturadas com colunas de Fabricante/Distribuidor, Tipo, Marca, Tipo de Embalagem, Capacidade (ml), EAN/GTIN e Preço Sugerido. Associe a coluna de Preço Sugerido diretamente ao campo valor_pauta.',
+    getTableHeaders: (numCols: number) => {
+      if (numCols === 7) return ['FABRICANTE_DISTRIBUIDOR', 'TIPO', 'MARCA', 'TIPO_EMBALAGEM', 'CAPACIDADE_ML', 'EAN_GTIN', 'PRECO_SUGERIDO'];
+      return Array.from({ length: numCols }).map((_, i) => `COLUNA_${i + 1}`);
+    }
+  },
+  MS: {
+    guideline: 'Tabelas estruturadas com colunas de Código, Descrição, Tipo, Valor (R$) e Ação. O campo Valor (R$) representa o valor_pauta.',
+    getTableHeaders: (numCols: number) => {
+      if (numCols === 5) return ['CODIGO', 'DESCRICAO', 'TIPO', 'VALOR_RS', 'ACAO'];
+      return Array.from({ length: numCols }).map((_, i) => `COLUNA_${i + 1}`);
+    }
+  },
+  SE: {
+    guideline: 'A tabela possui apenas 2 colunas principais: PRODUTO/MARCA/TIPO e VALOR (R$). As embalagens e faixas de volumes correspondentes são descritas em linhas divisórias horizontais de seção (ex: "Cerveja em garrafa descartável de 200ml a 240ml" ou "Cerveja em lata de 300ml a 399ml"). Você DEVE propagar a embalagem e a faixa de volume descritas nessas linhas divisórias para todos os itens listados logo abaixo dela, até que apareça uma nova linha divisória de seção.',
+    getTableHeaders: (numCols: number) => {
+      if (numCols === 2) return ['PRODUTO_MARCA_TIPO', 'VALOR_RS'];
+      return Array.from({ length: numCols }).map((_, i) => `COLUNA_${i + 1}`);
+    }
   }
 };
 
