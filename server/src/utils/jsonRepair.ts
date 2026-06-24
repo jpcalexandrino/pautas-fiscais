@@ -1,44 +1,58 @@
+function toStringOrJson(value: unknown): string {
+  return typeof value === 'string' ? value : JSON.stringify(value);
+}
+
+function stripMarkdown(raw: string): string {
+  return raw
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```\s*$/i, '')
+    .trim();
+}
+
 /**
- * Extracts raw text containing the JSON payload from the API response object.
+ * Extrai texto cru do objeto de resposta da API.
  */
 export function extractRawText(data: { success?: boolean; data?: unknown } | any): string {
   if (!data) return '';
   if (data.data && typeof data.data === 'object' && 'data' in data.data) {
-    const nested = (data.data as { data: unknown }).data;
-    return typeof nested === 'string' ? nested : JSON.stringify(nested);
+    return toStringOrJson((data.data as { data: unknown }).data);
   }
   if (data.data) {
-    return typeof data.data === 'string' ? data.data : JSON.stringify(data.data);
+    return toStringOrJson(data.data);
   }
-  return typeof data === 'string' ? data : JSON.stringify(data);
+  return toStringOrJson(data);
 }
 
 /**
- * Parses and repairs raw JSON strings, handling markdown wrapping and truncated arrays.
+ * Faz parsing de JSON, lidando com markdown e arrays truncados.
  */
 export function parseJsonResponse<T = any>(raw: string): T[] {
   if (!raw) return [];
-  const cleaned = raw
-    .replace(/^```(?:json)?\s*/i, '')
-    .replace(/\s*```\s*$/i, '')
-    .trim();
+  const cleaned = stripMarkdown(raw);
+
   try {
     const direct = JSON.parse(cleaned);
     const items = Array.isArray(direct) ? direct : (direct.itens || direct.items || []);
     if (Array.isArray(items)) return items;
-  } catch { /* ignore */ }
+  } catch {
+    // parsing direto falhou
+  }
+
   const arrayMatch = cleaned.match(/\[\s*\{[\s\S]*\}\s*\]/);
   if (arrayMatch) {
     try {
       const parsed = JSON.parse(arrayMatch[0]);
       if (Array.isArray(parsed)) return parsed;
-    } catch { /* ignore */ }
+    } catch {
+      // parsing parcial falhou
+    }
   }
+
   return parseTruncatedJsonArray<T>(cleaned);
 }
 
 /**
- * Parses a potentially truncated JSON array by checking balanced braces.
+ * Parser tolerante para arrays JSON truncados.
  */
 export function parseTruncatedJsonArray<T = any>(raw: string): T[] {
   const items: T[] = [];
@@ -46,15 +60,16 @@ export function parseTruncatedJsonArray<T = any>(raw: string): T[] {
   let inString = false;
   let isEscaped = false;
   let objectStart = -1;
+
   for (let i = 0; i < raw.length; i++) {
     const char = raw[i];
     if (char === '"' && !isEscaped) inString = !inString;
     if (inString) {
-      if (char === '\\') isEscaped = !isEscaped;
-      else isEscaped = false;
+      isEscaped = char === '\\' ? !isEscaped : false;
       continue;
     }
     isEscaped = false;
+
     if (char === '{') {
       if (braceCount === 0) objectStart = i;
       braceCount++;
@@ -65,7 +80,9 @@ export function parseTruncatedJsonArray<T = any>(raw: string): T[] {
         try {
           const parsed = JSON.parse(objStr);
           if (parsed && typeof parsed === 'object') items.push(parsed as T);
-        } catch { /* ignore */ }
+        } catch {
+          // objeto inválido, ignorar
+        }
         objectStart = -1;
       }
     }

@@ -43,7 +43,7 @@ export function DeParaTable({ items, onEdit, onDelete, loading }: DeParaTablePro
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="start">
               <DropdownMenuItem onClick={() => onEdit(row.original)}>
                 <Edit className="mr-2 h-4 w-4" /> Editar
               </DropdownMenuItem>

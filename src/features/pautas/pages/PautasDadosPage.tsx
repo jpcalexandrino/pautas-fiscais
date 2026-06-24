@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Download } from 'lucide-react';
+import { Download, RefreshCcw } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { Button } from '@/components/ui/button';
 import { usePautas, useEstados } from '../hooks/usePautas';
@@ -7,10 +7,20 @@ import { PautasDataTable, formatDateToBR } from '../components/PautasDataTable';
 import { toast } from 'sonner';
 
 export default function PautasDadosPage() {
-  const { pautas, loading } = usePautas();
+  const { pautas, loading, refetchPautas } = usePautas();
   const { data: estados = [] } = useEstados();
   const [tableInstance, setTableInstance] = useState<any>(null);
   const [exporting, setExporting] = useState(false);
+
+  const handleRefresh = async () => {
+    try {
+      await refetchPautas();
+    } catch (err) {
+      toast.error('Erro ao atualizar', {
+        description: err instanceof Error ? err.message : 'Erro inesperado.',
+      });
+    }
+  };
 
   const handleExport = () => {
     if (exporting) return;
@@ -62,7 +72,10 @@ export default function PautasDadosPage() {
             Planilhamento consolidado de pautas fiscais processadas.
           </p>
         </div>
-        <div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={loading || pautas.length === 0 || exporting}>
+            <RefreshCcw className="w-4 h-4" />
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -77,7 +90,7 @@ export default function PautasDadosPage() {
               </>
             ) : (
               <>
-                <Download className="w-4 h-4" /> Exportar XLSX
+                <Download className="w-4 h-4" /> Exportar Excel
               </>
             )}
           </Button>

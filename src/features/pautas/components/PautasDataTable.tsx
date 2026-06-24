@@ -4,6 +4,7 @@ import TableComponent from '@/components/Table';
 import { type ColumnDef } from '@tanstack/react-table';
 import { calculateColumnSizes } from '@/shared/utils/table';
 import { formatCurrency } from '@/shared/utils/formatters';
+import { Badge } from '@/components/ui/badge';
 
 interface PautasDataTableProps {
   pautas: Record<string, unknown>[];
@@ -58,7 +59,7 @@ export function PautasDataTable({ pautas, loading, getTableInstance }: PautasDat
         size: 250,
         cell: ({ row }) => (
           <span
-            className="max-w-xs truncate block"
+            className="truncate block"
             title={String(row.original.descricao_interna)}
           >
             {String(row.original.descricao_interna)}
@@ -113,12 +114,9 @@ export function PautasDataTable({ pautas, loading, getTableInstance }: PautasDat
         header: 'Arquivo',
         size: 250,
         cell: ({ row }) => (
-          <span
-            className="max-w-xs truncate block"
-            title={String(row.original.arquivo_origem || '')}
-          >
-            {String(row.original.arquivo_origem || '-')}
-          </span>
+            <Badge variant="outline" className="gap-1 border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400 font-semibold px-2 py-0.5">
+              {String(row.original.arquivo_origem || '-')}
+            </Badge>
         ),
       },
     ], pautas),

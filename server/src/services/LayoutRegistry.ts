@@ -47,8 +47,21 @@ export const LayoutRegistry: Record<string, UFLayout> = {
     }
   },
   PR: {
-    guideline: 'O cabeçalho das tabelas traz colunas CNPJ BASE E NOME DO FABRICANTE/IMPORTADOR, MARCAS e uma matriz de categorias de embalagens (garrafa de vidro/PET descartável, garrafa retornável, lata de alumínio, barril, kit, litro), cada uma subdividida por faixas de volume. Os valores de pauta aparecem distribuídos nessas subcolunas conforme o tipo de embalagem e volume.',
+    guideline: 'O cabeçalho traz CNPJ/Nome do Fabricante, Marca/Produto e uma matriz de embalagens subdividida por faixas de volume. Propague o fabricante para cada item.',
     getTableHeaders: (numCols: number) => {
+      if (numCols === 10) {
+        return [
+          'CNPJ_FABRICANTE', 'MARCA_PRODUTO',
+          'VIDRO_PET_DESCARTAVEL_ATE_330ML',
+          'VIDRO_PET_DESCARTAVEL_331_450ML',
+          'VIDRO_PET_DESCARTAVEL_451_650ML',
+          'VIDRO_PET_DESCARTAVEL_ACIMA_1000ML',
+          'RETORNAVEL',
+          'LATA_ALUMINIO',
+          'BARRIL_ATE_5L',
+          'KIT_LITRO'
+        ];
+      }
       return Array.from({ length: numCols }).map((_, i) => `COLUNA_${i + 1}`);
     }
   },

@@ -1,72 +1,72 @@
+// Constantes reutilizáveis
+const SCIENTIFIC_REGEX = /^-?\d+([.,]\d+)?e[+-]?\d+$/i;
+const EXCEL_EPOCH = 25569; // Excel epoch (1970-01-01)
+const MS_PER_DAY = 86400 * 1000;
+
 /**
- * Handles scientific notation parsing for numeric values.
+ * Trata parsing de notação científica.
  */
 function parseScientific(cleanValue: string): number {
-  return Number.parseFloat(cleanValue.replaceAll(',', '.')) || 0;
+  return Number(cleanValue.replaceAll(',', '.')) || 0;
 }
 
 /**
- * Handles logic for values with both dots and commas.
+ * Valores com ponto e vírgula.
  */
 function handleDualSeparators(cleanValue: string): number {
   const lastDot = cleanValue.lastIndexOf('.');
   const lastComma = cleanValue.lastIndexOf(',');
-  
+
   if (lastComma > lastDot) {
     // BR format: 1.234,56
-    return Number.parseFloat(cleanValue.replaceAll('.', '').replaceAll(',', '.')) || 0;
+    return Number(cleanValue.replaceAll('.', '').replaceAll(',', '.')) || 0;
   }
   // US format: 1,234.56
-  return Number.parseFloat(cleanValue.replaceAll(',', '')) || 0;
+  return Number(cleanValue.replaceAll(',', '')) || 0;
 }
 
 /**
- * Handles logic for values with only commas.
+ * Valores com apenas vírgula.
  */
 function handleOnlyComma(cleanValue: string): number {
   const parts = cleanValue.split(',');
   if (parts.length > 2) {
-    // Multiple commas: 1,234,567 -> Thousands
-    return Number.parseFloat(cleanValue.replaceAll(',', '')) || 0;
+    // 1,234,567 -> milhares
+    return Number(cleanValue.replaceAll(',', '')) || 0;
   }
-  // Single comma: 123,45 or 1,234
-  // In BR context, always treat as decimal
-  return Number.parseFloat(cleanValue.replaceAll(',', '.')) || 0;
+  // 123,45 -> decimal BR
+  return Number(cleanValue.replaceAll(',', '.')) || 0;
 }
 
 /**
- * Handles logic for values with only dots.
+ * Valores com apenas ponto.
  */
 function handleOnlyDot(cleanValue: string): number {
   const parts = cleanValue.split('.');
   if (parts.length > 2) {
-    // Multiple dots: 1.234.567 -> Thousands
-    return Number.parseFloat(cleanValue.replaceAll('.', '')) || 0;
+    // 1.234.567 -> milhares
+    return Number(cleanValue.replaceAll('.', '')) || 0;
   }
-  // Single dot: 123.45 or 1.234
-  // Treat as decimal (safer for US exports and small BR faturas)
-  return Number.parseFloat(cleanValue) || 0;
+  // 123.45 -> decimal
+  return Number(cleanValue) || 0;
 }
 
 /**
- * Parses numeric values from CSV, handling Brazilian format (1.234,56)
- * and ambiguous single dot cases (1.530).
+ * Parsing numérico robusto para CSV (BR e US).
  */
 export function parseNumericValue(value: any): number {
   if (value === null || value === undefined || value === '') return 0;
   if (typeof value === 'number') return value;
-  
+
   let cleanValue = String(value).trim();
   if (cleanValue === '') return 0;
 
-  // Regex to detect scientific notation
-  const scientificRegex = /^-?\d+([.,]\d+)?e[+-]?\d+$/i;
-  if (scientificRegex.test(cleanValue)) {
+  if (SCIENTIFIC_REGEX.test(cleanValue)) {
     return parseScientific(cleanValue);
   }
 
-  // Remove currency symbols and other non-numeric chars except . and ,
-  cleanValue = cleanValue.replaceAll(/[R$\s]/g, '');
+  // Remove símbolos monetários e caracteres não numéricos (exceto . , -)
+  cleanValue = cleanValue.replace(/[^\d.,-]/g, '');
 
   const hasComma = cleanValue.includes(',');
   const hasDot = cleanValue.includes('.');
@@ -75,12 +75,12 @@ export function parseNumericValue(value: any): number {
   if (hasComma) return handleOnlyComma(cleanValue);
   if (hasDot) return handleOnlyDot(cleanValue);
 
-  const parsed = Number.parseFloat(cleanValue);
+  const parsed = Number(cleanValue);
   return isNaN(parsed) ? 0 : parsed;
 }
 
 /**
- * Handles sanitization for Date objects.
+ * Sanitização de Date.
  */
 function sanitizeDate(value: Date): string {
   if (isNaN(value.getTime())) return '';
@@ -91,31 +91,31 @@ function sanitizeDate(value: Date): string {
 }
 
 /**
- * Handles sanitization for scientific notation strings in text fields.
+ * Sanitização de notação científica em texto.
  */
 function sanitizeScientific(cleanValue: string): string {
   try {
     const normalizedValue = cleanValue.replaceAll(',', '.');
     const num = Number(normalizedValue);
-    
+
     if (isNaN(num)) return cleanValue;
 
+    // IDs grandes tratados como BigInt
     if (isFinite(num) && (num > 1e6 || num < -1e6)) {
-        return BigInt(Math.round(num)).toString();
+      return BigInt(Math.round(num)).toString();
     }
-    
-    return num.toLocaleString(undefined, { 
-      useGrouping: false, 
-      maximumFractionDigits: 20 
+
+    return num.toLocaleString(undefined, {
+      useGrouping: false,
+      maximumFractionDigits: 20,
     });
-  } catch (e) {
+  } catch {
     return cleanValue;
   }
 }
 
 /**
- * Sanitizes strings, handling scientific notation for any text field.
- * Very robust version for Large IDs (CNPJ, UC, etc).
+ * Sanitização de texto genérica.
  */
 export function sanitizeText(value: any): string {
   if (value === null || value === undefined) return '';
@@ -129,41 +129,41 @@ export function sanitizeText(value: any): string {
   }
 
   let cleanValue = String(value).trim();
-  
-  // Strip time if present
+
+  // Remove hora se presente
   if (cleanValue.includes(' ') && (cleanValue.includes('/') || cleanValue.includes('-'))) {
     const parts = cleanValue.split(' ');
     if (parts[1]?.includes(':')) {
       cleanValue = parts[0];
     }
   }
-  
-  const scientificRegex = /^-?\d+([.,]\d+)?e[+-]?\d+$/i;
-  if (scientificRegex.test(cleanValue)) {
+
+  if (SCIENTIFIC_REGEX.test(cleanValue)) {
     return sanitizeScientific(cleanValue);
   }
-  
+
+  // IDs muito longos tratados como string
+  if (/^\d{15,}$/.test(cleanValue)) {
+    return cleanValue;
+  }
+
   return cleanValue;
 }
 
 /**
- * Strips time from date strings or converts Date objects/Excel serials
+ * Formata apenas a parte de data.
  */
 export function formatDateOnly(value: any): string | null {
   if (value === null || value === undefined) return null;
 
-  // Handle JS Date objects
   if (value instanceof Date) {
     if (isNaN(value.getTime())) return null;
     return value.toISOString().split('T')[0];
   }
 
-  // Handle Excel Serial Numbers (if they come as numbers)
-  // Usually > 30000 (roughly 1980+) and < 60000 (roughly 2060+)
   if (typeof value === 'number' && value > 30000 && value < 60000) {
     try {
-      // Excel dates start from 1899-12-30
-      const date = new Date(Math.round((value - 25569) * 86400 * 1000));
+      const date = new Date((value - EXCEL_EPOCH) * MS_PER_DAY);
       return date.toISOString().split('T')[0];
     } catch {
       return null;
@@ -173,18 +173,20 @@ export function formatDateOnly(value: any): string | null {
   const str = String(value).trim();
   if (str === '') return null;
 
-  // Extract just the date part from ISO or other formats (YYYY-MM-DD HH:mm:ss or DD/MM/YYYY HH:mm:ss)
   const datePart = str.split(/[ T]/)[0];
 
-  // If it's already YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return datePart;
 
-  // If it's DD/MM/YYYY
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(datePart)) {
     const [d, m, y] = datePart.split('/');
     return `${y}-${m}-${d}`;
   }
-  
-  // If it's not a recognized date format, return null for DATE columns
+
+  // Suporte extra: MM/DD/YYYY (US)
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(datePart)) {
+    const [m, d, y] = datePart.split('/');
+    return `${y}-${m}-${d}`;
+  }
+
   return null;
 }

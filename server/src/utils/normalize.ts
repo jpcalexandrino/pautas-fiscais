@@ -5,7 +5,8 @@ export function normalizeText(value?: string | null): string {
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^0-9a-z]/g, '');
+    .replace(/\s+/g, ' ') // garante espaços únicos
+    .replace(/[^0-9a-z ]/g, ''); // mantém apenas letras, números e espaço
 }
 
 export function normalizeGtin(value?: string | null): string {
@@ -23,76 +24,47 @@ export function dateToSkData(date: Date): number {
 export function parseStringToDate(value?: string | null): Date | null {
   if (!value) return null;
   const trimmed = String(value).trim();
-  const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (isoMatch) {
-    const y = parseInt(isoMatch[1], 10);
-    const m = parseInt(isoMatch[2], 10) - 1;
-    const d = parseInt(isoMatch[3], 10);
-    return new Date(y, m, d);
-  }
-  const brMatch = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
-  if (brMatch) {
-    const d = parseInt(brMatch[1], 10);
-    const m = parseInt(brMatch[2], 10) - 1;
-    const y = parseInt(brMatch[3], 10);
-    return new Date(y, m, d);
-  }
+
+  const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) return new Date(+isoMatch[1], +isoMatch[2] - 1, +isoMatch[3]);
+
+  const brMatch = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (brMatch) return new Date(+brMatch[3], +brMatch[2] - 1, +brMatch[1]);
+
   const skMatch = trimmed.match(/^(\d{4})(\d{2})(\d{2})$/);
-  if (skMatch) {
-    const y = parseInt(skMatch[1], 10);
-    const m = parseInt(skMatch[2], 10) - 1;
-    const d = parseInt(skMatch[3], 10);
-    return new Date(y, m, d);
-  }
+  if (skMatch) return new Date(+skMatch[1], +skMatch[2] - 1, +skMatch[3]);
+
   const parsed = new Date(trimmed);
-  if (!Number.isNaN(parsed.getTime())) {
-    return parsed;
-  }
-  return null;
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 export function parseDateToSkData(value?: string | null): number | null {
-  if (!value) return null;
-  const trimmed = String(value).trim();
-  const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (isoMatch) {
-    return parseInt(`${isoMatch[1]}${isoMatch[2]}${isoMatch[3]}`, 10);
-  }
-  const brMatch = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
-  if (brMatch) {
-    return parseInt(`${brMatch[3]}${brMatch[2]}${brMatch[1]}`, 10);
-  }
-  const skMatch = trimmed.match(/^(\d{8})$/);
-  if (skMatch) {
-    return parseInt(skMatch[1], 10);
-  }
-  const parsed = new Date(trimmed);
-  if (!Number.isNaN(parsed.getTime())) {
-    return dateToSkData(parsed);
-  }
-  return null;
+  const date = parseStringToDate(value);
+  return date ? dateToSkData(date) : null;
 }
 
 /**
- * Identifica se um GTIN é fictício/dummy (ex: todos zeros, 7890000000000, etc.)
+ * Identifica se um GTIN é fictício/dummy
  */
 export function isDummyGtin(gtin?: string | null): boolean {
   if (!gtin) return true;
-  const clean = String(gtin).replace(/\D/g, '');
+  const clean = normalizeGtin(gtin);
   if (!clean || clean.length < 8) return true;
-  // Todos os dígitos iguais (ex: 0000000000000 ou 9999999999999)
-  if (/^(\d)\1+$/.test(clean)) return true;
-  // GTIN de teste padrão (ex: 7890000000000)
-  if (clean === '7890000000000') return true;
+  if (/^(\d)\1+$/.test(clean)) return true; // todos dígitos iguais
+  if (clean === '7890000000000') return true; // GTIN de teste padrão
   return false;
 }
 
+export interface PautaItem {
+  gtin?: string | null;
+  descricao_estado: string;
+  data_pauta?: string | null;
+}
+
 /**
- * Deduplica itens de pauta baseado em GTIN, descrição normalizada E data.
- * Um item é duplicata se tiver o mesmo GTIN OU a mesma descrição normalizada
- * DENTRO DA MESMA DATA. Se a data for diferente, o item é mantido.
+ * Deduplica itens de pauta baseado em GTIN, descrição normalizada e data.
  */
-export function deduplicatePautaItems<T extends { gtin?: string | null; descricao_estado: string; data_pauta?: string | null }>(
+export function deduplicatePautaItems<T extends PautaItem>(
   items: T[],
   onDuplicateDiscarded?: (item: T, reason: 'gtin' | 'description') => void
 ): T[] {
@@ -100,35 +72,25 @@ export function deduplicatePautaItems<T extends { gtin?: string | null; descrica
   const seenDescs = new Set<string>();
   const result: T[] = [];
 
-  const normalizeDesc = (s: string) =>
-    s.toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-
   for (const item of items) {
-    const cleanGtin = item.gtin ? String(item.gtin).replace(/\D/g, '') : '';
-    const descKey = normalizeDesc(item.descricao_estado);
+    const cleanGtin = normalizeGtin(item.gtin);
+    const descKey = normalizeText(item.descricao_estado);
     const isDummy = isDummyGtin(cleanGtin);
-    const dateKey = item.data_pauta ? String(parseDateToSkData(item.data_pauta) ?? 'null') : 'null';
+    const dateKey = String(parseDateToSkData(item.data_pauta) ?? 'null');
 
     const gtinUniqueKey = `${cleanGtin}_${dateKey}`;
     const descUniqueKey = `${descKey}_${dateKey}`;
 
-    // Verifica duplicata por GTIN (ignora se for dummy)
     if (cleanGtin && !isDummy && seenGtins.has(gtinUniqueKey)) {
-      if (onDuplicateDiscarded) onDuplicateDiscarded(item, 'gtin');
+      onDuplicateDiscarded?.(item, 'gtin');
       continue;
     }
 
-    // Verifica duplicata por descrição (mesmo que tenha GTIN diferente)
     if (descKey && seenDescs.has(descUniqueKey)) {
-      if (onDuplicateDiscarded) onDuplicateDiscarded(item, 'description');
+      onDuplicateDiscarded?.(item, 'description');
       continue;
     }
 
-    // Registra AMBOS para cruzamento futuro (ignora gtin dummy)
     if (cleanGtin && !isDummy) seenGtins.add(gtinUniqueKey);
     if (descKey) seenDescs.add(descUniqueKey);
 
@@ -137,4 +99,3 @@ export function deduplicatePautaItems<T extends { gtin?: string | null; descrica
 
   return result;
 }
-

@@ -50,7 +50,7 @@ const TableCell = <T,>({ cell, isRowSelected }: CellProps<T>) => {
         }
 
         return (
-            <div className="flex items-center h-full overflow-hidden text-ellipsis whitespace-nowrap">
+            <div className="flex items-center h-full overflow-hidden text-ellipsis whitespace-nowrap w-full">
                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
             </div>
         )

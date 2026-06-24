@@ -80,7 +80,7 @@ interface TableProps<TData extends TableCustomData<TData>> {
     maxHeight?: string | number
 }
 
-export type TableCustomData<T> = { id?: string; subRows?: Partial<T>[] }
+export type TableCustomData<T> = { id?: string | number; subRows?: Partial<T>[] }
 declare module '@tanstack/react-table' {
     interface TableMeta<TData extends RowData> {
         tableId?: string | number
