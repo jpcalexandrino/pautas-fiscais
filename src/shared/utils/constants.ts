@@ -18,3 +18,12 @@ export const APP_CONFIG: AppConfig = {
   locale: 'pt-BR',
   currency: 'BRL',
 };
+
+export const BRAND_SLUGS: string[] = [
+  'imperio',
+  'império',
+  'imperial',
+  'cidade imperial',
+  '3.0',
+];
+

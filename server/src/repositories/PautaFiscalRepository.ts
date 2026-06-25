@@ -53,16 +53,26 @@ class PautaFiscalRepository {
       );
     `);
 
-    return db.query(`
+    await db.query(`
       CREATE TABLE IF NOT EXISTS pauta_arquivo_ocr (
         id BIGSERIAL PRIMARY KEY,
         filename VARCHAR(500) NOT NULL UNIQUE,
         uf CHAR(2) NOT NULL,
         textract_json JSONB NOT NULL,
         ai_json JSONB,
+        data_pauta DATE,
+        confirmed_cells JSONB DEFAULT '[]'::jsonb,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+    `);
+
+    await db.query(`
+      ALTER TABLE pauta_arquivo_ocr ADD COLUMN IF NOT EXISTS data_pauta DATE;
+    `);
+
+    return db.query(`
+      ALTER TABLE pauta_arquivo_ocr ADD COLUMN IF NOT EXISTS confirmed_cells JSONB DEFAULT '[]'::jsonb;
     `);
   }
 
@@ -211,17 +221,24 @@ class PautaFiscalRepository {
     return db.query('SELECT * FROM pauta_arquivo_ocr WHERE filename = $1', [filename]);
   }
 
-  async upsertOcr(filename: string, uf: string, textractJson: any, aiJson?: any): Promise<QueryResult> {
+  async upsertOcr(filename: string, uf: string, textractJson: any, aiJson?: any, dataPauta?: string): Promise<QueryResult> {
     return db.query(
-      `INSERT INTO pauta_arquivo_ocr (filename, uf, textract_json, ai_json, updated_at)
-       VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+      `INSERT INTO pauta_arquivo_ocr (filename, uf, textract_json, ai_json, data_pauta, updated_at)
+       VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
        ON CONFLICT (filename) DO UPDATE SET
          uf = EXCLUDED.uf,
          textract_json = EXCLUDED.textract_json,
          ai_json = EXCLUDED.ai_json,
+         data_pauta = COALESCE(EXCLUDED.data_pauta, pauta_arquivo_ocr.data_pauta),
          updated_at = CURRENT_TIMESTAMP
        RETURNING *`,
-      [filename, uf.toUpperCase(), JSON.stringify(textractJson), aiJson ? JSON.stringify(aiJson) : null]
+      [
+        filename,
+        uf.toUpperCase(),
+        JSON.stringify(textractJson),
+        aiJson ? JSON.stringify(aiJson) : null,
+        dataPauta || null
+      ]
     );
   }
 
@@ -231,11 +248,20 @@ class PautaFiscalRepository {
   }
 
   async getOcrFiles(): Promise<QueryResult> {
-    return db.query('SELECT id, filename, uf, created_at FROM pauta_arquivo_ocr ORDER BY created_at DESC');
+    return db.query('SELECT id, filename, uf, data_pauta, created_at FROM pauta_arquivo_ocr ORDER BY created_at DESC');
   }
 
   async deleteAllPendentes(): Promise<QueryResult> {
     return db.query('DELETE FROM fato_pauta_pendente');
+  }
+
+  async addConfirmedCell(filename: string, cellKey: string): Promise<QueryResult> {
+    return db.query(
+      `UPDATE pauta_arquivo_ocr
+       SET confirmed_cells = COALESCE(confirmed_cells, '[]'::jsonb) || jsonb_build_array($2::text)
+       WHERE filename = $1`,
+      [filename, cellKey]
+    );
   }
 }
 

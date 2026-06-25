@@ -16,7 +16,7 @@ import {
   CommandItem,
 } from "@/components/ui/command";
 
-interface Produto {
+export interface Produto {
   id: number;
   descricao_interna: string;
   codigo_interno?: string;

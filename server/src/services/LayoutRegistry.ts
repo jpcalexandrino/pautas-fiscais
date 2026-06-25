@@ -53,6 +53,27 @@ export const LayoutRegistry: Record<string, UFLayout> = {
   PR: {
     guideline: 'O Paraná (PR) utiliza tabelas em matriz onde cada linha representa uma marca/produto (especificada na coluna MARCA_PRODUTO) e as colunas subsequentes representam tipos de embalagens/volumes (ex: VIDRO_PET_DESCARTAVEL_ATE_330ML, LATA_ALUMINIO, BARRIL_ATE_5L, etc.) com o preço de pauta correspondente. Para cada linha de produto que pertença à nossa marca, você DEVE gerar um objeto JSON separado para cada coluna subsequente que contiver um preço válido (desconsidere colunas vazias ou com traço "-"). Para cada item extraído, monte a "descricao_estado" juntando o nome da marca/produto da linha com a descrição da embalagem/faixa de volume do cabeçalho da coluna (ex: "IMPERIO PILSEN LATA_ALUMINIO") e use o valor daquela coluna como valor_pauta.',
     getTableHeaders: (numCols: number) => {
+      if (numCols === 17) {
+        return [
+          'CNPJ_FABRICANTE',
+          'MARCA_PRODUTO',
+          'GARRAFA_VIDRO_PET_DESCARTAVEL_ATE_330ML',
+          'GARRAFA_VIDRO_PET_DESCARTAVEL_331_450ML',
+          'GARRAFA_VIDRO_PET_DESCARTAVEL_451_650ML',
+          'GARRAFA_VIDRO_PET_DESCARTAVEL_651_1000ML',
+          'GARRAFA_VIDRO_PET_DESCARTAVEL_ACIMA_1000ML',
+          'GARRAFA_VIDRO_RETORNAVEL_ATE_360ML',
+          'GARRAFA_VIDRO_RETORNAVEL_361_660ML',
+          'GARRAFA_VIDRO_RETORNAVEL_ACIMA_660ML',
+          'LATA_ALUMINIO_ATE_300ML',
+          'LATA_ALUMINIO_301_349ML',
+          'LATA_ALUMINIO_350_450ML',
+          'LATA_ALUMINIO_ACIMA_450ML',
+          'BARRIL_KEG_ATE_5L',
+          'BARRIL_LITRO',
+          'KIT_GARRAFA_COPOS'
+        ];
+      }
       if (numCols === 10) {
         return [
           'CNPJ_FABRICANTE', 'MARCA_PRODUTO',

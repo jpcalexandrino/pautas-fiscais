@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
-import { ProdutoSelector } from '@/features/produtos/components/ProdutoSelector';
+import { ProdutoSelector, type Produto } from '@/features/produtos/components/ProdutoSelector';
 
 interface DeParaDialogProps {
   isOpen: boolean;
@@ -17,7 +17,7 @@ interface DeParaDialogProps {
   onSubmit: (e: React.FormEvent) => void;
   isLoading: boolean;
   estados: Record<string, unknown>[];
-  produtos: Record<string, unknown>[];
+  produtos: Produto[];
 }
 
 export function DeParaDialog({
@@ -73,7 +73,6 @@ export function DeParaDialog({
               produtos={produtos}
               value={formData.fk_produto ? Number(formData.fk_produto) : null}
               onChange={(id) => setFormData({ ...formData, fk_produto: id })}
-              disablePortal
             />
           </div>
           <DialogFooter>

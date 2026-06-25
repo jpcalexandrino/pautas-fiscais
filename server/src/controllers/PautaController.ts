@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import PautaFiscalService from '../services/PautaFiscalService';
 import PautaFiscalRepository from '../repositories/PautaFiscalRepository';
+import { TextractCompactor } from '../services/TextractCompactor';
 
 function mapPautaFromDb(row: Record<string, unknown>) {
   return {
@@ -46,11 +47,13 @@ export async function upload(req: Request, res: Response) {
     if (!uf || uf.length !== 2) {
       return res.status(400).json({ error: 'UF do estado é obrigatória' });
     }
+    const dataPauta = req.body.data_pauta || undefined;
 
     const result = await PautaFiscalService.processUpload(
       req.file.buffer,
       req.file.originalname,
-      uf
+      uf,
+      dataPauta
     );
     res.json(result);
   } catch (error: unknown) {
@@ -152,3 +155,47 @@ export async function getArquivoOcrByFilename(req: Request, res: Response) {
     res.status(500).json({ error: (error as Error).message });
   }
 }
+
+export async function getTabelasOcr(req: Request, res: Response) {
+  try {
+    const filename = String(req.params.filename);
+    const result = await PautaFiscalRepository.findOcrByFilename(filename);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Arquivo não encontrado' });
+    }
+    const { textract_json, uf, confirmed_cells } = result.rows[0];
+    const tabelas = TextractCompactor.extractTables(textract_json, uf);
+    const sugestoesDatas = TextractCompactor.extractDates(textract_json);
+    res.json({ tabelas, sugestoesDatas, confirmedCells: confirmed_cells || [], uf });
+  } catch (error: unknown) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+}
+
+export async function confirmarManual(req: Request, res: Response) {
+  try {
+    const { fk_produto, fk_produtos, uf, descricao_estado, valor_pauta, data_pauta, arquivo_origem, salvar_de_para, cell_key } = req.body;
+    if ((!fk_produto && !fk_produtos) || !uf || !descricao_estado || valor_pauta === undefined || !data_pauta || !arquivo_origem) {
+      return res.status(400).json({ error: 'Todos os campos obrigatórios devem ser preenchidos' });
+    }
+
+    const ids = fk_produtos ? fk_produtos.map(Number) : [Number(fk_produto)];
+
+    await PautaFiscalService.confirmManual({
+      fk_produtos: ids,
+      uf: String(uf),
+      descricao_estado: String(descricao_estado),
+      valor_pauta: Number(valor_pauta),
+      data_pauta: String(data_pauta),
+      arquivo_origem: String(arquivo_origem),
+      salvarDePara: Boolean(salvar_de_para),
+      cellKey: cell_key ? String(cell_key) : undefined,
+    });
+
+    res.json({ success: true });
+  } catch (error: unknown) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+}
+
+

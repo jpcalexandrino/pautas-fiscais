@@ -4,6 +4,13 @@ import { getLayoutForUF } from './LayoutRegistry';
 
 const logger = new Logger('TextractCompactor');
 
+export interface EstruturaTabela {
+  tabelaIndex: number;
+  pagina: number;
+  headers: string[];
+  rows: string[][];
+}
+
 export class TextractCompactor {
   /**
    * Compacts raw Textract JSON data into structured Markdown text.
@@ -110,6 +117,112 @@ export class TextractCompactor {
     return finalLines.join('\n');
   }
 
+  /**
+   * Extrai e reconstrói as tabelas estruturadas do TextractJson, retornando-as como JSON.
+   */
+  static extractTables(data: any, uf?: string): EstruturaTabela[] {
+    if (!data) return [];
+
+    let nestedData: any = data;
+    if (data && typeof data === 'object') {
+      if ('data' in data && data.data && typeof data.data === 'object') {
+        nestedData = data.data;
+      }
+    }
+
+    const ufUpper = uf ? uf.toUpperCase() : '';
+    const resultados: EstruturaTabela[] = [];
+
+    // Case 1: Structured layout from pre-parsed table data
+    if (nestedData && typeof nestedData === 'object' && Array.isArray(nestedData.tables)) {
+      const tables: any[][] = nestedData.tables;
+      for (let tIdx = 0; tIdx < tables.length; tIdx++) {
+        const table = tables[tIdx];
+        if (!Array.isArray(table) || table.length === 0) continue;
+
+        const tableData: string[][] = table.map(row => {
+          if (!Array.isArray(row)) return [];
+          return row.map(cell => cell !== undefined ? String(cell).trim() : '');
+        });
+
+        const compactedTable = this._compactTable(tableData, ufUpper);
+        if (compactedTable.length === 0) continue;
+
+        let headers = compactedTable[0];
+        if (ufUpper) {
+          const layout = getLayoutForUF(ufUpper);
+          const customHeaders = layout.getTableHeaders(headers.length);
+          if (customHeaders && customHeaders.length > 0 && !customHeaders[0].startsWith('COLUNA_')) {
+            headers = customHeaders;
+          }
+        }
+
+        const rows = compactedTable.slice(1);
+
+        resultados.push({
+          tabelaIndex: tIdx + 1,
+          pagina: 1,
+          headers,
+          rows
+        });
+      }
+      return resultados;
+    }
+
+    // Case 2: Raw OCR block hierarchy
+    const blocks = this._extractBlocks(data);
+    if (blocks.length === 0) {
+      return [];
+    }
+
+    const blocksByPage: Record<number, any[]> = {};
+    for (const block of blocks) {
+      const pageNum = block.Page || 1;
+      if (!blocksByPage[pageNum]) {
+        blocksByPage[pageNum] = [];
+      }
+      blocksByPage[pageNum].push(block);
+    }
+
+    const pageNumbers = Object.keys(blocksByPage).map(Number).sort((a, b) => a - b);
+    let globalTableIdx = 1;
+
+    for (const pageNum of pageNumbers) {
+      const pageBlocks = blocksByPage[pageNum];
+      const tableBlocks = pageBlocks.filter(b => b.BlockType === 'TABLE');
+      const blockMap = new Map<string, any>(pageBlocks.map(b => [b.Id, b]));
+      const wordIdsInTables = new Set<string>();
+
+      for (const table of tableBlocks) {
+        const tableData = this._reconstructTableData(table, blockMap, wordIdsInTables);
+        if (tableData.length === 0) continue;
+
+        const compactedTable = this._compactTable(tableData, ufUpper);
+        if (compactedTable.length === 0) continue;
+
+        let headers = compactedTable[0];
+        if (ufUpper) {
+          const layout = getLayoutForUF(ufUpper);
+          const customHeaders = layout.getTableHeaders(headers.length);
+          if (customHeaders && customHeaders.length > 0 && !customHeaders[0].startsWith('COLUNA_')) {
+            headers = customHeaders;
+          }
+        }
+
+        const rows = compactedTable.slice(1);
+
+        resultados.push({
+          tabelaIndex: globalTableIdx++,
+          pagina: pageNum,
+          headers,
+          rows
+        });
+      }
+    }
+
+    return resultados;
+  }
+
   private static _extractBlocks(data: any): any[] {
     if (typeof data !== 'object' || data === null) return [];
     if ('Blocks' in data && Array.isArray(data.Blocks)) return data.Blocks;
@@ -139,26 +252,84 @@ export class TextractCompactor {
       // Cabeçalho da tabela nova (5 colunas)
       newTable.push(['ITEM', 'EMBALAGEM_VOLUME', 'MARCA_PRODUTO', 'COD_FABRICANTE', 'VALOR_PMPF']);
 
+      const normalizeSide = (side: string[]): string[] => {
+        if (side.length === 6) {
+          const item = side[0];
+          const embalagemVolume = `${side[1]} ${side[2]}`.trim();
+          const marcaProduto = side[3];
+          const codFabricante = side[4];
+          const valorPmpf = side[5];
+          return [item, embalagemVolume, marcaProduto, codFabricante, valorPmpf];
+        }
+        return side;
+      };
+
       for (let rIdx = 1; rIdx < table.length; rIdx++) {
         const row = table[rIdx];
         if (row.length < 5) continue;
-        
-        // Lado esquerdo: colunas 0 a 4
-        const leftRow = row.slice(0, 5);
-        // Lado direito: colunas 7 a 11 (se existirem)
-        const rightRow = row.length >= 12 ? row.slice(7, 12) : [];
 
-        if (this._isRowRelevant(leftRow.join(' '))) {
-          newTable.push(leftRow);
+        let leftRow: string[] = [];
+        let rightRow: string[] = [];
+
+        if (row.length === 11) {
+          leftRow = row.slice(0, 5);
+          rightRow = row.slice(6, 11);
+        } else if (row.length === 13) {
+          leftRow = row.slice(0, 6);
+          rightRow = row.slice(7, 13);
+        } else if (row.length === 12) {
+          const row5 = row[5] ? row[5].trim() : '';
+          const row6 = row[6] ? row[6].trim() : '';
+          // Verifica se a coluna 5 parece ser o valor_pmpf (geralmente contém vírgula ou ponto decimal)
+          const isRow5Price = /^\d+([.,]\d+)?$/.test(row5) && (row5.includes(',') || row5.includes('.'));
+          
+          if (row5 === '' || (!isRow5Price && row6 !== '')) {
+            // Lado esquerdo tem 5 colunas, lado direito tem 6 colunas
+            leftRow = row.slice(0, 5);
+            rightRow = row.slice(6, 12);
+          } else {
+            // Lado esquerdo tem 6 colunas, lado direito tem 5 colunas
+            leftRow = row.slice(0, 6);
+            rightRow = row.slice(7, 12);
+          }
+        } else {
+          // Fallback para outros tamanhos não previstos
+          leftRow = row.slice(0, 5);
+          rightRow = row.length >= 12 ? row.slice(7, 12) : [];
         }
-        if (rightRow.length >= 5 && this._isRowRelevant(rightRow.join(' '))) {
-          newTable.push(rightRow);
+
+        const normalizedLeft = normalizeSide(leftRow);
+        const normalizedRight = normalizeSide(rightRow);
+
+        if (normalizedLeft.length >= 5 && this._isRowRelevant(normalizedLeft.join(' '))) {
+          newTable.push(normalizedLeft);
+        }
+        if (normalizedRight.length >= 5 && this._isRowRelevant(normalizedRight.join(' '))) {
+          newTable.push(normalizedRight);
         }
       }
       return newTable;
     }
 
-    // 2. Filtro geral de marca para outros estados
+    // 2. Tratamento para o Paraná (PR) - Preserva as 3 primeiras linhas de cabeçalho mesclado
+    if (ufUpper === 'PR') {
+      const newTable: string[][] = [];
+      const headerRowsCount = Math.min(table.length, 3);
+      
+      for (let i = 0; i < headerRowsCount; i++) {
+        newTable.push(table[i]);
+      }
+
+      for (let rIdx = headerRowsCount; rIdx < table.length; rIdx++) {
+        const row = table[rIdx];
+        if (this._isRowRelevant(row.join(' '))) {
+          newTable.push(row);
+        }
+      }
+      return newTable;
+    }
+
+    // 3. Filtro geral de marca para outros estados
     const newTable: string[][] = [];
     newTable.push(table[0]); // Mantém o cabeçalho original
 
@@ -232,11 +403,44 @@ export class TextractCompactor {
     wordIdsInTables: Set<string>,
     uf?: string
   ): string {
+    const tableData = this._reconstructTableData(tableBlock, blockMap, wordIdsInTables);
+    if (tableData.length === 0) return '';
+
+    const compactedTable = this._compactTable(tableData, uf || '');
+    if (compactedTable.length <= 1) return '';
+
+    const tableLines: string[] = [];
+    let headers = compactedTable[0];
+    
+    if (uf) {
+      const layout = getLayoutForUF(uf);
+      const customHeaders = layout.getTableHeaders(headers.length);
+      if (customHeaders && customHeaders.length > 0 && !customHeaders[0].startsWith('COLUNA_')) {
+        headers = customHeaders;
+      }
+    }
+
+    tableLines.push(`| ${headers.join(' | ')} |`);
+    const separator = headers.map(() => '---').join(' | ');
+    tableLines.push(`| ${separator} |`);
+
+    for (let rIdx = 1; rIdx < compactedTable.length; rIdx++) {
+      tableLines.push(`| ${compactedTable[rIdx].join(' | ')} |`);
+    }
+
+    return tableLines.join('\n');
+  }
+
+  private static _reconstructTableData(
+    tableBlock: any,
+    blockMap: Map<string, any>,
+    wordIdsInTables: Set<string>
+  ): string[][] {
     const cells = (tableBlock.Relationships?.find((r: any) => r.Type === 'CHILD')?.Ids || [])
       .map((id: string) => blockMap.get(id))
       .filter((b: any) => b && b.BlockType === 'CELL');
 
-    if (cells.length === 0) return '';
+    if (cells.length === 0) return [];
 
     for (const cell of cells) {
       const childWordIds = cell.Relationships?.find((r: any) => r.Type === 'CHILD')?.Ids || [];
@@ -274,29 +478,7 @@ export class TextractCompactor {
       tableData.push(rowCellsText);
     }
 
-    const compactedTable = this._compactTable(tableData, uf || '');
-    if (compactedTable.length <= 1) return '';
-
-    const tableLines: string[] = [];
-    let headers = compactedTable[0];
-    
-    if (uf) {
-      const layout = getLayoutForUF(uf);
-      const customHeaders = layout.getTableHeaders(headers.length);
-      if (customHeaders && customHeaders.length > 0 && !customHeaders[0].startsWith('COLUNA_')) {
-        headers = customHeaders;
-      }
-    }
-
-    tableLines.push(`| ${headers.join(' | ')} |`);
-    const separator = headers.map(() => '---').join(' | ');
-    tableLines.push(`| ${separator} |`);
-
-    for (let rIdx = 1; rIdx < compactedTable.length; rIdx++) {
-      tableLines.push(`| ${compactedTable[rIdx].join(' | ')} |`);
-    }
-
-    return tableLines.join('\n');
+    return tableData;
   }
 
   private static _fallbackTextExtractor(data: unknown): string {
@@ -353,4 +535,43 @@ export class TextractCompactor {
     }
     return Array.from(new Set(lines)).join('\n');
   }
+
+  /**
+   * Varre o JSON do Textract procurando por datas de vigência (formatos comuns: DD/MM/AAAA).
+   */
+  static extractDates(data: any): string[] {
+    if (!data) return [];
+    const blocks = this._extractBlocks(data);
+    
+    // Filtra todas as linhas de texto do OCR
+    const lines = blocks
+      .filter(b => b && b.BlockType === 'LINE')
+      .map(b => (b.Text || '').trim())
+      .filter(Boolean);
+
+    // Expressão regular para encontrar datas no formato DD/MM/AAAA
+    const dateRegex = /\b(\d{2})[\/\.-](\d{2})[\/\.-](\d{4})\b/g;
+    const detectedDates = new Set<string>();
+
+    for (const text of lines) {
+      let match;
+      dateRegex.lastIndex = 0;
+      while ((match = dateRegex.exec(text)) !== null) {
+        const day = match[1];
+        const month = match[2];
+        const year = match[3];
+
+        const d = parseInt(day, 10);
+        const m = parseInt(month, 10);
+        const y = parseInt(year, 10);
+
+        if (d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 2000 && y <= 2100) {
+          detectedDates.add(`${year}-${month}-${day}`);
+        }
+      }
+    }
+
+    return Array.from(detectedDates);
+  }
 }
+

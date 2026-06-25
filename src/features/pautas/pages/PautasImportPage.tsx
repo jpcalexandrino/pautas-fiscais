@@ -1,8 +1,13 @@
-import { usePautas, useEstados } from '../hooks/usePautas';
-import { PautaUpload, type ResultadoProcessamento } from '../components/PautaUpload';
-import { ReprocessTab } from '../components/ReprocessTab';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Upload, Database } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { usePautas, useEstados, useOcrTables } from '../hooks/usePautas';
+import { useProdutos } from '@/features/produtos/hooks/useProdutos';
+import { OcrTablesViewer } from '../components/OcrTablesViewer';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { DatePicker } from '@/components/ui/date-picker';
+import { Upload, Database, Search, Check, UploadCloud, FileText, X, ArrowRight, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function PautasImportPage() {
@@ -11,36 +16,157 @@ export default function PautasImportPage() {
     uploadPauta,
     isUploading,
     ocrFiles = [],
-    reprocessPauta,
-    isReprocessing,
+    confirmManualPauta,
   } = usePautas();
 
-  const handleUpload = async (file: File, uf: string): Promise<ResultadoProcessamento> => {
-    const toastId = toast.loading('Processando pauta...');
+  const { produtos = [] } = useProdutos();
+
+  const [auditFilename, setAuditFilename] = useState<string>('');
+  const [vigenciaDate, setVigenciaDate] = useState<string>('');
+
+  // Estados para o formulário de upload
+  const [uploadUf, setUploadUf] = useState<string>('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadVigenciaDate, setUploadVigenciaDate] = useState<string>('');
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [mode, setMode] = useState<'select' | 'upload'>('select');
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Se não houver arquivos no banco, inicia no modo de upload automaticamente
+  useEffect(() => {
+    if (ocrFiles.length === 0) {
+      setMode('upload');
+    }
+  }, [ocrFiles.length]);
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (!isUploading) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    if (isUploading) return;
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      if (!file.name.toLowerCase().endsWith('.pdf') || file.type !== 'application/pdf') {
+        toast.error('Apenas arquivos PDF são aceitos.');
+        setSelectedFile(null);
+        return;
+      }
+      setSelectedFile(file);
+    }
+  };
+
+  const { data: queryData, isLoading: isLoadingTabelas } = useOcrTables(auditFilename);
+  const tabelas = queryData?.tabelas || [];
+  const sugestoesDatas = queryData?.sugestoesDatas || [];
+  const dbConfirmedCells = queryData?.confirmedCells || [];
+
+  const ocrFileUf = queryData?.uf || '';
+  const selectedAuditFile = ocrFiles.find((f: any) => f.filename === auditFilename);
+  const selectedAuditUf = ocrFileUf || (selectedAuditFile ? selectedAuditFile.uf : '');
+
+  // Preenche a data de vigência com a data cadastrada no banco, ou limpa se não houver
+  useEffect(() => {
+    if (auditFilename) {
+      const selectedFileObj = ocrFiles.find((f: any) => f.filename === auditFilename);
+      if (selectedFileObj && selectedFileObj.data_pauta) {
+        // Se a data_pauta for retornada como string ISO datetime de banco, pega apenas a parte da data YYYY-MM-DD
+        const datePart = typeof selectedFileObj.data_pauta === 'string'
+          ? selectedFileObj.data_pauta.split('T')[0]
+          : '';
+        setVigenciaDate(datePart);
+      } else {
+        setVigenciaDate('');
+      }
+    } else {
+      setVigenciaDate('');
+    }
+  }, [auditFilename, ocrFiles]);
+
+  // Preenche a data de vigência automaticamente com a primeira sugestão encontrada no OCR
+  useEffect(() => {
+    if (sugestoesDatas.length > 0 && !vigenciaDate) {
+      setVigenciaDate(sugestoesDatas[0]);
+      const dataFormatada = sugestoesDatas[0].split('-').reverse().join('/');
+      toast.success('Data de vigência autodetectada!', {
+        description: `Preenchemos o campo com a data ${dataFormatada} encontrada no PDF.`,
+      });
+    }
+  }, [sugestoesDatas, vigenciaDate]);
+
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.name.toLowerCase().endsWith('.pdf') || file.type !== 'application/pdf') {
+        toast.error('Apenas arquivos PDF são aceitos.');
+        setSelectedFile(null);
+        return;
+      }
+      setSelectedFile(file);
+    }
+  };
+
+  const handleUploadAndAudit = async () => {
+    if (!selectedFile || !uploadUf) {
+      toast.warning('Selecione o estado (UF) e o arquivo PDF antes de carregar.');
+      return;
+    }
+
+    const toastId = toast.loading('Processando OCR e tabelas da pauta...');
     try {
-      const result = await uploadPauta({ file, uf });
-
-      toast.success('Pauta processada com sucesso!', {
+      const result = await uploadPauta({
+        file: selectedFile,
+        uf: uploadUf,
+        dataPauta: uploadVigenciaDate || undefined
+      });
+      
+      toast.success('Pauta carregada com sucesso!', {
         id: toastId,
-        description: `${result.autoInserted} inseridos, ${result.pendingReview} pendentes de revisão.`,
+        description: `${result.autoInserted} inseridos, ${result.pendingReview} pendentes.`,
       });
 
-      return result;
+      // Auto-seleciona o arquivo recém-carregado para carregar a tabela na hora
+      setAuditFilename(result.arquivo);
+      if (uploadVigenciaDate) {
+        setVigenciaDate(uploadVigenciaDate);
+      }
+      
+      // Muda de volta para o modo de seleção com animação
+      setMode('select');
+      
+      // Limpa os campos do formulário de upload
+      setSelectedFile(null);
+      setUploadUf('');
+      setUploadVigenciaDate('');
+      if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (error) {
-      toast.error('Falha no processamento', {
+      toast.error('Falha no upload', {
         id: toastId,
-        description: error instanceof Error ? error.message : 'Erro inesperado ao enviar o arquivo.',
+        description: error instanceof Error ? error.message : 'Erro ao processar arquivo.',
       });
-      throw error;
     }
   };
 
   return (
-    <div className="animate-fade-in pb-10 space-y-6 max-w-2xl mx-auto px-4 sm:px-0">
+    <div className="animate-fade-in pb-10 space-y-6 max-w-7xl mx-auto px-4 sm:px-0">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Importar Pauta Fiscal</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Importar & Auditar Pautas Fiscais</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Envie o PDF extraído do Diário Oficial ou reprocessar dados já extraídos do Textract.
+          Selecione um PDF de pauta já processado no banco de dados ou envie um novo arquivo para estruturar e auditar preços de pauta.
         </p>
       </div>
 
@@ -49,31 +175,271 @@ export default function PautasImportPage() {
           Nenhum estado disponível para importação.
         </div>
       ) : (
-        <Tabs defaultValue="upload" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="upload" className="gap-2">
-              <Upload className="size-4" />
-              Novo Upload (PDF)
-            </TabsTrigger>
-            <TabsTrigger value="database" className="gap-2">
-              <Database className="size-4" />
-              Reprocessar Pauta
-            </TabsTrigger>
-          </TabsList>
+        <div className="space-y-6">
+          {/* Seção Superior de Controle */}
+          <div className="w-full bg-card border rounded-2xl shadow-md overflow-hidden transition-all duration-300">
+            <div className="relative overflow-hidden">
+              <div 
+                className="flex w-[200%] transition-transform duration-500 ease-in-out"
+                style={{ transform: mode === 'select' ? 'translateX(0)' : 'translateX(-50%)' }}
+              >
+                {/* 1. PAINEL SELECIONAR DO BANCO */}
+                <div className="w-1/2 p-6 shrink-0 space-y-6">
+                  {/* Header Row */}
+                  <div className="flex items-center justify-between border-b pb-3">
+                    <div className="flex items-center gap-3 text-primary font-semibold text-sm">
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <Database className="size-4" />
+                      </div>
+                      <div className="text-left">
+                        <h2 className="text-sm font-semibold text-foreground">Selecionar Pauta Existente</h2>
+                        <p className="text-[11px] text-muted-foreground font-normal">Selecione um arquivo PDF que já foi carregado e defina a vigência.</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setMode('upload')}
+                      className="text-xs text-primary hover:underline flex items-center gap-1 font-semibold cursor-pointer shrink-0 bg-primary/5 hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      Enviar novo PDF <ArrowRight className="size-3" />
+                    </button>
+                  </div>
 
-          <TabsContent value="upload">
-            <PautaUpload estados={estados} onUpload={handleUpload} isUploading={isUploading} />
-          </TabsContent>
+                  {/* Form Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+                    {/* Selecionar Arquivo */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-muted-foreground">Arquivo de Pauta *</label>
+                      <Select
+                        value={auditFilename || undefined}
+                        onValueChange={(val) => setAuditFilename(val)}
+                        disabled={ocrFiles.length === 0}
+                      >
+                        <SelectTrigger className="w-full bg-background text-xs h-10">
+                          <SelectValue placeholder={ocrFiles.length === 0 ? "Nenhum arquivo" : "Selecione o arquivo..."} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ocrFiles.map((file: any) => (
+                            <SelectItem key={file.id} value={file.filename} className="text-xs">
+                              {file.filename}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-          <TabsContent value="database">
-            <ReprocessTab
-              estados={estados}
-              ocrFiles={ocrFiles}
-              reprocessPauta={reprocessPauta}
-              isReprocessing={isReprocessing}
-            />
-          </TabsContent>
-        </Tabs>
+                    {/* Exibir UF */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-muted-foreground">Estado (UF)</label>
+                      {selectedAuditUf ? (
+                        <div className="flex items-center gap-2 h-10 px-3 border rounded-md bg-muted/40 text-xs font-medium text-foreground">
+                          <span className="bg-primary/15 text-primary px-1.5 py-0.5 rounded text-[10px] font-bold">
+                            {selectedAuditUf}
+                          </span>
+                          <span className="truncate text-muted-foreground text-[11px]">
+                            {estados.find((e: any) => e.uf === selectedAuditUf)?.nome || ''}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center h-10 px-3 border border-dashed rounded-md bg-muted/20 text-xs text-muted-foreground/60 italic">
+                          Sem seleção
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Selecionar Vigência */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-muted-foreground flex items-center justify-between">
+                        <span>Data de Vigência *</span>
+                        {sugestoesDatas.includes(vigenciaDate) && (
+                          <span className="text-[9px] text-emerald-600 bg-emerald-500/10 px-1 py-0.5 rounded font-semibold animate-pulse">
+                            Detectada
+                          </span>
+                        )}
+                      </label>
+                      <DatePicker
+                        value={vigenciaDate}
+                        onChange={setVigenciaDate}
+                        disabled={!auditFilename}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. PAINEL ENVIAR NOVO PDF */}
+                <div className="w-1/2 p-6 shrink-0 space-y-6">
+                  {/* Header Row */}
+                  <div className="flex items-center justify-between border-b pb-3">
+                    <div className="flex items-center gap-3 text-primary font-semibold text-sm">
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <Upload className="size-4" />
+                      </div>
+                      <div className="text-left">
+                        <h2 className="text-sm font-semibold text-foreground">Enviar Novo PDF de Pauta</h2>
+                        <p className="text-[11px] text-muted-foreground font-normal">Faça o upload do novo PDF para processar via OCR e IA.</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setMode('select')}
+                      className="text-xs text-primary hover:underline flex items-center gap-1 font-semibold cursor-pointer shrink-0 bg-primary/5 hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      <ArrowLeft className="size-3" /> Voltar para Selecionar
+                    </button>
+                  </div>
+
+                  {/* Upload controls */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-1 items-start">
+                    {/* Dropzone Area */}
+                    <div className="space-y-1.5 lg:col-span-5">
+                      <label className="text-xs font-semibold text-muted-foreground">Arquivo PDF *</label>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="application/pdf"
+                        className="hidden"
+                        onChange={handleFileChange}
+                        disabled={isUploading}
+                      />
+                      <div
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        onClick={() => !isUploading && fileInputRef.current?.click()}
+                        className={`
+                          border-2 border-dashed rounded-lg p-3 text-center cursor-pointer transition-all duration-200 min-h-[90px] flex flex-col items-center justify-center gap-1
+                          ${isDragging 
+                            ? 'border-primary bg-primary/5 scale-[0.98]' 
+                            : 'border-muted-foreground/20 hover:border-primary/50 hover:bg-muted/30'
+                          }
+                          ${selectedFile ? 'border-emerald-500/30 bg-emerald-500/5' : ''}
+                          ${isUploading ? 'pointer-events-none opacity-60' : ''}
+                        `}
+                      >
+                        {selectedFile ? (
+                          <div className="flex items-center justify-between w-full px-2">
+                            <div className="flex items-center gap-2 truncate">
+                              <div className="p-1 rounded bg-emerald-500/10 text-emerald-600 shrink-0">
+                                <FileText className="size-4" />
+                              </div>
+                              <div className="text-left truncate">
+                                <div className="text-[11px] font-semibold text-foreground truncate max-w-[120px] sm:max-w-[150px]">
+                                  {selectedFile.name}
+                                </div>
+                                <div className="text-[9px] text-muted-foreground">
+                                  {(selectedFile.size / 1024).toFixed(0)} KB
+                                </div>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedFile(null);
+                                  if (fileInputRef.current) fileInputRef.current.value = '';
+                              }}
+                              className="text-destructive hover:bg-destructive/10 p-1 rounded transition-colors shrink-0 cursor-pointer"
+                            >
+                              <X className="size-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <UploadCloud className={`size-5 text-muted-foreground/60 transition-transform ${isDragging ? 'scale-110 text-primary' : ''}`} />
+                            <div className="text-xs text-muted-foreground font-medium">
+                              Arraste seu PDF ou <span className="text-primary hover:underline font-semibold">procure</span>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Fields + Button */}
+                    <div className="lg:col-span-7 grid grid-cols-2 gap-3 items-end">
+                      {/* Select UF */}
+                      <div className="space-y-1.5 col-span-1">
+                        <label className="text-xs font-semibold text-muted-foreground">Estado (UF) *</label>
+                        <Select value={uploadUf} onValueChange={setUploadUf} disabled={isUploading}>
+                          <SelectTrigger className="bg-background text-xs h-10">
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-56">
+                            {estados.map((e: any) => (
+                              <SelectItem key={e.uf} value={e.uf} className="text-xs">
+                                {e.uf} - {e.nome}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Data de Vigência da Pauta */}
+                      <div className="space-y-1.5 col-span-1">
+                        <label className="text-xs font-semibold text-muted-foreground">Vigência (Opcional)</label>
+                        <DatePicker
+                          value={uploadVigenciaDate}
+                          onChange={setUploadVigenciaDate}
+                          disabled={isUploading}
+                          placeholder="Autodetectar"
+                        />
+                      </div>
+
+                      {/* Botão de Envio */}
+                      <div className="col-span-2 pt-1">
+                        <Button
+                          className={`w-full text-xs h-10 font-semibold transition-all duration-200 ${
+                            selectedFile && uploadUf && !isUploading
+                              ? 'bg-primary text-primary-foreground shadow-md hover:shadow-lg' 
+                              : 'bg-muted text-muted-foreground border'
+                          }`}
+                          onClick={handleUploadAndAudit}
+                          disabled={!selectedFile || !uploadUf || isUploading}
+                        >
+                          {isUploading ? (
+                            <>
+                              <Spinner className="w-4 h-4 animate-spin mr-2" />
+                              Processando...
+                            </>
+                          ) : (
+                            <>
+                              <Check className="size-4 mr-2" />
+                              Processar e Auditar
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          {/* Seção Inferior: Tabelas de Auditoria */}
+          {auditFilename ? (
+            <div className="pt-2">
+              <OcrTablesViewer
+                tabelas={tabelas}
+                isLoading={isLoadingTabelas}
+                filename={auditFilename}
+                produtos={produtos}
+                uf={selectedAuditUf}
+                dataPauta={vigenciaDate}
+                dbConfirmedCells={dbConfirmedCells}
+                onConfirmManual={confirmManualPauta}
+              />
+            </div>
+          ) : (
+            <div className="text-center py-20 text-muted-foreground border rounded-lg bg-card shadow-sm border-dashed space-y-2">
+              <Search className="size-8 mx-auto text-muted-foreground/60" />
+              <h3 className="font-semibold text-foreground text-sm">Nenhuma pauta selecionada</h3>
+              <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                Selecione uma pauta existente acima ou carregue um novo arquivo PDF para visualizar e auditar as tabelas.
+              </p>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

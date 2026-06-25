@@ -29,10 +29,13 @@ export function usePautas(filters?: { fk_estado?: number; fk_produto?: number })
   });
 
   const uploadMutation = useMutation({
-    mutationFn: async ({ file, uf }: { file: File; uf: string }) => {
+    mutationFn: async ({ file, uf, dataPauta }: { file: File; uf: string; dataPauta?: string }) => {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('uf', uf);
+      if (dataPauta) {
+        formData.append('data_pauta', dataPauta);
+      }
       const response = await apiUpload('/pautas/upload', formData);
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
@@ -43,6 +46,7 @@ export function usePautas(filters?: { fk_estado?: number; fk_produto?: number })
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pautas'] });
       queryClient.invalidateQueries({ queryKey: ['pautas-pendentes'] });
+      queryClient.invalidateQueries({ queryKey: ['pautas-ocr-files'] });
     },
   });
 
@@ -113,6 +117,36 @@ export function usePautas(filters?: { fk_estado?: number; fk_produto?: number })
     },
   });
 
+  const confirmManualMutation = useMutation({
+    mutationFn: async (params: {
+      fk_produtos: number[];
+      uf: string;
+      descricao_estado: string;
+      valor_pauta: number;
+      data_pauta: string;
+      arquivo_origem: string;
+      salvar_de_para: boolean;
+      cell_key?: string;
+    }) => {
+      const response = await apiFetch('/pautas/confirmar-manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || 'Falha ao gravar pauta manualmente');
+      }
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pautas'] });
+      queryClient.invalidateQueries({ queryKey: ['pautas-pendentes'] });
+      queryClient.invalidateQueries({ queryKey: ['de-para'] });
+      queryClient.invalidateQueries({ queryKey: ['pautas-ocr-tables'] });
+    },
+  });
+
   return {
     loading: pautasQuery.isLoading || pendentesQuery.isLoading || ocrFilesQuery.isLoading,
     pautas: pautasQuery.data || [],
@@ -121,6 +155,7 @@ export function usePautas(filters?: { fk_estado?: number; fk_produto?: number })
     uploadPauta: uploadMutation.mutateAsync,
     reprocessPauta: reprocessMutation.mutateAsync,
     confirmPendente: confirmMutation.mutateAsync,
+    confirmManualPauta: confirmManualMutation.mutateAsync,
     deletePendente: deletePendenteMutation.mutateAsync,
     deleteAllPendentes: deleteAllPendentesMutation.mutateAsync,
     isUploading: uploadMutation.isPending,
@@ -142,3 +177,17 @@ export function useEstados() {
     enabled: !!localStorage.getItem('token'),
   });
 }
+
+export function useOcrTables(filename?: string) {
+  return useQuery<{ tabelas: any[]; sugestoesDatas: string[]; confirmedCells: string[]; uf?: string }>({
+    queryKey: ['pautas-ocr-tables', filename],
+    queryFn: async () => {
+      if (!filename) return { tabelas: [], sugestoesDatas: [], confirmedCells: [], uf: '' };
+      const response = await apiFetch(`/pautas/ocr-files/${encodeURIComponent(filename)}/tabelas`);
+      if (!response.ok) throw new Error('Falha ao carregar tabelas do OCR');
+      return await response.json();
+    },
+    enabled: !!filename && !!localStorage.getItem('token'),
+  });
+}
+
