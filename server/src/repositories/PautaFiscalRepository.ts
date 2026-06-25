@@ -53,7 +53,7 @@ class PautaFiscalRepository {
       );
     `);
 
-    await db.query(`
+    return db.query(`
       CREATE TABLE IF NOT EXISTS pauta_arquivo_ocr (
         id BIGSERIAL PRIMARY KEY,
         filename VARCHAR(500) NOT NULL UNIQUE,
@@ -61,18 +61,10 @@ class PautaFiscalRepository {
         textract_json JSONB NOT NULL,
         ai_json JSONB,
         data_pauta DATE,
-        confirmed_cells JSONB DEFAULT '[]'::jsonb,
+        confirmed_cells JSONB DEFAULT '[]'..jsonb,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
-    `);
-
-    await db.query(`
-      ALTER TABLE pauta_arquivo_ocr ADD COLUMN IF NOT EXISTS data_pauta DATE;
-    `);
-
-    return db.query(`
-      ALTER TABLE pauta_arquivo_ocr ADD COLUMN IF NOT EXISTS confirmed_cells JSONB DEFAULT '[]'::jsonb;
     `);
   }
 
@@ -253,15 +245,6 @@ class PautaFiscalRepository {
 
   async deleteAllPendentes(): Promise<QueryResult> {
     return db.query('DELETE FROM fato_pauta_pendente');
-  }
-
-  async addConfirmedCell(filename: string, cellKey: string): Promise<QueryResult> {
-    return db.query(
-      `UPDATE pauta_arquivo_ocr
-       SET confirmed_cells = COALESCE(confirmed_cells, '[]'::jsonb) || jsonb_build_array($2::text)
-       WHERE filename = $1`,
-      [filename, cellKey]
-    );
   }
 }
 
