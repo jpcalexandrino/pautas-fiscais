@@ -71,7 +71,12 @@ export class TextractCompactor {
       const lineBlocks = pageBlocks.filter(b => b.BlockType === 'LINE');
       const pageText = lineBlocks.map(b => b.Text || '').join(' ').toLowerCase();
       
-      const hasBrand = BRAND_SLUGS_LOWER.some(slug => pageText.includes(slug));
+      const hasBrand = BRAND_SLUGS_LOWER.some(slug => {
+        if (slug === '3.0') {
+          return /\b3\.0\b/.test(pageText);
+        }
+        return pageText.includes(slug);
+      });
       
       if (!hasBrand) {
         logger.info(`[CHUNK] Ignorando página ${pageNum} por não conter marca relevante.`);
@@ -382,11 +387,17 @@ export class TextractCompactor {
   private static _isRowRelevant(rowText: string): boolean {
     const lower = rowText.toLowerCase();
 
-    if (lower.includes('imperio') || lower.includes('império') || lower.includes('cidade imperial') || lower.includes('3.0')) {
+    if (
+      lower.includes('imperio') ||
+      lower.includes('império') ||
+      lower.includes('cidade imperial') ||
+      lower.includes('puro malte pilsen') ||
+      /\b3\.0\b/.test(lower)
+    ) {
       return true;
     }
 
-    if (lower.includes('imperial')) {
+    if (lower.includes('cidade imperial')) {
       const isStyle = /imperial\s+(stout|ipa|sour|red|double|ap|lager|pils|wit|helles|dunkel)/i.test(lower) ||
                       /(stout|ipa|sour|red|double|ap|lager|pils|wit|helles|dunkel)\s+imperial/i.test(lower);
       if (!isStyle) {
