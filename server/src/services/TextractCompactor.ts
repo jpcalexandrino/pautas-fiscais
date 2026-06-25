@@ -129,6 +129,48 @@ export class TextractCompactor {
     return findBlocks(data) || [];
   }
 
+  private static _compactTable(table: string[][], uf: string): string[][] {
+    if (table.length === 0) return [];
+    const ufUpper = uf.toUpperCase();
+
+    // 1. Detecção e divisão de tabelas paralelas (ex: MG com 12 colunas)
+    if (ufUpper === 'MG' && table[0].length >= 11) {
+      const newTable: string[][] = [];
+      // Cabeçalho da tabela nova (5 colunas)
+      newTable.push(['ITEM', 'EMBALAGEM_VOLUME', 'MARCA_PRODUTO', 'COD_FABRICANTE', 'VALOR_PMPF']);
+
+      for (let rIdx = 1; rIdx < table.length; rIdx++) {
+        const row = table[rIdx];
+        if (row.length < 5) continue;
+        
+        // Lado esquerdo: colunas 0 a 4
+        const leftRow = row.slice(0, 5);
+        // Lado direito: colunas 7 a 11 (se existirem)
+        const rightRow = row.length >= 12 ? row.slice(7, 12) : [];
+
+        if (this._isRowRelevant(leftRow.join(' '))) {
+          newTable.push(leftRow);
+        }
+        if (rightRow.length >= 5 && this._isRowRelevant(rightRow.join(' '))) {
+          newTable.push(rightRow);
+        }
+      }
+      return newTable;
+    }
+
+    // 2. Filtro geral de marca para outros estados
+    const newTable: string[][] = [];
+    newTable.push(table[0]); // Mantém o cabeçalho original
+
+    for (let rIdx = 1; rIdx < table.length; rIdx++) {
+      const row = table[rIdx];
+      if (this._isRowRelevant(row.join(' '))) {
+        newTable.push(row);
+      }
+    }
+    return newTable;
+  }
+
   private static _formatNestedTables(tables: any[][], uf: string): string[] {
     const finalLines: string[] = [];
     const layout = getLayoutForUF(uf);
@@ -137,36 +179,29 @@ export class TextractCompactor {
       const table = tables[tIdx];
       if (!Array.isArray(table) || table.length === 0) continue;
 
-      const hasBrand = table.some(row =>
-        Array.isArray(row) && row.some(cell => this._isRowRelevant(String(cell)))
-      );
+      const tableData: string[][] = table.map(row => {
+        if (!Array.isArray(row)) return [];
+        return row.map(cell => cell !== undefined ? String(cell).trim() : '');
+      });
 
-      if (!hasBrand) continue;
+      const compactedTable = this._compactTable(tableData, uf);
+      if (compactedTable.length <= 1) continue;
 
       finalLines.push(`--- TABELA DE PRODUTOS ${tIdx + 1} ---`);
 
-      let maxCols = 0;
-      table.forEach(row => {
-        if (Array.isArray(row) && row.length > maxCols) {
-          maxCols = row.length;
-        }
-      });
+      let headers = compactedTable[0];
+      const customHeaders = layout.getTableHeaders(headers.length);
+      if (customHeaders && customHeaders.length > 0 && !customHeaders[0].startsWith('COLUNA_')) {
+        headers = customHeaders;
+      }
 
-      if (maxCols === 0) continue;
-
-      const headers = layout.getTableHeaders(maxCols);
       finalLines.push(`| ${headers.join(' | ')} |`);
-      const separator = headers.map(h => h.trim() ? '---' : '').join(' | ');
+      const separator = headers.map(() => '---').join(' | ');
       finalLines.push(`| ${separator} |`);
 
-      table.forEach((row) => {
-        if (!Array.isArray(row)) return;
-        const cells = Array.from({ length: maxCols }).map((_, colIdx) => {
-          const cellVal = row[colIdx];
-          return cellVal !== undefined ? String(cellVal).trim() : '';
-        });
-        finalLines.push(`| ${cells.join(' | ')} |`);
-      });
+      for (let rIdx = 1; rIdx < compactedTable.length; rIdx++) {
+        finalLines.push(`| ${compactedTable[rIdx].join(' | ')} |`);
+      }
 
       finalLines.push('');
     }
@@ -220,25 +255,12 @@ export class TextractCompactor {
       rows[rIdx].push(cell);
     }
 
-    const tableLines: string[] = [];
-
-    // Injeta cabeçalhos predefinidos do LayoutRegistry se existirem específicos para a UF
-    if (uf) {
-      const layout = getLayoutForUF(uf);
-      const customHeaders = layout.getTableHeaders(maxCol);
-      // Se não for um cabeçalho genérico ("COLUNA_1", etc.), adiciona como cabeçalho principal no topo do Markdown da tabela
-      if (customHeaders && customHeaders.length > 0 && !customHeaders[0].startsWith('COLUNA_')) {
-        tableLines.push(`| ${customHeaders.join(' | ')} |`);
-        const separator = customHeaders.map(h => h.trim() ? '---' : '').join(' | ');
-        tableLines.push(`| ${separator} |`);
-      }
-    }
-
     const sortedRowIndices = Object.keys(rows).map(Number).sort((a, b) => a - b);
+    const tableData: string[][] = [];
 
     for (const rIdx of sortedRowIndices) {
       const rowCells = rows[rIdx].sort((a, b) => (a.ColumnIndex || 1) - (b.ColumnIndex || 1));
-      const rowText = Array.from({ length: maxCol }).map((_, colIdx) => {
+      const rowCellsText = Array.from({ length: maxCol }).map((_, colIdx) => {
         const cell = rowCells.find(c => c.ColumnIndex === colIdx + 1);
         if (!cell) return '';
         const childIds = cell.Relationships?.find((r: any) => r.Type === 'CHILD')?.Ids || [];
@@ -248,15 +270,30 @@ export class TextractCompactor {
           .join(' ');
         
         return cellText;
-      }).join(' | ');
+      });
+      tableData.push(rowCellsText);
+    }
 
-      tableLines.push(`| ${rowText} |`);
+    const compactedTable = this._compactTable(tableData, uf || '');
+    if (compactedTable.length <= 1) return '';
 
-      // Se não injetamos cabeçalhos customizados no topo, tratamos a primeira linha como cabeçalho
-      if (rIdx === 1 && tableLines.length === 1) {
-        const separator = Array.from({ length: maxCol }).map(() => '---').join(' | ');
-        tableLines.push(`| ${separator} |`);
+    const tableLines: string[] = [];
+    let headers = compactedTable[0];
+    
+    if (uf) {
+      const layout = getLayoutForUF(uf);
+      const customHeaders = layout.getTableHeaders(headers.length);
+      if (customHeaders && customHeaders.length > 0 && !customHeaders[0].startsWith('COLUNA_')) {
+        headers = customHeaders;
       }
+    }
+
+    tableLines.push(`| ${headers.join(' | ')} |`);
+    const separator = headers.map(() => '---').join(' | ');
+    tableLines.push(`| ${separator} |`);
+
+    for (let rIdx = 1; rIdx < compactedTable.length; rIdx++) {
+      tableLines.push(`| ${compactedTable[rIdx].join(' | ')} |`);
     }
 
     return tableLines.join('\n');

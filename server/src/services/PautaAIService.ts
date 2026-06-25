@@ -34,7 +34,7 @@ export interface PautaAIContext {
   }>;
 }
 
-const CHUNK_SIZE = 25000;
+const CHUNK_SIZE = 100000;
 
 class PautaAIService {
   async extractPautaItems(context: PautaAIContext): Promise<PautaItemExtraido[]> {

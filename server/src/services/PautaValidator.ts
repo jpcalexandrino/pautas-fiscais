@@ -14,55 +14,10 @@ export function validatePautaItem(item: PautaItemExtraido, catalogVolumes?: Set<
     return false;
   }
 
-  // Se não temos os volumes cadastrados do catálogo, aceitamos como fallback
-  if (!catalogVolumes || catalogVolumes.size === 0) {
-    return true;
-  }
-
-  const parsedBatch = parseBatchDescription(item.descricao_estado);
-
-  if (parsedBatch.isBatch) {
-    // Caso 1: Faixa de volumes ou múltiplos volumes (ex: "Lata de 300 a 399ml")
-    let matchFound = false;
-
-    if (parsedBatch.minVolume !== undefined && parsedBatch.maxVolume !== undefined) {
-      // Verifica se existe algum volume do catálogo dentro do range
-      for (const vol of catalogVolumes) {
-        if (vol >= parsedBatch.minVolume && vol <= parsedBatch.maxVolume) {
-          matchFound = true;
-          break;
-        }
-      }
-    } else if (parsedBatch.specificVolumes && parsedBatch.specificVolumes.length > 0) {
-      // Verifica se algum dos volumes específicos está no catálogo
-      for (const vol of parsedBatch.specificVolumes) {
-        if (catalogVolumes.has(vol)) {
-          matchFound = true;
-          break;
-        }
-      }
-    }
-
-    return matchFound;
-  } else {
-    // Caso 2: Volume único específico (ex: "Lata 350ml")
-    if (parsedBatch.specificVolumes && parsedBatch.specificVolumes.length === 1) {
-      return catalogVolumes.has(parsedBatch.specificVolumes[0]);
-    }
-
-    // Fallback: Tentativa via regex simples se o batchMatcher não identificar volume estruturado
-    const volumeMatch = item.descricao_estado?.match(/(\d+)\s*(ml|ML|l|L)/);
-    if (volumeMatch) {
-      let v = parseInt(volumeMatch[1], 10);
-      const unit = volumeMatch[2].toLowerCase();
-      if (unit === 'l') {
-        v *= 1000;
-      }
-      return catalogVolumes.has(v);
-    }
-  }
-
-  return false;
+  // Sempre consideramos o item válido se passou nos testes básicos de estrutura e preço.
+  // Deixamos a verificação fina de volume para o Matching e a tela de De-Para. Isso permite que
+  // itens com faixas de volume (ex: "até 299ml", "300 a 360ml") sejam mantidos e associados manualmente.
+  return true;
 }
 
 export async function validateAndReprocess(
@@ -96,8 +51,15 @@ export async function validateAndReprocess(
     }
   }
 
+  // Se já temos itens válidos, não fazemos o retry na IA para evitar que ela retorne menos itens ou se confunda.
+  // Apenas descartamos os itens inválidos (ex: itens sem preço no PDF ou concorrentes que escaparam do filtro preliminar).
   if (invalidItems.length > 0) {
-    logger.warn(`[VALIDATOR] ${invalidItems.length} item(s) inválido(s). Reprocessando chunk...`);
+    if (validItems.length > 0) {
+      logger.info(`[VALIDATOR] ${validItems.length} item(s) válido(s) mantido(s). ${invalidItems.length} item(s) inválido(s) descartado(s) sem requerer reprocessamento.`);
+      return validItems;
+    }
+
+    logger.warn(`[VALIDATOR] Nenhum item válido encontrado e ${invalidItems.length} item(s) inválido(s). Reprocessando chunk com instruções extra...`);
 
     const invalidList = invalidItems
       .map(it => `"${it.descricao_estado}" (valor_pauta: ${it.valor_pauta ?? 'nulo'})`)

@@ -24,7 +24,8 @@ const BEER_STYLES = [
 ] as const;
 
 const STOP_WORDS = new Set([
-  'cerveja', 'lata', 'garrafa', 'a', 'de', 'da', 'do', 'e', 'ou', 'com', 'em', 'para', 'sem', 'de-para'
+  'cerveja', 'lata', 'garrafa', 'a', 'de', 'da', 'do', 'e', 'ou', 'com', 'em', 'para', 'sem', 'de-para',
+  'vidro', 'descartavel', 'retornavel', 'embalagem', 'cx', 'pack', 'caixa', 'unidades', 'un'
 ]);
 
 /**
@@ -55,7 +56,7 @@ export function parseBatchDescription(description: string): ParsedBatch {
 
   // 1. Detectar faixa de volume (ex: "300 a 500ml", "300-500ml", "300/500ml")
   // Simplificado pois os acentos (à, até) já foram removidos pelo cleanString
-  const rangeRegex = /(\d+)\s*(?:ml|l)?\s*(?:a|e|ate|-|\/)\s*(\d+)\s*(ml|l)/gi;
+  const rangeRegex = /(\d+)\s*(?:ml|l)?\s*(?:a|e|ate|-|\/|\s+)\s*(\d+)\s*(ml|l)/gi;
   const rangeMatch = rangeRegex.exec(normalized);
 
   if (rangeMatch) {
@@ -95,7 +96,7 @@ export function parseBatchDescription(description: string): ParsedBatch {
 
   // 3. Limpar volumes da descrição para analisar estilos/marca
   let cleanText = normalized
-    .replace(/(\d+)\s*(?:ml|l)?\s*(?:a|e|ate|-|\/)\s*(\d+)\s*(ml|l)/gi, ' ')
+    .replace(/(\d+)\s*(?:ml|l)?\s*(?:a|e|ate|-|\/|\s+)\s*(\d+)\s*(ml|l)/gi, ' ')
     .replace(/\b\d+\s*(ml|l)\b/gi, ' ')
     .replace(/[^a-z0-9\s]/g, ' ') // Agora sim removemos os hífens/barras residuais
     .replace(/\s+/g, ' ')

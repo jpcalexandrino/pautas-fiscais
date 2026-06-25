@@ -5,12 +5,16 @@ export interface UFLayout {
 
 export const GLOBAL_INSTRUCTIONS = `
 INSTRUÇÕES GERAIS DE EXTRAÇÃO E MAPEAMENTO (CRÍTICO):
-1. Filtro de Marca Relevante: Você deve extrair APENAS os itens da marca Cidade Imperial, Império, Imperial ou 3.0. Ignore marcas concorrentes (como Ambev, Heineken, Petrópolis, Coca-Cola, etc.).
+1. Filtro de Marca Relevante e Descarte Localizado:
+   - Você deve extrair APENAS os itens que pertençam à nossa marca (Cidade Imperial, Império, Imperial ou 3.0). Ignore marcas concorrentes (como Ambev, Heineken, Stella, Budweiser, Brahma, Skol, Kaiser, Petrópolis, Coca-Cola, etc.).
+   - IMPORTANTE: O descarte de concorrentes deve ser LOCALIZADO. Em tabelas paralelas (como em MG) ou tabelas em matriz (como em PR), um produto nosso e um produto concorrente podem aparecer na mesma linha do Markdown. Nesses casos, extraia as informações do nosso produto normalmente e ignore apenas o concorrente. NUNCA ignore ou descarte a linha inteira do Markdown se ela contiver algum produto da nossa marca.
 2. Correspondência Estrita de Volume: O volume (ml ou litros) extraído de cada produto deve obrigatoriamente se alinhar ou cobrir os produtos listados em "produtos_referencia".
    - Se for um item de volume específico, use o volume do produto correspondente (ex: se o PDF tiver 350ml e houver correspondente com 350ml nas referências, use-o). Não invente volumes que não estão cadastrados nas referências (como 355ml se só existir 350ml).
    - Se for uma categoria de faixa (ex: "lata de 300 a 399ml"), preserve a descrição da faixa ("lata de 300 a 399ml") no campo "descricao_estado".
-3. Identificação do PMPF / Valor de Pauta: Os cabeçalhos das tabelas variam muito. Identifique a coluna correta do Preço Médio (PMPF, Valor de Pauta, Preço Sugerido, Preço de Referência).
-   - NÃO CONFUNDA o valor do PMPF com: código NCM, alíquota de ICMS (ex: 18%), percentual de MVA (ex: 40%), ou código de fabricante. O PMPF é tipicamente um valor monetário em reais (ex: 4,50, 6,20).
+3. Identificação do PMPF / Valor de Pauta com Cabeçalhos Bagunçados (Resiliência de OCR):
+   - Os cabeçalhos das tabelas variam muito e podem conter erros de OCR (ex: "PMPF" virar "PNPF" ou "PRECO", "LATA" virar "LA1A"). Mapeie semanticamente os cabeçalhos.
+   - NÃO CONFUNDA o valor do PMPF com: código NCM (8 dígitos), alíquota de ICMS (ex: 12%, 18%, 20%, 25%), percentual de MVA (ex: 40%), ou número de item (ex: 1, 2, 3).
+   - O PMPF é sempre um valor monetário em reais (ex: 4.50, 6.20). Se o cabeçalho estiver bagunçado ou deslocado, infira a coluna do preço analisando o padrão dos dados da coluna (dados monetários decimais).
 4. Retorno Estruturado: Retorne as informações estritamente estruturadas no formato JSON solicitado, sem explicações em prosa.
 `;
 
@@ -31,7 +35,7 @@ export const LayoutRegistry: Record<string, UFLayout> = {
     }
   },
   MG: {
-    guideline: 'As tabelas do estado de Minas Gerais trazem as colunas ITEM, EMBALAGEM_VOLUME, MARCA_PRODUTO, COD_FABRICANTE e VALOR_PMPF. IMPORTANTE: Essas tabelas costumam ser paralelas e vir lado a lado na mesma página. No Markdown, isso aparecerá como uma única linha de tabela com cerca de 12 colunas, contendo duas sequências de dados (ex: ITEM | EMBALAGEM_VOLUME | MARCA_PRODUTO | COD_FABRICANTE | VALOR_PMPF | | | ITEM | EMBALAGEM_VOLUME | MARCA_PRODUTO | COD_FABRICANTE | VALOR_PMPF). Você DEVE tratar cada grupo de colunas de forma totalmente independente para extrair os produtos correspondentes. Nunca misture o nome/marca de um produto com o valor de pauta (VALOR_PMPF) da coluna lateral.',
+    guideline: 'As tabelas do estado de Minas Gerais trazem as colunas ITEM, EMBALAGEM_VOLUME, MARCA_PRODUTO, COD_FABRICANTE e VALOR_PMPF. IMPORTANTE: Essas tabelas costumam ser paralelas e vir lado a lado na mesma página. No Markdown, isso aparecerá como uma única linha de tabela com cerca de 12 colunas, contendo duas sequências de dados (ex: ITEM | EMBALAGEM_VOLUME | MARCA_PRODUTO | COD_FABRICANTE | VALOR_PMPF | | | ITEM | EMBALAGEM_VOLUME | MARCA_PRODUTO | COD_FABRICANTE | VALOR_PMPF). Você DEVE tratar cada grupo de colunas (as colunas de 1 a 5 e as de 8 a 12) de forma totalmente independente para extrair os produtos correspondentes. Se uma das colunas (ou lados) pertencer a um concorrente e a outra metade for um produto da nossa marca, descarte apenas a metade do concorrente e extraia a nossa marca normalmente. NUNCA misture ou confunda os dados de um lado com a coluna de preço (VALOR_PMPF) da coluna paralela do outro lado.',
     getTableHeaders: (numCols: number) => {
       if (numCols === 12) {
         return [
@@ -47,7 +51,7 @@ export const LayoutRegistry: Record<string, UFLayout> = {
     }
   },
   PR: {
-    guideline: 'O cabeçalho traz CNPJ/Nome do Fabricante, Marca/Produto e uma matriz de embalagens subdividida por faixas de volume. Propague o fabricante para cada item.',
+    guideline: 'O Paraná (PR) utiliza tabelas em matriz onde cada linha representa uma marca/produto (especificada na coluna MARCA_PRODUTO) e as colunas subsequentes representam tipos de embalagens/volumes (ex: VIDRO_PET_DESCARTAVEL_ATE_330ML, LATA_ALUMINIO, BARRIL_ATE_5L, etc.) com o preço de pauta correspondente. Para cada linha de produto que pertença à nossa marca, você DEVE gerar um objeto JSON separado para cada coluna subsequente que contiver um preço válido (desconsidere colunas vazias ou com traço "-"). Para cada item extraído, monte a "descricao_estado" juntando o nome da marca/produto da linha com a descrição da embalagem/faixa de volume do cabeçalho da coluna (ex: "IMPERIO PILSEN LATA_ALUMINIO") e use o valor daquela coluna como valor_pauta.',
     getTableHeaders: (numCols: number) => {
       if (numCols === 10) {
         return [
