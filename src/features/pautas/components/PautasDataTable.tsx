@@ -42,13 +42,13 @@ export function PautasDataTable({ pautas, loading, getTableInstance }: PautasDat
   const columns = useMemo<ColumnDef<any>[]>(
     () => calculateColumnSizes([
       {
-        accessorKey: 'uf',
+        accessorFn: (row) => `${row.uf || ''} - ${row.nome_estado || ''}`,
         id: 'uf',
         header: 'UF - Estado',
         size: 150,
         cell: ({ row }) => (
-          <span className="font-medium">
-            {String(row.original.uf)} - {String(row.original.nome_estado)}
+          <span>
+            {String(row.original.uf || '')} - {String(row.original.nome_estado || '')}
           </span>
         ),
       },

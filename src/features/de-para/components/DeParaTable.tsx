@@ -55,18 +55,15 @@ export function DeParaTable({ items, onEdit, onDelete, loading }: DeParaTablePro
         ),
       },
       {
-        accessorKey: 'uf',
+        accessorFn: (row) => `${row.uf || ''} - ${row.nome_estado || ''}`,
         id: 'uf',
-        header: 'UF',
-        size: 70,
-        cell: ({ row }) => <span className="font-medium">{String(row.original.uf)}</span>,
-      },
-      {
-        accessorKey: 'nome_estado',
-        id: 'nome_estado',
-        header: 'Estado',
+        header: 'UF - Estado',
         size: 150,
-        cell: ({ row }) => String(row.original.nome_estado || '-'),
+        cell: ({ row }) => (
+          <span>
+            {String(row.original.uf || '')} - {String(row.original.nome_estado || '')}
+          </span>
+        ),
       },
       {
         accessorKey: 'termo_descricao_estado',

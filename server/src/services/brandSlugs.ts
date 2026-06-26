@@ -17,7 +17,6 @@ export async function loadBrandSlugsFromDb(): Promise<void> {
       const terms = result.rows.map((r: any) => r.termo);
       BRAND_SLUGS.length = 0;
       BRAND_SLUGS.push(...terms);
-      console.log('Loaded brand slugs from database:', BRAND_SLUGS);
     }
   } catch (error) {
     console.error('Failed to load brand slugs from database:', error);

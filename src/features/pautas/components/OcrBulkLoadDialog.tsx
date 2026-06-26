@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Check, Search, AlertTriangle, Loader2, Info } from 'lucide-react';
+import { Check, Search, Loader2, Info } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Spinner } from '@/components/ui/spinner';
 
 interface Produto {
   id: number;

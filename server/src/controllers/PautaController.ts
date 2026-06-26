@@ -37,6 +37,16 @@ function mapPendenteFromDb(row: Record<string, unknown>) {
     dados_extraidos: row.dados_extraidos,
   };
 }
+function formatMonthYear(dateString: string): string {
+  const date = new Date(dateString + 'T12:00:00');
+  const months = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+  const month = months[date.getMonth()];
+  const year = date.getFullYear();
+  return `${month} ${year}`;
+}
 
 export async function upload(req: Request, res: Response) {
   try {
@@ -47,11 +57,24 @@ export async function upload(req: Request, res: Response) {
     if (!uf || uf.length !== 2) {
       return res.status(400).json({ error: 'UF do estado é obrigatória' });
     }
-    const dataPauta = req.body.data_pauta || undefined;
+    const dataPauta = req.body.data_pauta;
+    if (!dataPauta) {
+      return res.status(400).json({ error: 'Data de vigência é obrigatória para o upload' });
+    }
+
+    const formattedFilename = `${uf} - ${formatMonthYear(dataPauta)}.pdf`;
+
+    // Verifica se já existe um arquivo com esse nome no banco para evitar duplicatas
+    const existing = await PautaFiscalRepository.findOcrByFilename(formattedFilename);
+    if (existing.rows.length > 0) {
+      return res.status(400).json({
+        error: `Uma pauta fiscal para ${uf} na vigência ${formatMonthYear(dataPauta)} já foi cadastrada.`
+      });
+    }
 
     const result = await PautaFiscalService.processUpload(
       req.file.buffer,
-      req.file.originalname,
+      formattedFilename,
       uf,
       dataPauta
     );

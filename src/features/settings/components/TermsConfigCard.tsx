@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, HelpCircle, Check, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, HelpCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTerms } from '../hooks/useTerms';
 import { useAuth } from '@/contexts/AuthContext';

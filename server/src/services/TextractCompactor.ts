@@ -541,8 +541,7 @@ export class TextractCompactor {
   private static _isNonBeerSubheader(text: string): boolean {
     const lower = text.toLowerCase();
     const nonBeerKeywords = [
-      'agua', 'água', 'refrigerante', 'energetico', 'energético', 
-      'isotonico', 'isotônico', 'suco', 'nectar', 'néctar', 'chá', 'cha ', 'bebida lactea', 'bebida láctea'
+      'refrigerante', 'suco', 'nectar', 'néctar', 'chá', 'cha ', 'bebida lactea', 'bebida láctea'
     ];
     return nonBeerKeywords.some(kw => lower.includes(kw)) && !lower.includes('cerveja') && !lower.includes('chopp');
   }

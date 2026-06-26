@@ -24,6 +24,46 @@ export default function PautasImportPage() {
   const [auditFilename, setAuditFilename] = useState<string>('');
   const [vigenciaDate, setVigenciaDate] = useState<string>('');
 
+  // Estados para filtros de arquivos
+  const [filterMonth, setFilterMonth] = useState<string>('all');
+  const [filterYear, setFilterYear] = useState<string>('all');
+
+  const monthsList = [
+    { value: '01', label: 'Janeiro' },
+    { value: '02', label: 'Fevereiro' },
+    { value: '03', label: 'Março' },
+    { value: '04', label: 'Abril' },
+    { value: '05', label: 'Maio' },
+    { value: '06', label: 'Junho' },
+    { value: '07', label: 'Julho' },
+    { value: '08', label: 'Agosto' },
+    { value: '09', label: 'Setembro' },
+    { value: '10', label: 'Outubro' },
+    { value: '11', label: 'Novembro' },
+    { value: '12', label: 'Dezembro' }
+  ];
+
+  const availableYears = Array.from(new Set(
+    ocrFiles
+      .map((f: any) => {
+        if (!f.data_pauta) return '';
+        const datePart = typeof f.data_pauta === 'string' ? f.data_pauta.split('T')[0] : '';
+        return datePart ? datePart.split('-')[0] : '';
+      })
+      .filter((year: string) => year !== '')
+  )).sort((a: any, b: any) => b.localeCompare(a));
+
+  const filteredOcrFiles = ocrFiles.filter((file: any) => {
+    if (!file.data_pauta) return filterMonth === 'all' && filterYear === 'all';
+    const datePart = typeof file.data_pauta === 'string' ? file.data_pauta.split('T')[0] : '';
+    if (!datePart) return false;
+    const [year, month] = datePart.split('-');
+    
+    const matchMonth = filterMonth === 'all' || month === filterMonth;
+    const matchYear = filterYear === 'all' || year === filterYear;
+    return matchMonth && matchYear;
+  });
+
   // Estados para o formulário de upload
   const [uploadUf, setUploadUf] = useState<string>('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -121,8 +161,8 @@ export default function PautasImportPage() {
   };
 
   const handleUploadAndAudit = async () => {
-    if (!selectedFile || !uploadUf) {
-      toast.warning('Selecione o estado (UF) e o arquivo PDF antes de carregar.');
+    if (!selectedFile || !uploadUf || !uploadVigenciaDate) {
+      toast.warning('Selecione o estado (UF), o arquivo PDF e a data de vigência antes de carregar.');
       return;
     }
 
@@ -131,7 +171,7 @@ export default function PautasImportPage() {
       const result = await uploadPauta({
         file: selectedFile,
         uf: uploadUf,
-        dataPauta: uploadVigenciaDate || undefined
+        dataPauta: uploadVigenciaDate
       });
       
       toast.success('Pauta carregada com sucesso!', {
@@ -206,62 +246,103 @@ export default function PautasImportPage() {
                   </div>
 
                   {/* Form Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
-                    {/* Selecionar Arquivo */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-muted-foreground">Arquivo de Pauta *</label>
-                      <Select
-                        value={auditFilename || undefined}
-                        onValueChange={(val) => setAuditFilename(val)}
-                        disabled={ocrFiles.length === 0}
-                      >
-                        <SelectTrigger className="w-full bg-background text-xs h-10">
-                          <SelectValue placeholder={ocrFiles.length === 0 ? "Nenhum arquivo" : "Selecione o arquivo..."} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ocrFiles.map((file: any) => (
-                            <SelectItem key={file.id} value={file.filename} className="text-xs">
-                              {file.filename}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
+                    {/* Filtros à esquerda */}
+                    <div className="lg:col-span-4 p-4 border rounded-xl bg-muted/20 space-y-4">
+                      <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5 border-b pb-2">
+                        <Search className="size-3.5 text-primary" />
+                        Filtrar por Período
+                      </h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-semibold text-muted-foreground">Mês</label>
+                          <Select value={filterMonth} onValueChange={setFilterMonth} disabled={ocrFiles.length === 0}>
+                            <SelectTrigger className="w-full bg-background text-xs h-9">
+                              <SelectValue placeholder="Todos" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all" className="text-xs">Todos os meses</SelectItem>
+                              {monthsList.map((m) => (
+                                <SelectItem key={m.value} value={m.value} className="text-xs">{m.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-semibold text-muted-foreground">Ano</label>
+                          <Select value={filterYear} onValueChange={setFilterYear} disabled={ocrFiles.length === 0}>
+                            <SelectTrigger className="w-full bg-background text-xs h-9">
+                              <SelectValue placeholder="Todos" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all" className="text-xs">Todos os anos</SelectItem>
+                              {availableYears.map((year) => (
+                                <SelectItem key={year} value={year} className="text-xs">{year}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Exibir UF */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-muted-foreground">Estado (UF)</label>
-                      {selectedAuditUf ? (
-                        <div className="flex items-center gap-2 h-10 px-3 border rounded-md bg-muted/40 text-xs font-medium text-foreground">
-                          <span className="bg-primary/15 text-primary px-1.5 py-0.5 rounded text-[10px] font-bold">
-                            {selectedAuditUf}
-                          </span>
-                          <span className="truncate text-muted-foreground text-[11px]">
-                            {estados.find((e: any) => e.uf === selectedAuditUf)?.nome || ''}
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center h-10 px-3 border border-dashed rounded-md bg-muted/20 text-xs text-muted-foreground/60 italic">
-                          Sem seleção
-                        </div>
-                      )}
-                    </div>
+                    {/* Seleção do arquivo no centro/direita */}
+                    <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                      {/* Selecionar Arquivo */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-muted-foreground">Arquivo de Pauta *</label>
+                        <Select
+                          value={auditFilename || undefined}
+                          onValueChange={(val) => setAuditFilename(val)}
+                          disabled={filteredOcrFiles.length === 0}
+                        >
+                          <SelectTrigger className="w-full bg-background text-xs h-10">
+                            <SelectValue placeholder={filteredOcrFiles.length === 0 ? "Nenhum arquivo" : "Selecione o arquivo..."} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {filteredOcrFiles.map((file: any) => (
+                              <SelectItem key={file.id} value={file.filename} className="text-xs">
+                                {file.filename}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                    {/* Selecionar Vigência */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-muted-foreground flex items-center justify-between">
-                        <span>Data de Vigência *</span>
-                        {sugestoesDatas.includes(vigenciaDate) && (
-                          <span className="text-[9px] text-emerald-600 bg-emerald-500/10 px-1 py-0.5 rounded font-semibold animate-pulse">
-                            Detectada
-                          </span>
+                      {/* Exibir UF */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-muted-foreground">Estado (UF)</label>
+                        {selectedAuditUf ? (
+                          <div className="flex items-center gap-2 h-10 px-3 border rounded-md bg-muted/40 text-xs font-medium text-foreground">
+                            <span className="bg-primary/15 text-primary px-1.5 py-0.5 rounded text-[10px] font-bold">
+                              {selectedAuditUf}
+                            </span>
+                            <span className="truncate text-muted-foreground text-[11px]">
+                              {estados.find((e: any) => e.uf === selectedAuditUf)?.nome || ''}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center h-10 px-3 border border-dashed rounded-md bg-muted/20 text-xs text-muted-foreground/60 italic">
+                            Sem seleção
+                          </div>
                         )}
-                      </label>
-                      <DatePicker
-                        value={vigenciaDate}
-                        onChange={setVigenciaDate}
-                        disabled={!auditFilename}
-                      />
+                      </div>
+
+                      {/* Selecionar Vigência */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-muted-foreground flex items-center justify-between">
+                          <span>Data de Vigência *</span>
+                          {sugestoesDatas.includes(vigenciaDate) && (
+                            <span className="text-[9px] text-emerald-600 bg-emerald-500/10 px-1 py-0.5 rounded font-semibold animate-pulse">
+                              Detectada
+                            </span>
+                          )}
+                        </label>
+                        <DatePicker
+                          value={vigenciaDate}
+                          onChange={setVigenciaDate}
+                          disabled={true}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -375,12 +456,12 @@ export default function PautasImportPage() {
 
                       {/* Data de Vigência da Pauta */}
                       <div className="space-y-1.5 col-span-1">
-                        <label className="text-xs font-semibold text-muted-foreground">Vigência (Opcional)</label>
+                        <label className="text-xs font-semibold text-muted-foreground">Vigência *</label>
                         <DatePicker
                           value={uploadVigenciaDate}
                           onChange={setUploadVigenciaDate}
                           disabled={isUploading}
-                          placeholder="Autodetectar"
+                          placeholder="Selecione"
                         />
                       </div>
 
@@ -388,12 +469,12 @@ export default function PautasImportPage() {
                       <div className="col-span-2 pt-1">
                         <Button
                           className={`w-full text-xs h-10 font-semibold transition-all duration-200 ${
-                            selectedFile && uploadUf && !isUploading
+                            selectedFile && uploadUf && uploadVigenciaDate && !isUploading
                               ? 'bg-primary text-primary-foreground shadow-md hover:shadow-lg' 
                               : 'bg-muted text-muted-foreground border'
                           }`}
                           onClick={handleUploadAndAudit}
-                          disabled={!selectedFile || !uploadUf || isUploading}
+                          disabled={!selectedFile || !uploadUf || !uploadVigenciaDate || isUploading}
                         >
                           {isUploading ? (
                             <>

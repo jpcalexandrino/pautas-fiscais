@@ -78,7 +78,7 @@ export function OcrTableCard({
                           {cIdx === 0 && showWarning && (
                             <span 
                               className="inline-flex items-center gap-1 text-amber-500 mr-1.5 vertical-middle align-middle cursor-help"
-                              title="Esta linha corresponde à nossa marca, mas nenhum preço válido de pauta foi detectado. Possível falha de leitura no OCR."
+                              title="Esta linha corresponde aos termos cadastrados, mas nenhum preço válido de pauta foi detectado. Possível falha de leitura no OCR."
                             >
                               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                             </span>

@@ -1,6 +1,6 @@
 import { Link, useLocation } from '@tanstack/react-router';
 import {
-  Home, Database, Package, User, Settings,
+  Home, Database, Package, Settings,
   ArrowLeftRight, Upload,
   FileText
 } from 'lucide-react';
@@ -12,7 +12,6 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarMenuBadge,
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
@@ -20,10 +19,7 @@ import {
   useSidebar
 } from '../ui/sidebar';
 import { NavUser } from './NavUser';
-import Logo from '@/assets/logo-em.png';
 import { useAuth } from '@/contexts/AuthContext';
-import { useQuery } from '@tanstack/react-query';
-import { apiFetch } from '@/api/client';
 
 const navData = {
   mainNav: [
