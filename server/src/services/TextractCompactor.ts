@@ -586,15 +586,15 @@ export class TextractCompactor {
   private static _isRowRelevant(rowText: string): boolean {
     const lower = rowText.toLowerCase();
 
-    if (
-      lower.includes('imperio') ||
-      lower.includes('império') ||
-      lower.includes('cidade imperial') ||
-      lower.includes('macedonia') ||
-      lower.includes('macedônia') ||
-      lower.includes('puro malte pilsen') ||
-      /\b3\.0\b/.test(lower)
-    ) {
+    const matches = BRAND_SLUGS.some(slug => {
+      const lowerSlug = slug.toLowerCase();
+      if (lowerSlug === '3.0') {
+        return /\b3\.0\b/.test(lower);
+      }
+      return lower.includes(lowerSlug);
+    });
+
+    if (matches) {
       return true;
     }
 

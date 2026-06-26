@@ -3,6 +3,7 @@ import { HelpCircle, Info } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { toast } from 'sonner';
 import { BRAND_SLUGS } from '@shared/utils/constants';
+import { useTerms } from '@features/settings/hooks/useTerms';
 import { OcrToolbar } from './OcrToolbar';
 import { OcrTableCard } from './OcrTableCard';
 import { OcrAssociationDialog } from './OcrAssociationDialog';
@@ -49,7 +50,7 @@ interface OcrTablesViewerProps {
   }) => Promise<any>;
 }
 
-const priceRegex = /^\s*\d+[\.,]\d{2}\s*$/;
+const priceRegex = /^\s*(?:R\$\s*)?\d+[\.,]\d{2}\s*$/i;
 
 function normalizeForSearch(str: string): string {
   return str
@@ -138,10 +139,13 @@ export function OcrTablesViewer({
 
   const normalizedSearch = normalizeForSearch(searchTerm);
 
+  const { terms } = useTerms();
+  const activeSlugs = terms.length > 0 ? terms.map((t) => t.termo) : BRAND_SLUGS;
+
   const rowMatchesBrand = (row: string[]) => {
     return row.some((cell) => {
       const cellNorm = normalizeForSearch(cell);
-      return BRAND_SLUGS.some((slug) => cellNorm.includes(normalizeForSearch(slug)));
+      return activeSlugs.some((slug) => cellNorm.includes(normalizeForSearch(slug)));
     });
   };
 
@@ -234,7 +238,8 @@ export function OcrTablesViewer({
     const cellKey = `${selectedCellData.tabelaIdx}-${selectedCellData.rIdx}-${selectedCellData.cIdx}`;
     
     try {
-      const valorNum = parseFloat(selectedCellData.value.replace(',', '.'));
+      const cleanValue = selectedCellData.value.replace(/R\$\s*/i, '').trim();
+      const valorNum = parseFloat(cleanValue.replace(',', '.'));
       
       await onConfirmManual({
         fk_produtos: selectedProductIds,

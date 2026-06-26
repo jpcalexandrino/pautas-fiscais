@@ -92,7 +92,7 @@ export function OcrTableCard({
                                   : 'bg-primary/5 hover:bg-primary/20 border-primary/20 hover:border-primary/40 text-primary'
                               }`}
                             >
-                              R$ {cell}
+                              R$ {cell.replace(/R\$\s*/i, '')}
                               {isConfirmed && <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />}
                             </button>
                           ) : (

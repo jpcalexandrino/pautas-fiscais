@@ -1,6 +1,6 @@
 import { Link, useLocation } from '@tanstack/react-router';
 import {
-  Home, Database, Package, User,
+  Home, Database, Package, User, Settings,
   ArrowLeftRight, Upload,
   FileText
 } from 'lucide-react';
@@ -50,7 +50,7 @@ const navData = {
     {
       title: "Administração",
       items: [
-        { title: "Usuários", url: "/users", icon: User },
+        { title: "Configurações", url: "/settings", icon: Settings },
       ],
     },
   ],

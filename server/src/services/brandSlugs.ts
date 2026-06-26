@@ -1,10 +1,5 @@
-/**
- * Termos identificadores da marca que devem estar presentes numa linha
- * do PDF de pauta fiscal para que ela seja considerada relevante.
- *
- * Usado tanto para filtrar o texto extraído quanto para orientar a IA
- * sobre onde ancorar a descrição do produto na linha.
- */
+import TermoRepository from '../repositories/TermoRepository';
+
 export const BRAND_SLUGS: string[] = [
   'imperio',
   'império',
@@ -14,6 +9,20 @@ export const BRAND_SLUGS: string[] = [
   'macedônia',
   '3.0',
 ];
+
+export async function loadBrandSlugsFromDb(): Promise<void> {
+  try {
+    const result = await TermoRepository.getAll();
+    if (result.rows.length > 0) {
+      const terms = result.rows.map((r: any) => r.termo);
+      BRAND_SLUGS.length = 0;
+      BRAND_SLUGS.push(...terms);
+      console.log('Loaded brand slugs from database:', BRAND_SLUGS);
+    }
+  } catch (error) {
+    console.error('Failed to load brand slugs from database:', error);
+  }
+}
 
 /**
  * Remove anotações geradas pelo filterTextByBrandSlugs ([CTX_ESQ: ...] e [PRODUTO: ...])

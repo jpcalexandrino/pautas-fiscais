@@ -111,7 +111,8 @@ export function OcrBulkLoadDialog({
           const cellKey = `${tabela.tabelaIndex}-${rIdx}-${cIdx}`;
           const inferredDesc = inferItemDescription(row, tabela.headers, cIdx, uf);
           const isConfirmed = confirmedCells.has(cellKey);
-          const valorNum = parseFloat(cell.replace(',', '.'));
+          const cleanCell = cell.replace(/R\$\s*/i, '').trim();
+          const valorNum = parseFloat(cleanCell.replace(',', '.'));
 
           // Procura primeiro no De-Para
           const normInferred = normalizeText(inferredDesc);
@@ -302,7 +303,7 @@ export function OcrBulkLoadDialog({
                         <td className="p-3 font-medium max-w-xs truncate" title={item.inferredDesc}>
                           {item.inferredDesc}
                         </td>
-                        <td className="p-3 font-semibold text-primary">R$ {item.value}</td>
+                        <td className="p-3 font-semibold text-primary">R$ {item.value.replace(/R\$\s*/i, '')}</td>
                         <td className="p-3">
                           <button
                             type="button"

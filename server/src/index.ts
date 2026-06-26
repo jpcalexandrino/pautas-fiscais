@@ -9,6 +9,7 @@ import produtoRoutes from './routes/produtoRoutes';
 import estadoRoutes from './routes/estadoRoutes';
 import deParaRoutes from './routes/deParaRoutes';
 import pautaRoutes from './routes/pautaRoutes';
+import termoRoutes from './routes/termoRoutes';
 import authMiddleware from './middleware/authMiddleware';
 
 import UserRepository from './repositories/UserRepository';
@@ -17,6 +18,8 @@ import EstadoRepository from './repositories/EstadoRepository';
 import CalendarioRepository from './repositories/CalendarioRepository';
 import DeParaProdutoEstadoRepository from './repositories/DeParaProdutoEstadoRepository';
 import PautaFiscalRepository from './repositories/PautaFiscalRepository';
+import TermoRepository from './repositories/TermoRepository';
+import { loadBrandSlugsFromDb } from './services/brandSlugs';
 
 const app: Application = express();
 app.disable('x-powered-by');
@@ -41,6 +44,7 @@ app.use('/api/produtos', authMiddleware, produtoRoutes);
 app.use('/api/estados', authMiddleware, estadoRoutes);
 app.use('/api/de-para', authMiddleware, deParaRoutes);
 app.use('/api/pautas', authMiddleware, pautaRoutes);
+app.use('/api/config/termos', authMiddleware, termoRoutes);
 
 // Em produção, servir o frontend buildado pelo Vite
 if (isProduction) {
@@ -62,6 +66,9 @@ async function init(): Promise<void> {
     await ProdutoRepository.createTable();
     await DeParaProdutoEstadoRepository.createTable();
     await PautaFiscalRepository.createTable();
+    await TermoRepository.createTable();
+    await TermoRepository.seed();
+    await loadBrandSlugsFromDb();
     await EstadoRepository.seed();
     await CalendarioRepository.seed();
 
