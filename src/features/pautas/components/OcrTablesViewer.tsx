@@ -6,6 +6,8 @@ import { BRAND_SLUGS } from '@shared/utils/constants';
 import { OcrToolbar } from './OcrToolbar';
 import { OcrTableCard } from './OcrTableCard';
 import { OcrAssociationDialog } from './OcrAssociationDialog';
+import { OcrBulkLoadDialog } from './OcrBulkLoadDialog';
+import { useDePara } from '@features/de-para/hooks/useDePara';
 
 export interface EstruturaTabela {
   tabelaIndex: number;
@@ -56,6 +58,17 @@ function normalizeForSearch(str: string): string {
     .replace(/[\u0300-\u036f]/g, '');
 }
 
+function normalizeText(value?: string | null): string {
+  if (!value) return '';
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .replace(/[^0-9a-z ]/g, '');
+}
+
 function inferItemDescription(row: string[], headers: string[], colIdx: number, uf: string): string {
   const ufUpper = uf.toUpperCase();
   
@@ -103,6 +116,8 @@ export function OcrTablesViewer({
     }
   }, [dbConfirmedCells, filename]);
 
+  const { items: deParas } = useDePara(uf);
+
   // Estados para o Modal de Associação
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedCellData, setSelectedCellData] = useState<{
@@ -116,6 +131,10 @@ export function OcrTablesViewer({
   const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
   const [saveDePara, setSaveDePara] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Estados para a Carga em Lote
+  const [bulkLoadOpen, setBulkLoadOpen] = useState(false);
+  const [selectedBulkTable, setSelectedBulkTable] = useState<any | null>(null);
 
   const normalizedSearch = normalizeForSearch(searchTerm);
 
@@ -180,21 +199,29 @@ export function OcrTablesViewer({
       inferredDesc,
     });
 
-    const normInferred = normalizeForSearch(inferredDesc);
-    const bestMatch = produtos
-      .map(p => ({
-        p,
-        score: normInferred.split(/\s+/).reduce((acc, word) => {
-          if (word.length >= 3 && normalizeForSearch(p.descricao_interna).includes(word)) {
-            return acc + 1;
-          }
-          return acc;
-        }, 0)
-      }))
-      .filter(m => m.score > 0)
-      .sort((a, b) => b.score - a.score)[0];
+    const normInferred = normalizeText(inferredDesc);
+    const exactDeParaMatches = deParas.filter(
+      (dp: any) => normalizeText(dp.termo_descricao_estado) === normInferred
+    );
 
-    setSelectedProductIds(bestMatch ? [bestMatch.p.id] : []);
+    if (exactDeParaMatches.length > 0) {
+      setSelectedProductIds(exactDeParaMatches.map((dp: any) => dp.fk_produto));
+    } else {
+      const bestMatch = produtos
+        .map(p => ({
+          p,
+          score: normInferred.split(/\s+/).reduce((acc, word) => {
+            if (word.length >= 3 && normalizeText(p.descricao_interna).includes(word)) {
+              return acc + 1;
+            }
+            return acc;
+          }, 0)
+        }))
+        .filter(m => m.score > 0)
+        .sort((a, b) => b.score - a.score)[0];
+
+      setSelectedProductIds(bestMatch ? [bestMatch.p.id] : []);
+    }
     setProductSearch('');
     setSaveDePara(true);
     setModalOpen(true);
@@ -236,6 +263,49 @@ export function OcrTablesViewer({
       });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleBulkLoadClick = (tabela: any) => {
+    if (!dataPauta) {
+      toast.warning('Atenção', {
+        description: 'Selecione a Data de Vigência da Pauta no topo antes de iniciar a carga em lote.',
+      });
+      return;
+    }
+    setSelectedBulkTable(tabela);
+    setBulkLoadOpen(true);
+  };
+
+  const handleConfirmBulk = async (payloads: any[]) => {
+    let successCount = 0;
+    let failCount = 0;
+    let lastError = '';
+
+    for (const payload of payloads) {
+      try {
+        await onConfirmManual(payload);
+        setConfirmedCells((prev) => {
+          const next = new Set(prev);
+          next.add(payload.cell_key);
+          return next;
+        });
+        successCount++;
+      } catch (err: any) {
+        console.error('Erro na carga em lote do item:', payload.descricao_estado, err);
+        lastError = err?.message || String(err);
+        failCount++;
+      }
+    }
+
+    if (successCount > 0) {
+      toast.success('Carga em Lote Concluída', {
+        description: `${successCount} itens importados com sucesso.${failCount > 0 ? ` ${failCount} falhas. Detalhe: ${lastError}` : ''}`,
+      });
+    } else if (failCount > 0) {
+      toast.error('Erro na Carga em Lote', {
+        description: `Falha ao importar os ${failCount} itens selecionados. Detalhe: ${lastError}`,
+      });
     }
   };
 
@@ -330,6 +400,7 @@ export function OcrTablesViewer({
               highlightText={highlightText}
               rowMatchesBrand={rowMatchesBrand}
               isPriceCell={isPriceCell}
+              onBulkLoadClick={handleBulkLoadClick}
             />
           ))}
         </div>
@@ -348,6 +419,21 @@ export function OcrTablesViewer({
         onProductSearchChange={setProductSearch}
         selectedProductIds={selectedProductIds}
         setSelectedProductIds={setSelectedProductIds}
+      />
+
+      <OcrBulkLoadDialog
+        open={bulkLoadOpen}
+        onOpenChange={setBulkLoadOpen}
+        tabela={selectedBulkTable}
+        produtos={produtos}
+        deParas={deParas || []}
+        uf={uf}
+        dataPauta={dataPauta}
+        filename={filename}
+        confirmedCells={confirmedCells}
+        onConfirmBulk={handleConfirmBulk}
+        isPriceCell={isPriceCell}
+        inferItemDescription={inferItemDescription}
       />
     </div>
   );

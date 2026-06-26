@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
-import { Upload, ArrowRight, ClipboardCheck, Database, ArrowLeftRight } from 'lucide-react';
+import { Upload, ArrowRight, Database, ArrowLeftRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -16,12 +16,6 @@ const quickAccessItems: QuickAccessItem[] = [
     title: 'Importar PDF',
     description: 'Faça upload do Diário Oficial para extrair dados com IA.',
     to: '/import',
-  },
-  {
-    icon: ClipboardCheck,
-    title: 'Revisão Pendente',
-    description: 'Associe itens não reconhecidos pela IA aos produtos cadastrados.',
-    to: '/revisao',
   },
   {
     icon: Database,

@@ -47,7 +47,7 @@ export default function LoginPage() {
           <div className="flex items-center justify-center size-16 mb-4 bg-primary dark:bg-primary rounded-md border border-primary dark:border-primary">
             <FileText className="text-white size-8" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight mb-2">Pautas Fiscais</h1>
+          <h1 className="text-3xl font-bold tracking-tight mb-2">Pricer</h1>
           <p className="text-muted-foreground text-sm">Entre com suas credenciais para acessar o sistema</p>
         </div>
 

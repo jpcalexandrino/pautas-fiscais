@@ -11,6 +11,7 @@ interface OcrTableCardProps {
   highlightText: (text: string, search: string) => ReactNode;
   rowMatchesBrand: (row: string[]) => boolean;
   isPriceCell: (value: string, header: string) => boolean;
+  onBulkLoadClick: (tabela: Omit<EstruturaTabela, 'rows'> & { indexedRows: IndexedRow[] }) => void;
 }
 
 export function OcrTableCard({
@@ -21,6 +22,7 @@ export function OcrTableCard({
   highlightText,
   rowMatchesBrand,
   isPriceCell,
+  onBulkLoadClick,
 }: OcrTableCardProps) {
   return (
     <Card className="overflow-hidden border shadow-sm">
@@ -28,9 +30,14 @@ export function OcrTableCard({
         <h3 className="font-semibold text-sm text-foreground">
           Tabela {tabela.tabelaIndex}
         </h3>
-        <span className="text-xs text-muted-foreground bg-background px-2.5 py-0.5 rounded-full border">
-          Página {tabela.pagina}
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onBulkLoadClick(tabela)}
+            className="text-[11px] font-medium bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 hover:border-primary/30 px-2.5 py-1 rounded transition-all cursor-pointer"
+          >
+            Carga em Lote
+          </button>
+        </div>
       </div>
       <CardContent className="p-0">
         <div className="overflow-x-auto max-w-full scrollbar-thin">
@@ -58,7 +65,7 @@ export function OcrTableCard({
                   <tr
                     key={rIdx}
                     className={`hover:bg-muted/10 transition-colors odd:bg-muted/5 ${
-                      isBrandRow ? 'bg-primary/[0.03] dark:bg-primary/[0.02] border-l-2 border-l-primary' : ''
+                      isBrandRow ? 'bg-primary/[0.03] dark:bg-primary/[0.02] border-l-2' : ''
                     }`}
                   >
                     {row.map((cell, cIdx) => {

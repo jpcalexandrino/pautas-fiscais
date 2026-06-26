@@ -13,7 +13,6 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
-import { Route as AuthenticatedRevisaoRouteImport } from './routes/_authenticated/revisao'
 import { Route as AuthenticatedProdutosRouteImport } from './routes/_authenticated/produtos'
 import { Route as AuthenticatedImportRouteImport } from './routes/_authenticated/import'
 import { Route as AuthenticatedDeParaRouteImport } from './routes/_authenticated/de-para'
@@ -36,11 +35,6 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
 const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
   id: '/users',
   path: '/users',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedRevisaoRoute = AuthenticatedRevisaoRouteImport.update({
-  id: '/revisao',
-  path: '/revisao',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedProdutosRoute = AuthenticatedProdutosRouteImport.update({
@@ -71,7 +65,6 @@ export interface FileRoutesByFullPath {
   '/de-para': typeof AuthenticatedDeParaRoute
   '/import': typeof AuthenticatedImportRoute
   '/produtos': typeof AuthenticatedProdutosRoute
-  '/revisao': typeof AuthenticatedRevisaoRoute
   '/users': typeof AuthenticatedUsersRoute
 }
 export interface FileRoutesByTo {
@@ -80,7 +73,6 @@ export interface FileRoutesByTo {
   '/de-para': typeof AuthenticatedDeParaRoute
   '/import': typeof AuthenticatedImportRoute
   '/produtos': typeof AuthenticatedProdutosRoute
-  '/revisao': typeof AuthenticatedRevisaoRoute
   '/users': typeof AuthenticatedUsersRoute
   '/': typeof AuthenticatedIndexRoute
 }
@@ -92,7 +84,6 @@ export interface FileRoutesById {
   '/_authenticated/de-para': typeof AuthenticatedDeParaRoute
   '/_authenticated/import': typeof AuthenticatedImportRoute
   '/_authenticated/produtos': typeof AuthenticatedProdutosRoute
-  '/_authenticated/revisao': typeof AuthenticatedRevisaoRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
@@ -105,7 +96,6 @@ export interface FileRouteTypes {
     | '/de-para'
     | '/import'
     | '/produtos'
-    | '/revisao'
     | '/users'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -114,7 +104,6 @@ export interface FileRouteTypes {
     | '/de-para'
     | '/import'
     | '/produtos'
-    | '/revisao'
     | '/users'
     | '/'
   id:
@@ -125,7 +114,6 @@ export interface FileRouteTypes {
     | '/_authenticated/de-para'
     | '/_authenticated/import'
     | '/_authenticated/produtos'
-    | '/_authenticated/revisao'
     | '/_authenticated/users'
     | '/_authenticated/'
   fileRoutesById: FileRoutesById
@@ -165,13 +153,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUsersRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/revisao': {
-      id: '/_authenticated/revisao'
-      path: '/revisao'
-      fullPath: '/revisao'
-      preLoaderRoute: typeof AuthenticatedRevisaoRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/produtos': {
       id: '/_authenticated/produtos'
       path: '/produtos'
@@ -208,7 +189,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDeParaRoute: typeof AuthenticatedDeParaRoute
   AuthenticatedImportRoute: typeof AuthenticatedImportRoute
   AuthenticatedProdutosRoute: typeof AuthenticatedProdutosRoute
-  AuthenticatedRevisaoRoute: typeof AuthenticatedRevisaoRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
@@ -218,7 +198,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDeParaRoute: AuthenticatedDeParaRoute,
   AuthenticatedImportRoute: AuthenticatedImportRoute,
   AuthenticatedProdutosRoute: AuthenticatedProdutosRoute,
-  AuthenticatedRevisaoRoute: AuthenticatedRevisaoRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }

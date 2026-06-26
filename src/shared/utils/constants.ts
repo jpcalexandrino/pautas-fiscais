@@ -12,7 +12,7 @@ export interface AppConfig {
 }
 
 export const APP_CONFIG: AppConfig = {
-  name: 'Pautas Fiscais',
+  name: 'Pricer',
   version: '1.0.0',
   description: 'Sistema de Classificação e Gestão de Pautas Fiscais',
   locale: 'pt-BR',
@@ -23,6 +23,8 @@ export const BRAND_SLUGS: string[] = [
   'imperio',
   'império',
   'cidade imperial',
+  'macedonia',
+  'macedônia',
   'puro malte pilsen',
   '3.0',
 ];

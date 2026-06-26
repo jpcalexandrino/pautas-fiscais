@@ -1,8 +1,7 @@
 import { Link, useLocation } from '@tanstack/react-router';
 import {
   Home, Database, Package, User,
-  ArrowLeftRight, ClipboardCheck, Upload,
-  TriangleAlert,
+  ArrowLeftRight, Upload,
   FileText
 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
@@ -38,7 +37,6 @@ const navData = {
       title: "Pautas Fiscais",
       items: [
         { title: "Importar PDF", url: "/import", icon: Upload },
-        { title: "Revisão", url: "/revisao", icon: ClipboardCheck },
         { title: "Dados Pauta", url: "/dados", icon: Database },
       ],
     },
@@ -62,16 +60,6 @@ export default function AppSidebar() {
   const { appName } = useApp();
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
-  const { data: pendentes = [] } = useQuery({
-    queryKey: ['pautas-pendentes'],
-    queryFn: async () => {
-      const res = await apiFetch('/pautas/pendentes');
-      if (!res.ok) return [];
-      return res.json();
-    },
-    enabled: !!localStorage.getItem('token'),
-    staleTime: 60_000,
-  });
   const location = useLocation();
   const { state: sidebarState } = useSidebar();
   const collapsed = sidebarState === 'collapsed';
@@ -124,9 +112,6 @@ export default function AppSidebar() {
                           <Link to={item.url as any}>
                             <Icon className="size-4" />
                             <span>{item.title}</span>
-                            {item.url === '/revisao' && pendentes.length > 0 && !collapsed && (
-                              <SidebarMenuBadge className="text-amber-600"><TriangleAlert className="size-1" /></SidebarMenuBadge>
-                            )}
                           </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>

@@ -61,7 +61,7 @@ class PautaFiscalRepository {
         textract_json JSONB NOT NULL,
         ai_json JSONB,
         data_pauta DATE,
-        confirmed_cells JSONB DEFAULT '[]'..jsonb,
+        confirmed_cells JSONB DEFAULT '[]'::jsonb,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -231,6 +231,16 @@ class PautaFiscalRepository {
         aiJson ? JSON.stringify(aiJson) : null,
         dataPauta || null
       ]
+    );
+  }
+
+  async addConfirmedCell(filename: string, cellKey: string): Promise<QueryResult> {
+    return db.query(
+      `UPDATE pauta_arquivo_ocr
+       SET confirmed_cells = COALESCE(confirmed_cells, '[]'::jsonb) || jsonb_build_array($2::text),
+           updated_at = CURRENT_TIMESTAMP
+       WHERE filename = $1`,
+      [filename, cellKey]
     );
   }
 

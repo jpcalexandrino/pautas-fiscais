@@ -10,6 +10,8 @@ export const BRAND_SLUGS: string[] = [
   'império',
   'cidade imperial',
   'puro malte pilsen',
+  'macedonia',
+  'macedônia',
   '3.0',
 ];
 

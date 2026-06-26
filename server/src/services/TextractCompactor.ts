@@ -4,6 +4,11 @@ import { getLayoutForUF } from './LayoutRegistry';
 
 const logger = new Logger('TextractCompactor');
 
+export interface StateSE {
+  currentSubheaderSE?: string;
+  isBeerSection?: boolean;
+}
+
 export interface EstruturaTabela {
   tabelaIndex: number;
   pagina: number;
@@ -62,9 +67,9 @@ export class TextractCompactor {
     }
 
     const BRAND_SLUGS_LOWER = BRAND_SLUGS.map(s => s.toLowerCase());
-    const finalLines: string[] = [];
-
     const pageNumbers = Object.keys(blocksByPage).map(Number).sort((a, b) => a - b);
+    const stateSE: StateSE = { currentSubheaderSE: '', isBeerSection: true };
+    const finalLines: string[] = [];
 
     for (const pageNum of pageNumbers) {
       const pageBlocks = blocksByPage[pageNum];
@@ -85,15 +90,47 @@ export class TextractCompactor {
 
       finalLines.push(`--- PÁGINA ${pageNum} ---`);
 
-      const tableBlocks = pageBlocks.filter(b => b.BlockType === 'TABLE');
       const blockMap = new Map<string, any>(pageBlocks.map(b => [b.Id, b]));
       const wordIdsInTables = new Set<string>();
       const tableMarkdowns: string[] = [];
 
-      for (const table of tableBlocks) {
-        const tableMd = this._reconstructTableFromBlocks(table, blockMap, wordIdsInTables, uf);
-        if (tableMd) {
-          tableMarkdowns.push(tableMd);
+      // Ordena os blocos da página: para Sergipe (SE), primeiro coluna da esquerda (centro < 0.5), depois da direita.
+      // Dentro de cada coluna (ou para outros estados), ordena de cima para baixo.
+      const sortedPageBlocks = [...pageBlocks].sort((a, b) => {
+        if (uf === 'SE') {
+          const centerA = (a.Geometry?.BoundingBox?.Left ?? 0) + (a.Geometry?.BoundingBox?.Width ?? 0) / 2;
+          const centerB = (b.Geometry?.BoundingBox?.Left ?? 0) + (b.Geometry?.BoundingBox?.Width ?? 0) / 2;
+          const isLeftA = centerA < 0.5;
+          const isLeftB = centerB < 0.5;
+          if (isLeftA !== isLeftB) {
+            return isLeftA ? -1 : 1;
+          }
+        }
+        const topA = a.Geometry?.BoundingBox?.Top ?? 0;
+        const topB = b.Geometry?.BoundingBox?.Top ?? 0;
+        if (topA !== topB) return topA - topB;
+        const leftA = a.Geometry?.BoundingBox?.Left ?? 0;
+        const leftB = b.Geometry?.BoundingBox?.Left ?? 0;
+        return leftA - leftB;
+      });
+
+      for (const block of sortedPageBlocks) {
+        if (block.BlockType === 'LINE' && uf === 'SE') {
+          const text = (block.Text || '').trim();
+          if (text) {
+            if (this._isNonBeerSubheader(text)) {
+              stateSE.isBeerSection = false;
+              stateSE.currentSubheaderSE = '';
+            } else if (this._isSubheaderSE(text)) {
+              stateSE.isBeerSection = true;
+              stateSE.currentSubheaderSE = text;
+            }
+          }
+        } else if (block.BlockType === 'TABLE') {
+          const tableMd = this._reconstructTableFromBlocks(block, blockMap, wordIdsInTables, uf, stateSE);
+          if (tableMd) {
+            tableMarkdowns.push(tableMd);
+          }
         }
       }
 
@@ -141,6 +178,7 @@ export class TextractCompactor {
     // Case 1: Structured layout from pre-parsed table data
     if (nestedData && typeof nestedData === 'object' && Array.isArray(nestedData.tables)) {
       const tables: any[][] = nestedData.tables;
+      const stateSE = { currentSubheaderSE: '' };
       for (let tIdx = 0; tIdx < tables.length; tIdx++) {
         const table = tables[tIdx];
         if (!Array.isArray(table) || table.length === 0) continue;
@@ -150,7 +188,7 @@ export class TextractCompactor {
           return row.map(cell => cell !== undefined ? String(cell).trim() : '');
         });
 
-        const compactedTable = this._compactTable(tableData, ufUpper);
+        const compactedTable = this._compactTable(tableData, ufUpper, stateSE);
         if (compactedTable.length === 0) continue;
 
         let headers = compactedTable[0];
@@ -191,37 +229,70 @@ export class TextractCompactor {
 
     const pageNumbers = Object.keys(blocksByPage).map(Number).sort((a, b) => a - b);
     let globalTableIdx = 1;
+    const stateSE: StateSE = { currentSubheaderSE: '', isBeerSection: true };
 
     for (const pageNum of pageNumbers) {
       const pageBlocks = blocksByPage[pageNum];
-      const tableBlocks = pageBlocks.filter(b => b.BlockType === 'TABLE');
       const blockMap = new Map<string, any>(pageBlocks.map(b => [b.Id, b]));
       const wordIdsInTables = new Set<string>();
 
-      for (const table of tableBlocks) {
-        const tableData = this._reconstructTableData(table, blockMap, wordIdsInTables);
-        if (tableData.length === 0) continue;
-
-        const compactedTable = this._compactTable(tableData, ufUpper);
-        if (compactedTable.length === 0) continue;
-
-        let headers = compactedTable[0];
-        if (ufUpper) {
-          const layout = getLayoutForUF(ufUpper);
-          const customHeaders = layout.getTableHeaders(headers.length);
-          if (customHeaders && customHeaders.length > 0 && !customHeaders[0].startsWith('COLUNA_')) {
-            headers = customHeaders;
+      // Ordena os blocos da página: para Sergipe (SE), primeiro coluna da esquerda (centro < 0.5), depois da direita.
+      // Dentro de cada coluna (ou para outros estados), ordena de cima para baixo.
+      const sortedPageBlocks = [...pageBlocks].sort((a, b) => {
+        if (ufUpper === 'SE') {
+          const centerA = (a.Geometry?.BoundingBox?.Left ?? 0) + (a.Geometry?.BoundingBox?.Width ?? 0) / 2;
+          const centerB = (b.Geometry?.BoundingBox?.Left ?? 0) + (b.Geometry?.BoundingBox?.Width ?? 0) / 2;
+          const isLeftA = centerA < 0.5;
+          const isLeftB = centerB < 0.5;
+          if (isLeftA !== isLeftB) {
+            return isLeftA ? -1 : 1;
           }
         }
+        const topA = a.Geometry?.BoundingBox?.Top ?? 0;
+        const topB = b.Geometry?.BoundingBox?.Top ?? 0;
+        if (topA !== topB) return topA - topB;
+        const leftA = a.Geometry?.BoundingBox?.Left ?? 0;
+        const leftB = b.Geometry?.BoundingBox?.Left ?? 0;
+        return leftA - leftB;
+      });
 
-        const rows = compactedTable.slice(1);
+      for (const block of sortedPageBlocks) {
+        if (block.BlockType === 'LINE' && ufUpper === 'SE') {
+          const text = (block.Text || '').trim();
+          if (text) {
+            if (this._isNonBeerSubheader(text)) {
+              stateSE.isBeerSection = false;
+              stateSE.currentSubheaderSE = '';
+            } else if (this._isSubheaderSE(text)) {
+              stateSE.isBeerSection = true;
+              stateSE.currentSubheaderSE = text;
+            }
+          }
+        } else if (block.BlockType === 'TABLE') {
+          const tableData = this._reconstructTableData(block, blockMap, wordIdsInTables);
+          if (tableData.length === 0) continue;
 
-        resultados.push({
-          tabelaIndex: globalTableIdx++,
-          pagina: pageNum,
-          headers,
-          rows
-        });
+          const compactedTable = this._compactTable(tableData, ufUpper, stateSE);
+          if (compactedTable.length === 0) continue;
+
+          let headers = compactedTable[0];
+          if (ufUpper) {
+            const layout = getLayoutForUF(ufUpper);
+            const customHeaders = layout.getTableHeaders(headers.length);
+            if (customHeaders && customHeaders.length > 0 && !customHeaders[0].startsWith('COLUNA_')) {
+              headers = customHeaders;
+            }
+          }
+
+          const rows = compactedTable.slice(1);
+
+          resultados.push({
+            tabelaIndex: globalTableIdx++,
+            pagina: pageNum,
+            headers,
+            rows
+          });
+        }
       }
     }
 
@@ -247,7 +318,7 @@ export class TextractCompactor {
     return findBlocks(data) || [];
   }
 
-  private static _compactTable(table: string[][], uf: string): string[][] {
+  private static _compactTable(table: string[][], uf: string, state?: { currentSubheaderSE?: string }): string[][] {
     if (table.length === 0) return [];
     const ufUpper = uf.toUpperCase();
 
@@ -334,7 +405,89 @@ export class TextractCompactor {
       return newTable;
     }
 
-    // 3. Filtro geral de marca para outros estados
+    // 3. Tratamento para Sergipe (SE) - Propaga o subcabeçalho (volume/embalagem) para as linhas subsequentes
+    if (ufUpper === 'SE') {
+      const newTable: string[][] = [];
+      newTable.push(table[0]); // Mantém o cabeçalho original
+
+      let currentSubheader = '';
+
+      // Heurística de volume: varre a tabela para estimar a volumetria correta dos itens
+      let tableHas600ml = false;
+      let tableHas300ml = false;
+      for (const row of table) {
+        if (row && row[0]) {
+          const lower = row[0].toLowerCase();
+          if (lower.includes('600 ml') || lower.includes('600ml') || lower.includes('500 ml') || lower.includes('500ml')) {
+            tableHas600ml = true;
+          }
+          if (lower.includes('300 ml') || lower.includes('300ml') || lower.includes('330 ml') || lower.includes('330ml') || lower.includes('350 ml') || lower.includes('350ml') || lower.includes('355 ml') || lower.includes('355ml')) {
+            tableHas300ml = true;
+          }
+        }
+      }
+
+      for (let rIdx = 1; rIdx < table.length; rIdx++) {
+        const row = table[rIdx];
+        if (row.length === 0) continue;
+
+        const col0 = row[0] ? row[0].trim() : '';
+        const col1 = row[1] ? row[1].trim() : '';
+
+        const isProductRelevant = this._isRowRelevant(col0);
+        const hasPrice = col1 && (/\d+[\.,]\d+/.test(col1) || /^\s*(?:R\$\s*)?\d+\s*$/i.test(col1));
+        const isSub = this._isSubheaderSE(col0);
+        const isNonBeerSub = this._isNonBeerSubheader(col0);
+
+        // Ignorar subcabeçalhos de 900ml a 1000ml pois não possuem produtos relevantes e quebram a propagação
+        const is900or1000ml = col0.toLowerCase().includes('900') || col0.toLowerCase().includes('1000') || col0.toLowerCase().includes('1.000');
+
+        if (isNonBeerSub && !hasPrice) {
+          currentSubheader = '';
+          if (state) {
+            state.isBeerSection = false;
+            state.currentSubheaderSE = '';
+          }
+          continue;
+        }
+
+        if (!is900or1000ml && ((isSub && !hasPrice) || (!isProductRelevant && !hasPrice && col0.length > 0))) {
+          currentSubheader = col0;
+          if (state) {
+            state.isBeerSection = true;
+            state.currentSubheaderSE = col0;
+          }
+          continue;
+        }
+
+        if (isProductRelevant) {
+          const isBeerSection = state ? state.isBeerSection !== false : true;
+          if (isBeerSection) {
+            const newRow = [...row];
+            let activeSubheader = currentSubheader || state?.currentSubheaderSE || '';
+            
+            // Corrige o cabeçalho ativo baseado na volumetria dos produtos contidos na tabela
+            if (activeSubheader.includes('276 ml a 399 ml') || activeSubheader.includes('300 ml')) {
+              if (tableHas600ml && !tableHas300ml) {
+                activeSubheader = 'Cerveja em garrafa descartável de 500 ml a 660 ml';
+              }
+            } else if (activeSubheader.includes('500 ml a 660 ml') || activeSubheader.includes('600 ml')) {
+              if (tableHas300ml && !tableHas600ml) {
+                activeSubheader = 'Cerveja em garrafa descartável de 276 ml a 399 ml';
+              }
+            }
+
+            if (activeSubheader) {
+              newRow[0] = `${col0} (${activeSubheader})`;
+            }
+            newTable.push(newRow);
+          }
+        }
+      }
+      return newTable;
+    }
+
+    // 4. Filtro geral de marca para outros estados
     const newTable: string[][] = [];
     newTable.push(table[0]); // Mantém o cabeçalho original
 
@@ -350,6 +503,7 @@ export class TextractCompactor {
   private static _formatNestedTables(tables: any[][], uf: string): string[] {
     const finalLines: string[] = [];
     const layout = getLayoutForUF(uf);
+    const stateSE = { currentSubheaderSE: '' };
 
     for (let tIdx = 0; tIdx < tables.length; tIdx++) {
       const table = tables[tIdx];
@@ -360,7 +514,7 @@ export class TextractCompactor {
         return row.map(cell => cell !== undefined ? String(cell).trim() : '');
       });
 
-      const compactedTable = this._compactTable(tableData, uf);
+      const compactedTable = this._compactTable(tableData, uf, stateSE);
       if (compactedTable.length <= 1) continue;
 
       finalLines.push(`--- TABELA DE PRODUTOS ${tIdx + 1} ---`);
@@ -384,6 +538,51 @@ export class TextractCompactor {
     return finalLines;
   }
 
+  private static _isNonBeerSubheader(text: string): boolean {
+    const lower = text.toLowerCase();
+    const nonBeerKeywords = [
+      'agua', 'água', 'refrigerante', 'energetico', 'energético', 
+      'isotonico', 'isotônico', 'suco', 'nectar', 'néctar', 'chá', 'cha ', 'bebida lactea', 'bebida láctea'
+    ];
+    return nonBeerKeywords.some(kw => lower.includes(kw)) && !lower.includes('cerveja') && !lower.includes('chopp');
+  }
+
+  private static _isSubheaderSE(text: string): boolean {
+    const lower = text.toLowerCase();
+    
+    // Ignorar subcabeçalhos de 900ml a 1000ml pois não possuem produtos relevantes e quebram a propagação
+    if (lower.includes('900') || lower.includes('1000') || lower.includes('1.000')) {
+      return false;
+    }
+
+    // Se contiver preço (ex: decimal com vírgula ou ponto), não é um subcabeçalho
+    if (/\d+[\.,]\d+/.test(lower)) {
+      return false;
+    }
+    
+    // Se contiver marcas concorrentes, é uma linha de produto concorrente, não subcabeçalho
+    const concorrentes = [
+      'skol', 'brahma', 'antarctica', 'heineken', 'amstel', 'budweiser', 'stella', 'corona',
+      'kaiser', 'crystal', 'itaipava', 'devassa', 'schin', 'conti', 'cerpa', 'colina', 'samba',
+      'proibida', 'spoller', 'serramalte', 'eisenbahn', 'bohemia', 'petra', 'burguesa', 'caracu',
+      '1500', 'original'
+    ];
+    const hasConcorrente = concorrentes.some(c => lower.includes(c));
+    if (hasConcorrente) return false;
+
+    const hasKeyword = lower.includes('garrafa') ||
+                       lower.includes('lata') ||
+                       lower.includes('retornavel') ||
+                       lower.includes('retornável') ||
+                       lower.includes('descartavel') ||
+                       lower.includes('descartável') ||
+                       lower.includes('copo') ||
+                       lower.includes('barril') ||
+                       (lower.includes('cerveja') && (lower.includes(' de ') || lower.includes('em')));
+                       
+    return hasKeyword;
+  }
+
   private static _isRowRelevant(rowText: string): boolean {
     const lower = rowText.toLowerCase();
 
@@ -391,6 +590,8 @@ export class TextractCompactor {
       lower.includes('imperio') ||
       lower.includes('império') ||
       lower.includes('cidade imperial') ||
+      lower.includes('macedonia') ||
+      lower.includes('macedônia') ||
       lower.includes('puro malte pilsen') ||
       /\b3\.0\b/.test(lower)
     ) {
@@ -412,12 +613,13 @@ export class TextractCompactor {
     tableBlock: any,
     blockMap: Map<string, any>,
     wordIdsInTables: Set<string>,
-    uf?: string
+    uf?: string,
+    state?: StateSE
   ): string {
     const tableData = this._reconstructTableData(tableBlock, blockMap, wordIdsInTables);
     if (tableData.length === 0) return '';
 
-    const compactedTable = this._compactTable(tableData, uf || '');
+    const compactedTable = this._compactTable(tableData, uf || '', state);
     if (compactedTable.length <= 1) return '';
 
     const tableLines: string[] = [];
