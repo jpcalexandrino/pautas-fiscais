@@ -248,8 +248,8 @@ export default function PautasImportPage() {
                   {/* Form Grid */}
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
                     {/* Filtros à esquerda */}
-                    <div className="lg:col-span-4 p-4 border rounded-xl bg-muted/20 space-y-4">
-                      <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5 border-b pb-2">
+                    <div className="lg:col-span-4 p-4 border-r space-y-4">
+                      <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5 pb-2">
                         <Search className="size-3.5 text-primary" />
                         Filtrar por Período
                       </h3>
@@ -286,7 +286,7 @@ export default function PautasImportPage() {
                     </div>
 
                     {/* Seleção do arquivo no centro/direita */}
-                    <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                       {/* Selecionar Arquivo */}
                       <div className="space-y-1.5">
                         <label className="text-xs font-semibold text-muted-foreground">Arquivo de Pauta *</label>
@@ -357,7 +357,7 @@ export default function PautasImportPage() {
                       </div>
                       <div className="text-left">
                         <h2 className="text-sm font-semibold text-foreground">Enviar Novo PDF de Pauta</h2>
-                        <p className="text-[11px] text-muted-foreground font-normal">Faça o upload do novo PDF para processar via OCR e IA.</p>
+                        <p className="text-[11px] text-muted-foreground font-normal">Faça o upload do novo PDF para processar.</p>
                       </div>
                     </div>
                     <button

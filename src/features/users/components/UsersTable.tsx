@@ -71,13 +71,7 @@ export const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDelete,
         header: 'Nome Completo',
         size: 200,
         cell: ({ row }) => (
-          <Button
-            variant="link"
-            className="px-0 h-auto font-medium text-foreground hover:text-primary transition-colors text-left hover:no-underline"
-            onClick={() => onEdit(row.original)}
-          >
-            {row.original.name}
-          </Button>
+            row.original.name
         ),
       },
       {

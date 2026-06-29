@@ -93,7 +93,7 @@ export default function SettingsPage() {
                 )}
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Cadastre ou delete os termos e marcas de produtos a serem detectados e lidos pelo OCR.
+                Cadastre ou delete os termos e marcas de produtos a serem detectados e lidos.
               </p>
             </div>
           </CardContent>

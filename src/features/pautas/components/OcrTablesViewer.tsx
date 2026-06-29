@@ -318,7 +318,7 @@ export function OcrTablesViewer({
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-3">
         <Spinner className="w-8 h-8 text-primary animate-spin" />
-        <span className="text-sm text-muted-foreground">Reconstruindo tabelas do OCR...</span>
+        <span className="text-sm text-muted-foreground">Reconstruindo tabelas</span>
       </div>
     );
   }

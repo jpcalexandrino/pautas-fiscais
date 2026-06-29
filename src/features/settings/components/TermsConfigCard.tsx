@@ -132,7 +132,7 @@ export function TermsConfigCard() {
         <div className="text-xs text-muted-foreground bg-primary/5 border border-primary/10 p-3 rounded-md flex gap-2">
           <HelpCircle className="w-4 h-4 text-primary shrink-0 mt-0.5" />
           <p>
-            <strong>Como funciona:</strong> Ao fazer a leitura (OCR) de uma pauta fiscal em PDF, o sistema só compactará e exibirá páginas e tabelas que possuam pelo menos um destes termos/palavras-chave em suas linhas.
+            <strong>Como funciona:</strong> Ao fazer a leitura de uma pauta fiscal em PDF, o sistema só compactará e exibirá páginas e tabelas que possuam pelo menos um destes termos/palavras-chave em suas linhas.
           </p>
         </div>
       </CardContent>
