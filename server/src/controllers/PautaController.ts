@@ -221,4 +221,24 @@ export async function confirmarManual(req: Request, res: Response) {
   }
 }
 
+export async function updateTabelasOcr(req: Request, res: Response) {
+  try {
+    const filename = String(req.params.filename);
+    const { tabelas } = req.body;
+    if (!Array.isArray(tabelas)) {
+      return res.status(400).json({ error: 'Lista de tabelas inválida' });
+    }
+
+    const payload = {
+      isEdited: true,
+      tables: tabelas,
+    };
+
+    await PautaFiscalRepository.updateOcrTables(filename, payload);
+    res.json({ success: true });
+  } catch (error: unknown) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+}
+
 

@@ -20,6 +20,7 @@ router.get('/', PautaController.getAll);
 router.get('/ocr-files', PautaController.getArquivosOcr);
 router.get('/ocr-files/:filename', PautaController.getArquivoOcrByFilename);
 router.get('/ocr-files/:filename/tabelas', PautaController.getTabelasOcr);
+router.put('/ocr-files/:filename/tabelas', PautaController.updateTabelasOcr);
 router.post('/reprocessar-ia', PautaController.reprocessarComIA);
 router.get('/pendentes', PautaController.getPendentes);
 router.post('/pendentes/:id/confirmar', PautaController.confirmPendente);

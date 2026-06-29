@@ -48,6 +48,8 @@ interface OcrTablesViewerProps {
     salvar_de_para: boolean;
     cell_key?: string;
   }) => Promise<any>;
+  updateOcrTables?: (params: { filename: string; tabelas: any[] }) => Promise<any>;
+  isUpdatingOcrTables?: boolean;
 }
 
 const priceRegex = /^\s*(?:R\$\s*)?\d+[\.,]\d{2}\s*$/i;
@@ -103,9 +105,18 @@ export function OcrTablesViewer({
   dataPauta,
   dbConfirmedCells,
   onConfirmManual,
+  updateOcrTables,
+  isUpdatingOcrTables = false,
 }: OcrTablesViewerProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [confirmedCells, setConfirmedCells] = useState<Set<string>>(new Set());
+  const [isEditingMode, setIsEditingMode] = useState(false);
+  const [localTabelas, setLocalTabelas] = useState<EstruturaTabela[]>([]);
+
+  // Sincroniza a cópia local quando tabelas mudam
+  useEffect(() => {
+    setLocalTabelas(tabelas);
+  }, [tabelas]);
   const [filterBrandOnly, setFilterBrandOnly] = useState(true);
 
   // Sincroniza as células confirmadas salvas no banco
@@ -183,6 +194,68 @@ export function OcrTablesViewer({
       return false;
     }
     return priceRegex.test(value);
+  };
+
+  const handleToggleEditingMode = () => {
+    if (isEditingMode) {
+      setLocalTabelas(tabelas);
+      setIsEditingMode(false);
+    } else {
+      setLocalTabelas(JSON.parse(JSON.stringify(tabelas)));
+      setIsEditingMode(true);
+    }
+  };
+
+  const handleCellEdit = (tabelaIdx: number, rIdx: number, cIdx: number, value: string) => {
+    setLocalTabelas(prev => prev.map(t => {
+      if (t.tabelaIndex !== tabelaIdx) return t;
+      const newRows = [...t.rows];
+      newRows[rIdx] = [...newRows[rIdx]];
+      newRows[rIdx][cIdx] = value;
+      return { ...t, rows: newRows };
+    }));
+  };
+
+  const handleHeaderEdit = (tabelaIdx: number, cIdx: number, value: string) => {
+    setLocalTabelas(prev => prev.map(t => {
+      if (t.tabelaIndex !== tabelaIdx) return t;
+      const newHeaders = [...t.headers];
+      newHeaders[cIdx] = value;
+      return { ...t, headers: newHeaders };
+    }));
+  };
+
+  const handleDeleteRow = (tabelaIdx: number, rIdx: number) => {
+    setLocalTabelas(prev => prev.map(t => {
+      if (t.tabelaIndex !== tabelaIdx) return t;
+      const newRows = t.rows.filter((_, idx) => idx !== rIdx);
+      return { ...t, rows: newRows };
+    }));
+  };
+
+  const handleDeleteTable = (tabelaIdx: number) => {
+    setLocalTabelas(prev => prev.filter(t => t.tabelaIndex !== tabelaIdx));
+  };
+
+  const handleAddRow = (tabelaIdx: number) => {
+    setLocalTabelas(prev => prev.map(t => {
+      if (t.tabelaIndex !== tabelaIdx) return t;
+      const newRow = Array(t.headers.length).fill('');
+      return { ...t, rows: [...t.rows, newRow] };
+    }));
+  };
+
+  const handleSaveEdits = async () => {
+    if (!updateOcrTables) return;
+    try {
+      await updateOcrTables({ filename, tabelas: localTabelas });
+      toast.success('Tabelas atualizadas com sucesso!');
+      setIsEditingMode(false);
+    } catch (err: any) {
+      toast.error('Erro ao salvar edições', {
+        description: err.message || 'Erro inesperado.',
+      });
+    }
   };
 
   const handleCellClick = (tabelaIdx: number, rIdx: number, cIdx: number, value: string, row: string[], headers: string[]) => {
@@ -331,20 +404,24 @@ export function OcrTablesViewer({
     );
   }
 
-  const filteredTabelas = tabelas
+  const activeTabelas = isEditingMode ? localTabelas : tabelas;
+
+  const filteredTabelas = activeTabelas
     .map((tabela) => {
       let indexedRows = tabela.rows.map((row, originalIndex) => ({
         data: row,
         originalIndex,
       }));
 
-      if (filterBrandOnly) {
-        indexedRows = indexedRows.filter((rowObj) => rowMatchesBrand(rowObj.data));
-      }
-      if (normalizedSearch) {
-        indexedRows = indexedRows.filter((rowObj) =>
-          rowObj.data.some((cell) => normalizeForSearch(cell).includes(normalizedSearch))
-        );
+      if (!isEditingMode) {
+        if (filterBrandOnly) {
+          indexedRows = indexedRows.filter((rowObj) => rowMatchesBrand(rowObj.data));
+        }
+        if (normalizedSearch) {
+          indexedRows = indexedRows.filter((rowObj) =>
+            rowObj.data.some((cell) => normalizeForSearch(cell).includes(normalizedSearch))
+          );
+        }
       }
       return {
         tabelaIndex: tabela.tabelaIndex,
@@ -356,7 +433,7 @@ export function OcrTablesViewer({
     .filter(
       (tabela) =>
         tabela.indexedRows.length > 0 &&
-        (!filterBrandOnly ||
+        (isEditingMode || !filterBrandOnly ||
           tableHasBrand(tabelas.find((t) => t.tabelaIndex === tabela.tabelaIndex) || { rows: [] } as any))
     );
 
@@ -376,6 +453,10 @@ export function OcrTablesViewer({
         totalTablesCount={tabelas.length}
         displayLinesCount={displayLinesCount}
         displayTablesCount={displayTablesCount}
+        isEditingMode={isEditingMode}
+        onToggleEditingMode={handleToggleEditingMode}
+        onSaveEdits={handleSaveEdits}
+        isSavingEdits={isUpdatingOcrTables}
       />
 
       {filteredTabelas.length === 0 ? (
@@ -406,6 +487,12 @@ export function OcrTablesViewer({
               rowMatchesBrand={rowMatchesBrand}
               isPriceCell={isPriceCell}
               onBulkLoadClick={handleBulkLoadClick}
+              isEditingMode={isEditingMode}
+              onCellEdit={handleCellEdit}
+              onHeaderEdit={handleHeaderEdit}
+              onDeleteRow={handleDeleteRow}
+              onDeleteTable={handleDeleteTable}
+              onAddRow={handleAddRow}
             />
           ))}
         </div>

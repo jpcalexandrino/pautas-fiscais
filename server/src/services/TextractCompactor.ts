@@ -171,6 +171,9 @@ export class TextractCompactor {
         nestedData = data.data;
       }
     }
+    if (nestedData && typeof nestedData === 'object' && nestedData.isEdited && Array.isArray(nestedData.tables)) {
+      return nestedData.tables;
+    }
 
     const ufUpper = uf ? uf.toUpperCase() : '';
     const resultados: EstruturaTabela[] = [];

@@ -244,6 +244,16 @@ class PautaFiscalRepository {
     );
   }
 
+  async updateOcrTables(filename: string, textractJson: any): Promise<QueryResult> {
+    return db.query(
+      `UPDATE pauta_arquivo_ocr
+       SET textract_json = $2,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE filename = $1`,
+      [filename, JSON.stringify(textractJson)]
+    );
+  }
+
   async deleteFiscalAndPendenteByFilename(filename: string): Promise<void> {
     await db.query('DELETE FROM fato_pauta_fiscal WHERE arquivo_origem = $1', [filename]);
     await db.query('DELETE FROM fato_pauta_pendente WHERE arquivo_origem = $1', [filename]);

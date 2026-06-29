@@ -3,7 +3,6 @@ import { usePautas, useEstados, useOcrTables } from '../hooks/usePautas';
 import { useProdutos } from '@/features/produtos/hooks/useProdutos';
 import { OcrTablesViewer } from '../components/OcrTablesViewer';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -17,6 +16,8 @@ export default function PautasImportPage() {
     isUploading,
     ocrFiles = [],
     confirmManualPauta,
+    updateOcrTables,
+    isUpdatingOcrTables,
   } = usePautas();
 
   const { produtos = [] } = useProdutos();
@@ -509,6 +510,8 @@ export default function PautasImportPage() {
                 dataPauta={vigenciaDate}
                 dbConfirmedCells={dbConfirmedCells}
                 onConfirmManual={confirmManualPauta}
+                updateOcrTables={updateOcrTables}
+                isUpdatingOcrTables={isUpdatingOcrTables}
               />
             </div>
           ) : (

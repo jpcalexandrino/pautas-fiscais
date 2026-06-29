@@ -95,14 +95,14 @@ export function PautasDataTable({ pautas, loading, getTableInstance }: PautasDat
         cell: ({ row }) => (row.original.conteudo_volume != null ? String(row.original.conteudo_volume) : '-'),
       },
       {
-        accessorKey: 'valor_pauta',
+        accessorFn: (row) => (row.valor_pauta != null ? formatCurrency(row.valor_pauta) : '-'),
         id: 'valor_pauta',
         header: 'PMPF',
         size: 110,
-        cell: ({ row }) => (row.original.valor_pauta != null ? formatCurrency(row.original.valor_pauta) : '-'),
+        cell: ({ getValue }) => getValue(),
       },
       {
-        accessorKey: 'data',
+        accessorFn: (row) => formatDateToBR(row.data),
         id: 'data',
         header: 'Data',
         size: 120,

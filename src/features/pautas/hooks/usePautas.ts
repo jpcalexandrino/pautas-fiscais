@@ -147,6 +147,24 @@ export function usePautas(filters?: { fk_estado?: number; fk_produto?: number })
     },
   });
 
+  const updateOcrTablesMutation = useMutation({
+    mutationFn: async ({ filename, tabelas }: { filename: string; tabelas: any[] }) => {
+      const response = await apiFetch(`/pautas/ocr-files/${encodeURIComponent(filename)}/tabelas`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tabelas }),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || 'Falha ao salvar alterações nas tabelas');
+      }
+      return await response.json();
+    },
+    onSuccess: (_, { filename }) => {
+      queryClient.invalidateQueries({ queryKey: ['pautas-ocr-tables', filename] });
+    },
+  });
+
   return {
     loading: pautasQuery.isLoading || pendentesQuery.isLoading || ocrFilesQuery.isLoading,
     pautas: pautasQuery.data || [],
@@ -158,8 +176,10 @@ export function usePautas(filters?: { fk_estado?: number; fk_produto?: number })
     confirmManualPauta: confirmManualMutation.mutateAsync,
     deletePendente: deletePendenteMutation.mutateAsync,
     deleteAllPendentes: deleteAllPendentesMutation.mutateAsync,
+    updateOcrTables: updateOcrTablesMutation.mutateAsync,
     isUploading: uploadMutation.isPending,
     isReprocessing: reprocessMutation.isPending,
+    isUpdatingOcrTables: updateOcrTablesMutation.isPending,
     refetchPautas: pautasQuery.refetch,
     refetchPendentes: pendentesQuery.refetch,
     refetchOcrFiles: ocrFilesQuery.refetch,
