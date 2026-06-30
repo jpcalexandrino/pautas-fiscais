@@ -38,6 +38,9 @@ export function SiteHeader() {
     case "users":
       pathnames[0] = "Usuários";
       break;
+    case "settings":
+      pathnames[0] = "Configurações";
+      break;
     default:
       break;
   }

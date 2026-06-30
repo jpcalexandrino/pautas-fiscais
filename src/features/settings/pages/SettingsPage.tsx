@@ -28,7 +28,7 @@ export default function SettingsPage() {
   return (
     <div className="space-y-8 animate-fade-in pb-10">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Configurações</h1>
         <p className="text-muted-foreground text-sm mt-1">
           Ajuste as preferências e configurações globais do sistema.
         </p>

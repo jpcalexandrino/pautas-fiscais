@@ -45,7 +45,7 @@ export function OcrToolbar({
           />
         </div>
 
-        <div className="flex items-center gap-2 border rounded-md px-3 py-1.5 bg-background select-none shrink-0">
+        {/* <div className="flex items-center gap-2 border rounded-md px-3 py-1.5 bg-background select-none shrink-0">
           <Checkbox
             id="filter-brand-only"
             checked={filterBrandOnly}
@@ -58,7 +58,7 @@ export function OcrToolbar({
           >
             Filtrar apenas nossa marca
           </label>
-        </div>
+        </div> */}
       </div>
 
       <div className="flex flex-wrap items-center gap-3 self-start lg:self-auto shrink-0">
