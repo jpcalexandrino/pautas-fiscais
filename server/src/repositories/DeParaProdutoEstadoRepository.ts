@@ -84,6 +84,16 @@ class DeParaProdutoEstadoRepository {
   }
 
   async create(row: DeParaRow): Promise<QueryResult> {
+    const existing = await db.query(
+      `SELECT * FROM aux_de_para_produto_estado 
+       WHERE fk_estado_nk = $1 AND termo_descricao_estado = $2 AND fk_produto_sk = $3`,
+      [row.fk_estado_nk.toUpperCase(), row.termo_descricao_estado, row.fk_produto_sk]
+    );
+    
+    if (existing.rows.length > 0) {
+      return existing;
+    }
+
     return db.query(
       `INSERT INTO aux_de_para_produto_estado (fk_estado_nk, termo_descricao_estado, gtin_estado, fk_produto_sk)
        VALUES ($1, $2, $3, $4) RETURNING *`,

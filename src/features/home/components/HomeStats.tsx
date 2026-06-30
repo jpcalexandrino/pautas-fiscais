@@ -50,7 +50,7 @@ export default function HomeStats({ stats, isLoading }: HomeStatsProps) {
             <div className="flex items-center gap-1 font-medium">
               Aguardando associação <ClipboardCheck className="h-3.5 w-3.5" />
             </div>
-            <div className="text-muted-foreground text-xs">Produtos sem classificação automática</div>
+            <div className="text-muted-foreground text-xs">Produtos sem classificação</div>
           </CardFooter>
         </Card>
 

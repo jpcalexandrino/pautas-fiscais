@@ -177,7 +177,7 @@ export default function PautasImportPage() {
       
       toast.success('Pauta carregada com sucesso!', {
         id: toastId,
-        description: `${result.autoInserted} inseridos, ${result.pendingReview} pendentes.`,
+        description: 'Verifique e associe os produtos.',
       });
 
       // Auto-seleciona o arquivo recém-carregado para carregar a tabela na hora

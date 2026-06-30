@@ -89,6 +89,41 @@ function inferItemDescription(row: string[], headers: string[], colIdx: number, 
   if (marcaIdx !== -1 && row[marcaIdx]) parts.push(row[marcaIdx]);
   if (embalagemIdx !== -1 && row[embalagemIdx] && embalagemIdx !== colIdx) parts.push(row[embalagemIdx]);
   
+  // Ignora cabeçalhos genéricos de preço (ex: PRECO_SUGERIDO, VALOR_PMPF)
+  const isGenericPriceHeader = headers[colIdx] && /preco|valor|pmpf|pauta|custo|sugerido/i.test(headers[colIdx]);
+  if (headers[colIdx] && !isGenericPriceHeader && headers[colIdx] !== headers[marcaIdx] && headers[colIdx] !== headers[embalagemIdx]) {
+    parts.push(headers[colIdx]);
+  }
+  
+  // Busca por qualquer célula na linha que contenha padrão de volume (ex: 330ml, 330 ml, 500ml)
+  const volumeRegex = /\b\d+(?:[\.,]\d+)?\s*(?:ml|l|g|kg)\b/i;
+  const numberOnlyVolumeRegex = /\b(210|250|269|275|300|310|330|350|355|400|450|473|500|550|600|750|960|1000|1500|2000)\b/;
+  
+  let volumeFound = '';
+  for (let i = 0; i < row.length; i++) {
+    if (i === colIdx || i === marcaIdx || i === embalagemIdx) continue;
+    const cellValue = (row[i] || '').trim();
+    
+    if (volumeRegex.test(cellValue)) {
+      const match = cellValue.match(volumeRegex);
+      if (match) {
+        volumeFound = match[0];
+        break;
+      }
+    } else if (numberOnlyVolumeRegex.test(cellValue)) {
+      const match = cellValue.match(numberOnlyVolumeRegex);
+      if (match) {
+        volumeFound = match[0] + 'ml';
+        break;
+      }
+    }
+  }
+
+  // Se encontramos um volume na linha e ele ainda não faz parte de nenhuma das strings incluídas
+  if (volumeFound && !parts.some(p => p.toLowerCase().includes(volumeFound.toLowerCase()))) {
+    parts.push(volumeFound);
+  }
+  
   if (parts.length === 0) {
     parts = row.filter((_, idx) => idx !== colIdx && idx !== 0);
   }
