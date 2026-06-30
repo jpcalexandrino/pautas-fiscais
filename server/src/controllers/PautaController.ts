@@ -142,10 +142,54 @@ export async function deleteAllPendentes(req: Request, res: Response) {
   }
 }
 
+function calculateOcrFileStats(row: any) {
+  const { id, filename, uf, data_pauta, confirmed_cells, textract_json, created_at } = row;
+  
+  let totalPrices = 0;
+  try {
+    const tabelas = TextractCompactor.extractTables(textract_json, uf);
+    const priceRegex = /^\s*(?:R\$\s*)?\d+[\.,]\d{2}\s*$/i;
+    const isPriceCell = (value: string, header: string) => {
+      const normHeader = (header || '').toUpperCase();
+      if (normHeader === 'ITEM' || normHeader === 'CNPJ_FABRICANTE' || normHeader === 'COD_FABRICANTE' || normHeader === 'NCM') {
+        return false;
+      }
+      return priceRegex.test(value);
+    };
+
+    tabelas.forEach((tabela: any) => {
+      tabela.rows.forEach((r: string[]) => {
+        r.forEach((cell: string, cIdx: number) => {
+          if (isPriceCell(cell, tabela.headers[cIdx])) {
+            totalPrices++;
+          }
+        });
+      });
+    });
+  } catch (err) {
+    console.error('Erro ao calcular estatísticas do arquivo OCR:', filename, err);
+  }
+
+  const confirmedList = Array.isArray(confirmed_cells) ? confirmed_cells : [];
+  const confirmedCount = confirmedList.length;
+
+  return {
+    id,
+    filename,
+    uf,
+    data_pauta,
+    created_at,
+    total_prices: totalPrices,
+    confirmed_count: confirmedCount,
+    pending_count: Math.max(0, totalPrices - confirmedCount),
+  };
+}
+
 export async function getArquivosOcr(req: Request, res: Response) {
   try {
     const result = await PautaFiscalRepository.getOcrFiles();
-    res.json(result.rows);
+    const detailed = result.rows.map(calculateOcrFileStats);
+    res.json(detailed);
   } catch (error: unknown) {
     res.status(500).json({ error: (error as Error).message });
   }

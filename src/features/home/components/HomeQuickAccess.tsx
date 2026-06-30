@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
-import { Upload, ArrowRight, Database, ArrowLeftRight } from 'lucide-react';
+import { Upload, ArrowRight, Database, ArrowLeftRight, Tag } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -29,6 +29,12 @@ const quickAccessItems: QuickAccessItem[] = [
     description: 'Gerencie as regras de equivalência de termos por estado.',
     to: '/de-para',
   },
+  {
+    icon: Tag,
+    title: 'Termos das Pautas',
+    description: 'Gerencie os termos utilizados nas pautas.',
+    to: '/settings',
+  }
 ];
 
 export default function HomeQuickAccess() {

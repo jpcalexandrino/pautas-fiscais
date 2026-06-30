@@ -8,6 +8,7 @@ import HomeGreeting from '../components/HomeGreeting';
 import HomeStats from '../components/HomeStats';
 import HomeQuickAccess from '../components/HomeQuickAccess';
 import HomeWorkFlow from '../components/HomeWorkFlow';
+import HomeCharts from '../components/HomeCharts';
 
 export default function HomePage() {
   const { user } = useAuth();
@@ -18,26 +19,33 @@ export default function HomePage() {
     produtosCount: 0,
     deParaCount: 0,
   });
+  const [pautas, setPautas] = useState<any[]>([]);
+  const [ocrFiles, setOcrFiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadStats() {
       try {
-        const [pautasRes, pendentesRes, produtosRes, deParaRes] = await Promise.all([
+        const [pautasRes, ocrFilesRes, produtosRes, deParaRes] = await Promise.all([
           apiFetch('/pautas'),
-          apiFetch('/pautas/pendentes'),
+          apiFetch('/pautas/ocr-files'),
           apiFetch('/produtos'),
           apiFetch('/de-para')
         ]);
 
-        const pautas = pautasRes.ok ? await pautasRes.json() : [];
-        const pendentes = pendentesRes.ok ? await pendentesRes.json() : [];
+        const pautasData = pautasRes.ok ? await pautasRes.json() : [];
+        const ocrFilesData = ocrFilesRes.ok ? await ocrFilesRes.json() : [];
         const produtos = produtosRes.ok ? await produtosRes.json() : [];
         const dePara = deParaRes.ok ? await deParaRes.json() : [];
 
+        setPautas(pautasData);
+        setOcrFiles(ocrFilesData);
+
+        const totalPending = ocrFilesData.reduce((acc: number, f: any) => acc + (f.pending_count || 0), 0);
+
         setStats({
-          pautasCount: pautas.length,
-          pendentesCount: pendentes.length,
+          pautasCount: pautasData.length,
+          pendentesCount: totalPending,
           produtosCount: produtos.length,
           deParaCount: dePara.length,
         });
@@ -60,6 +68,9 @@ export default function HomePage() {
 
       {/* KPI Stats Cards */}
       <HomeStats stats={stats} isLoading={loading} />
+
+      {/* Modern SVGs Charts Section */}
+      <HomeCharts pautas={pautas} ocrFiles={ocrFiles} isLoading={loading} />
 
       <Separator />
 

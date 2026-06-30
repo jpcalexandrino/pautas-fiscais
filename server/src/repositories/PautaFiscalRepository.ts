@@ -260,7 +260,7 @@ class PautaFiscalRepository {
   }
 
   async getOcrFiles(): Promise<QueryResult> {
-    return db.query('SELECT id, filename, uf, data_pauta, created_at FROM pauta_arquivo_ocr ORDER BY created_at DESC');
+    return db.query('SELECT id, filename, uf, data_pauta, confirmed_cells, textract_json, created_at FROM pauta_arquivo_ocr ORDER BY created_at DESC');
   }
 
   async deleteAllPendentes(): Promise<QueryResult> {
