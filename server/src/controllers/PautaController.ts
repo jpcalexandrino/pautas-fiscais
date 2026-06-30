@@ -23,20 +23,7 @@ function mapPautaFromDb(row: Record<string, unknown>) {
   };
 }
 
-function mapPendenteFromDb(row: Record<string, unknown>) {
-  return {
-    id: row.id,
-    uf: row.fk_estado_nk,
-    nome_estado: row.nome_estado,
-    descricao_estado: row.descricao_estado,
-    gtin_extraido: row.gtin_extraido,
-    valor_pauta: row.valor_pauta,
-    data: row.fk_data,
-    arquivo_origem: row.arquivo_origem,
-    created_at: row.created_at,
-    dados_extraidos: row.dados_extraidos,
-  };
-}
+
 function formatMonthYear(dateString: string): string {
   const date = new Date(dateString + 'T12:00:00');
   const months = [
@@ -97,50 +84,6 @@ export async function getAll(req: Request, res: Response) {
   }
 }
 
-export async function getPendentes(req: Request, res: Response) {
-  try {
-    const uf = req.query.uf as string | undefined;
-    const result = await PautaFiscalRepository.getPendentes(uf);
-    res.json(result.rows.map(mapPendenteFromDb));
-  } catch (error: unknown) {
-    res.status(500).json({ error: (error as Error).message });
-  }
-}
-
-export async function confirmPendente(req: Request, res: Response) {
-  try {
-    const { fk_produto, salvar_de_para } = req.body;
-    if (!fk_produto) {
-      return res.status(400).json({ error: 'Produto é obrigatório' });
-    }
-    await PautaFiscalService.confirmPendente(
-      Number(req.params.id),
-      Number(fk_produto),
-      Boolean(salvar_de_para)
-    );
-    res.json({ success: true });
-  } catch (error: unknown) {
-    res.status(500).json({ error: (error as Error).message });
-  }
-}
-
-export async function deletePendente(req: Request, res: Response) {
-  try {
-    await PautaFiscalRepository.deletePendente(Number(req.params.id));
-    res.status(204).send();
-  } catch (error: unknown) {
-    res.status(500).json({ error: (error as Error).message });
-  }
-}
-
-export async function deleteAllPendentes(req: Request, res: Response) {
-  try {
-    await PautaFiscalRepository.deleteAllPendentes();
-    res.status(204).send();
-  } catch (error: unknown) {
-    res.status(500).json({ error: (error as Error).message });
-  }
-}
 
 function calculateOcrFileStats(row: any) {
   const { id, filename, uf, data_pauta, confirmed_cells, textract_json, created_at } = row;
@@ -192,21 +135,6 @@ export async function getArquivosOcr(req: Request, res: Response) {
     res.json(detailed);
   } catch (error: unknown) {
     res.status(500).json({ error: (error as Error).message });
-  }
-}
-
-export async function reprocessarComIA(req: Request, res: Response) {
-  try {
-    const { filename, uf } = req.body;
-    if (!filename || !uf) {
-      return res.status(400).json({ error: 'Filename e UF são obrigatórios' });
-    }
-    const result = await PautaFiscalService.reprocessWithAI(filename, uf.toUpperCase());
-    res.json(result);
-  } catch (error: unknown) {
-    const message = (error as Error).message;
-    const status = message.includes('não possui um JSON da IA') ? 422 : 500;
-    res.status(status).json({ error: message });
   }
 }
 

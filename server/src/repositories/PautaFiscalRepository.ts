@@ -38,20 +38,6 @@ class PautaFiscalRepository {
       );
     `);
 
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS fato_pauta_pendente (
-        id BIGSERIAL PRIMARY KEY,
-        fk_estado INT NOT NULL REFERENCES dim_estado(sk_estado),
-        fk_estado_nk CHAR(2) NOT NULL,
-        descricao_estado VARCHAR(500) NOT NULL,
-        gtin_extraido VARCHAR(13),
-        valor_pauta DECIMAL(10,4),
-        fk_data INT REFERENCES dim_calendario(sk_data),
-        arquivo_origem VARCHAR(500),
-        dados_extraidos JSONB,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
 
     return db.query(`
       CREATE TABLE IF NOT EXISTS pauta_arquivo_ocr (
@@ -138,76 +124,6 @@ class PautaFiscalRepository {
     );
   }
 
-  async createPendente(row: PautaPendenteRow): Promise<QueryResult> {
-    return db.query(
-      `INSERT INTO fato_pauta_pendente (
-        fk_estado, fk_estado_nk, descricao_estado, gtin_extraido,
-        valor_pauta, fk_data, arquivo_origem, dados_extraidos
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-      [
-        row.fk_estado, row.fk_estado_nk, row.descricao_estado, row.gtin_extraido ?? null,
-        row.valor_pauta ?? null, row.fk_data ?? null,
-        row.arquivo_origem ?? null, row.dados_extraidos ? JSON.stringify(row.dados_extraidos) : null,
-      ]
-    );
-  }
-
-  async createPendentesMany(rows: PautaPendenteRow[]): Promise<QueryResult> {
-    if (rows.length === 0) return { rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult;
-
-    const values: any[] = [];
-    const placeholders: string[] = [];
-
-    rows.forEach((row, i) => {
-      const idx = i * 8;
-      placeholders.push(`($${idx + 1},$${idx + 2},$${idx + 3},$${idx + 4},$${idx + 5},$${idx + 6},$${idx + 7},$${idx + 8})`);
-      values.push(
-        row.fk_estado,
-        row.fk_estado_nk,
-        row.descricao_estado,
-        row.gtin_extraido ?? null,
-        row.valor_pauta ?? null,
-        row.fk_data ?? null,
-        row.arquivo_origem ?? null,
-        row.dados_extraidos ? JSON.stringify(row.dados_extraidos) : null
-      );
-    });
-
-    return db.query(
-      `INSERT INTO fato_pauta_pendente (
-        fk_estado, fk_estado_nk, descricao_estado, gtin_extraido,
-        valor_pauta, fk_data, arquivo_origem, dados_extraidos
-      ) VALUES ${placeholders.join(',')} RETURNING *`,
-      values
-    );
-  }
-
-  async getPendentes(fk_estado_nk?: string): Promise<QueryResult> {
-    if (fk_estado_nk) {
-      return db.query(
-        `SELECT p.*, e.nome_estado
-         FROM fato_pauta_pendente p
-         JOIN dim_estado e ON e.sk_estado = p.fk_estado
-         WHERE p.fk_estado_nk = $1
-         ORDER BY p.created_at DESC`,
-        [fk_estado_nk.toUpperCase()]
-      );
-    }
-    return db.query(
-      `SELECT p.*, e.nome_estado
-       FROM fato_pauta_pendente p
-       JOIN dim_estado e ON e.sk_estado = p.fk_estado
-       ORDER BY p.created_at DESC`
-    );
-  }
-
-  async getPendenteById(id: number): Promise<QueryResult> {
-    return db.query('SELECT * FROM fato_pauta_pendente WHERE id = $1', [id]);
-  }
-
-  async deletePendente(id: number): Promise<QueryResult> {
-    return db.query('DELETE FROM fato_pauta_pendente WHERE id = $1', [id]);
-  }
 
   async findOcrByFilename(filename: string): Promise<QueryResult> {
     return db.query('SELECT * FROM pauta_arquivo_ocr WHERE filename = $1', [filename]);
@@ -256,15 +172,10 @@ class PautaFiscalRepository {
 
   async deleteFiscalAndPendenteByFilename(filename: string): Promise<void> {
     await db.query('DELETE FROM fato_pauta_fiscal WHERE arquivo_origem = $1', [filename]);
-    await db.query('DELETE FROM fato_pauta_pendente WHERE arquivo_origem = $1', [filename]);
   }
 
   async getOcrFiles(): Promise<QueryResult> {
     return db.query('SELECT id, filename, uf, data_pauta, confirmed_cells, textract_json, created_at FROM pauta_arquivo_ocr ORDER BY created_at DESC');
-  }
-
-  async deleteAllPendentes(): Promise<QueryResult> {
-    return db.query('DELETE FROM fato_pauta_pendente');
   }
 }
 
