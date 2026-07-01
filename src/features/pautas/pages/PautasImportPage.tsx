@@ -10,6 +10,7 @@ import { Upload, Database, Search, Check, UploadCloud, FileText, X, ArrowRight, 
 import { toast } from 'sonner';
 
 export default function PautasImportPage() {
+  const [contexto, setContexto] = useState<'proprio' | 'terceiros'>('proprio');
   const { data: estados = [] } = useEstados();
   const {
     uploadPauta,
@@ -18,7 +19,7 @@ export default function PautasImportPage() {
     confirmManualPauta,
     updateOcrTables,
     isUpdatingOcrTables,
-  } = usePautas();
+  } = usePautas({ contexto });
 
   const { produtos = [] } = useProdutos();
 
@@ -110,7 +111,7 @@ export default function PautasImportPage() {
     }
   };
 
-  const { data: queryData, isLoading: isLoadingTabelas } = useOcrTables(auditFilename);
+  const { data: queryData, isLoading: isLoadingTabelas } = useOcrTables(auditFilename, contexto);
   const tabelas = queryData?.tabelas || [];
   const sugestoesDatas = queryData?.sugestoesDatas || [];
   const dbConfirmedCells = queryData?.confirmedCells || [];
@@ -172,7 +173,8 @@ export default function PautasImportPage() {
       const result = await uploadPauta({
         file: selectedFile,
         uf: uploadUf,
-        dataPauta: uploadVigenciaDate
+        dataPauta: uploadVigenciaDate,
+        contexto
       });
       
       toast.success('Pauta carregada com sucesso!', {
@@ -288,6 +290,26 @@ export default function PautasImportPage() {
 
                     {/* Seleção do arquivo no centro/direita */}
                     <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                      {/* Selecionar Contexto */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-muted-foreground">Contexto *</label>
+                        <Select
+                          value={contexto}
+                          onValueChange={(val: any) => {
+                            setContexto(val);
+                            setAuditFilename('');
+                          }}
+                        >
+                          <SelectTrigger className="w-full bg-background text-xs h-10">
+                            <SelectValue placeholder="Selecione o contexto" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="proprio" className="text-xs">Produtos Próprios</SelectItem>
+                            <SelectItem value="terceiros" className="text-xs">Produtos de Terceiros</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
                       {/* Selecionar Arquivo */}
                       <div className="space-y-1.5">
                         <label className="text-xs font-semibold text-muted-foreground">Arquivo de Pauta *</label>
@@ -437,7 +459,21 @@ export default function PautasImportPage() {
                     </div>
 
                     {/* Fields + Button */}
-                    <div className="lg:col-span-7 grid grid-cols-2 gap-3 items-end">
+                    <div className="lg:col-span-7 grid grid-cols-3 gap-3 items-end">
+                      {/* Selecionar Contexto */}
+                      <div className="space-y-1.5 col-span-1">
+                        <label className="text-xs font-semibold text-muted-foreground">Contexto *</label>
+                        <Select value={contexto} onValueChange={(val: any) => setContexto(val)} disabled={isUploading}>
+                          <SelectTrigger className="bg-background text-xs h-10">
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="proprio" className="text-xs">Produtos Próprios</SelectItem>
+                            <SelectItem value="terceiros" className="text-xs">Produtos de Terceiros</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
                       {/* Select UF */}
                       <div className="space-y-1.5 col-span-1">
                         <label className="text-xs font-semibold text-muted-foreground">Estado (UF) *</label>
@@ -467,7 +503,7 @@ export default function PautasImportPage() {
                       </div>
 
                       {/* Botão de Envio */}
-                      <div className="col-span-2 pt-1">
+                      <div className="col-span-3 pt-1">
                         <Button
                           className={`w-full text-xs h-10 font-semibold transition-all duration-200 ${
                             selectedFile && uploadUf && uploadVigenciaDate && !isUploading
@@ -512,6 +548,7 @@ export default function PautasImportPage() {
                 onConfirmManual={confirmManualPauta}
                 updateOcrTables={updateOcrTables}
                 isUpdatingOcrTables={isUpdatingOcrTables}
+                contexto={contexto}
               />
             </div>
           ) : (

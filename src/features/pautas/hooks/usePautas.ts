@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch, apiUpload } from '@/api/client';
 
-export function usePautas(filters?: { fk_estado?: number; fk_produto?: number }) {
+export function usePautas(filters?: { fk_estado?: number; fk_produto?: number; contexto?: string }) {
   const queryClient = useQueryClient();
 
   const pautasQuery = useQuery({
@@ -10,6 +10,7 @@ export function usePautas(filters?: { fk_estado?: number; fk_produto?: number })
       const params = new URLSearchParams();
       if (filters?.fk_estado) params.set('fk_estado', String(filters.fk_estado));
       if (filters?.fk_produto) params.set('fk_produto', String(filters.fk_produto));
+      if (filters?.contexto) params.set('contexto', filters.contexto);
       const qs = params.toString();
       const response = await apiFetch(`/pautas${qs ? `?${qs}` : ''}`);
       if (!response.ok) throw new Error('Falha ao carregar pautas');
@@ -19,12 +20,15 @@ export function usePautas(filters?: { fk_estado?: number; fk_produto?: number })
   });
 
   const uploadMutation = useMutation({
-    mutationFn: async ({ file, uf, dataPauta }: { file: File; uf: string; dataPauta?: string }) => {
+    mutationFn: async ({ file, uf, dataPauta, contexto }: { file: File; uf: string; dataPauta?: string; contexto?: string }) => {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('uf', uf);
       if (dataPauta) {
         formData.append('data_pauta', dataPauta);
+      }
+      if (contexto) {
+        formData.append('contexto', contexto);
       }
       const response = await apiUpload('/pautas/upload', formData);
       if (!response.ok) {
@@ -40,9 +44,10 @@ export function usePautas(filters?: { fk_estado?: number; fk_produto?: number })
   });
 
   const ocrFilesQuery = useQuery({
-    queryKey: ['pautas-ocr-files'],
+    queryKey: ['pautas-ocr-files', filters?.contexto],
     queryFn: async () => {
-      const response = await apiFetch('/pautas/ocr-files');
+      const qs = filters?.contexto ? `?contexto=${filters.contexto}` : '';
+      const response = await apiFetch(`/pautas/ocr-files${qs}`);
       if (!response.ok) throw new Error('Falha ao carregar arquivos do banco');
       return await response.json();
     },
@@ -59,6 +64,7 @@ export function usePautas(filters?: { fk_estado?: number; fk_produto?: number })
       arquivo_origem: string;
       salvar_de_para: boolean;
       cell_key?: string;
+      contexto?: string;
     }) => {
       const response = await apiFetch('/pautas/confirmar-manual', {
         method: 'POST',
@@ -79,11 +85,11 @@ export function usePautas(filters?: { fk_estado?: number; fk_produto?: number })
   });
 
   const updateOcrTablesMutation = useMutation({
-    mutationFn: async ({ filename, tabelas }: { filename: string; tabelas: any[] }) => {
+    mutationFn: async ({ filename, tabelas, contexto }: { filename: string; tabelas: any[]; contexto?: string }) => {
       const response = await apiFetch(`/pautas/ocr-files/${encodeURIComponent(filename)}/tabelas`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tabelas }),
+        body: JSON.stringify({ tabelas, contexto }),
       });
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
@@ -122,16 +128,16 @@ export function useEstados() {
   });
 }
 
-export function useOcrTables(filename?: string) {
+export function useOcrTables(filename?: string, contexto?: string) {
   return useQuery<{ tabelas: any[]; sugestoesDatas: string[]; confirmedCells: string[]; uf?: string }>({
-    queryKey: ['pautas-ocr-tables', filename],
+    queryKey: ['pautas-ocr-tables', filename, contexto],
     queryFn: async () => {
       if (!filename) return { tabelas: [], sugestoesDatas: [], confirmedCells: [], uf: '' };
-      const response = await apiFetch(`/pautas/ocr-files/${encodeURIComponent(filename)}/tabelas`);
+      const qs = contexto ? `?contexto=${contexto}` : '';
+      const response = await apiFetch(`/pautas/ocr-files/${encodeURIComponent(filename)}/tabelas${qs}`);
       if (!response.ok) throw new Error('Falha ao carregar tabelas do OCR');
       return await response.json();
     },
     enabled: !!filename && !!localStorage.getItem('token'),
   });
 }
-

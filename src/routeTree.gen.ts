@@ -18,6 +18,7 @@ import { Route as AuthenticatedProdutosRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedImportRouteImport } from './routes/_authenticated/import'
 import { Route as AuthenticatedDeParaRouteImport } from './routes/_authenticated/de-para'
 import { Route as AuthenticatedDadosRouteImport } from './routes/_authenticated/dados'
+import { Route as AuthenticatedAuditoriaRouteImport } from './routes/_authenticated/auditoria'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -63,10 +64,16 @@ const AuthenticatedDadosRoute = AuthenticatedDadosRouteImport.update({
   path: '/dados',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedAuditoriaRoute = AuthenticatedAuditoriaRouteImport.update({
+  id: '/auditoria',
+  path: '/auditoria',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
+  '/auditoria': typeof AuthenticatedAuditoriaRoute
   '/dados': typeof AuthenticatedDadosRoute
   '/de-para': typeof AuthenticatedDeParaRoute
   '/import': typeof AuthenticatedImportRoute
@@ -76,6 +83,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/auditoria': typeof AuthenticatedAuditoriaRoute
   '/dados': typeof AuthenticatedDadosRoute
   '/de-para': typeof AuthenticatedDeParaRoute
   '/import': typeof AuthenticatedImportRoute
@@ -88,6 +96,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
+  '/_authenticated/auditoria': typeof AuthenticatedAuditoriaRoute
   '/_authenticated/dados': typeof AuthenticatedDadosRoute
   '/_authenticated/de-para': typeof AuthenticatedDeParaRoute
   '/_authenticated/import': typeof AuthenticatedImportRoute
@@ -101,6 +110,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/auditoria'
     | '/dados'
     | '/de-para'
     | '/import'
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
+    | '/auditoria'
     | '/dados'
     | '/de-para'
     | '/import'
@@ -121,6 +132,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_authenticated'
     | '/login'
+    | '/_authenticated/auditoria'
     | '/_authenticated/dados'
     | '/_authenticated/de-para'
     | '/_authenticated/import'
@@ -200,10 +212,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDadosRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/auditoria': {
+      id: '/_authenticated/auditoria'
+      path: '/auditoria'
+      fullPath: '/auditoria'
+      preLoaderRoute: typeof AuthenticatedAuditoriaRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedAuditoriaRoute: typeof AuthenticatedAuditoriaRoute
   AuthenticatedDadosRoute: typeof AuthenticatedDadosRoute
   AuthenticatedDeParaRoute: typeof AuthenticatedDeParaRoute
   AuthenticatedImportRoute: typeof AuthenticatedImportRoute
@@ -214,6 +234,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAuditoriaRoute: AuthenticatedAuditoriaRoute,
   AuthenticatedDadosRoute: AuthenticatedDadosRoute,
   AuthenticatedDeParaRoute: AuthenticatedDeParaRoute,
   AuthenticatedImportRoute: AuthenticatedImportRoute,

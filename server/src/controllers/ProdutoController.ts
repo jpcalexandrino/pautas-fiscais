@@ -10,6 +10,7 @@ function mapFromDb(row: Record<string, unknown>) {
     descricao_interna: row.descricao_interna,
     embalagem: row.embalagem,
     conteudo_volume: row.conteudo_volume,
+    tipo: row.tipo,
     created_at: row.created_at,
   };
 }
@@ -21,6 +22,7 @@ function mapToDb(body: Record<string, unknown>) {
     descricao_interna: body.descricao_interna as string,
     embalagem: body.embalagem as string,
     conteudo_volume: body.conteudo_volume != null ? Number(body.conteudo_volume) : undefined,
+    tipo: body.tipo as string,
   };
 }
 
@@ -180,12 +182,16 @@ export async function bulkImport(req: Request, res: Response) {
           }
         }
 
+        const tipoRaw = getNormalizedValue(row, ['tipo', 'origem', 'contexto']);
+        const tipo = tipoRaw ? String(tipoRaw).trim().toLowerCase() : (existingProduct ? existingProduct.tipo : 'proprio');
+
         const mapped = {
           nk_codigo_interno: codigo || (existingProduct ? existingProduct.nk_codigo_interno : null),
           gtin_13: gtin || (existingProduct ? existingProduct.gtin_13 : null),
           descricao_interna: descricao,
           embalagem: embalagem !== undefined ? embalagem : (existingProduct ? existingProduct.embalagem : null),
           conteudo_volume: volume !== undefined ? volume : (existingProduct ? existingProduct.conteudo_volume : null),
+          tipo: (tipo === 'terceiros' || tipo === 'terceiro') ? 'terceiros' : 'proprio',
         };
 
         if (existingProduct) {

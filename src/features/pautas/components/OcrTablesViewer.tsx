@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode, useMemo } from 'react';
 import { HelpCircle, Info } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { toast } from 'sonner';
@@ -47,9 +47,11 @@ interface OcrTablesViewerProps {
     arquivo_origem: string;
     salvar_de_para: boolean;
     cell_key?: string;
+    contexto?: string;
   }) => Promise<any>;
-  updateOcrTables?: (params: { filename: string; tabelas: any[] }) => Promise<any>;
+  updateOcrTables?: (params: { filename: string; tabelas: any[]; contexto?: string }) => Promise<any>;
   isUpdatingOcrTables?: boolean;
+  contexto?: string;
 }
 
 const priceRegex = /^\s*(?:R\$\s*)?\d+[\.,]\d{2}\s*$/i;
@@ -142,6 +144,7 @@ export function OcrTablesViewer({
   onConfirmManual,
   updateOcrTables,
   isUpdatingOcrTables = false,
+  contexto = 'proprio',
 }: OcrTablesViewerProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [confirmedCells, setConfirmedCells] = useState<Set<string>>(new Set());
@@ -184,6 +187,10 @@ export function OcrTablesViewer({
   const [selectedBulkTable, setSelectedBulkTable] = useState<any | null>(null);
 
   const normalizedSearch = normalizeForSearch(searchTerm);
+
+  const filteredCatalogProducts = useMemo(() => {
+    return produtos.filter((p: any) => (p.tipo || 'proprio') === contexto);
+  }, [produtos, contexto]);
 
   const { terms } = useTerms();
   const activeSlugs = terms.length > 0 ? terms.map((t) => t.termo) : BRAND_SLUGS;
@@ -283,12 +290,12 @@ export function OcrTablesViewer({
   const handleSaveEdits = async () => {
     if (!updateOcrTables) return;
     try {
-      await updateOcrTables({ filename, tabelas: localTabelas });
-      toast.success('Tabelas atualizadas com sucesso!');
+      await updateOcrTables({ filename, tabelas: localTabelas, contexto });
+      toast.success('Tabelas updated successfully!');
       setIsEditingMode(false);
     } catch (err: any) {
-      toast.error('Erro ao salvar edições', {
-        description: err.message || 'Erro inesperado.',
+      toast.error('Error saving edits', {
+        description: err.message || 'Unexpected error.',
       });
     }
   };
@@ -319,7 +326,7 @@ export function OcrTablesViewer({
     if (exactDeParaMatches.length > 0) {
       setSelectedProductIds(exactDeParaMatches.map((dp: any) => dp.fk_produto));
     } else {
-      const bestMatch = produtos
+      const bestMatch = filteredCatalogProducts
         .map(p => ({
           p,
           score: normInferred.split(/\s+/).reduce((acc, word) => {
@@ -358,6 +365,7 @@ export function OcrTablesViewer({
         arquivo_origem: filename,
         salvar_de_para: saveDePara,
         cell_key: cellKey,
+        contexto: contexto
       });
 
       setConfirmedCells((prev) => {
@@ -397,7 +405,7 @@ export function OcrTablesViewer({
 
     for (const payload of payloads) {
       try {
-        await onConfirmManual(payload);
+        await onConfirmManual({ ...payload, contexto });
         setConfirmedCells((prev) => {
           const next = new Set(prev);
           next.add(payload.cell_key);
@@ -537,7 +545,7 @@ export function OcrTablesViewer({
         open={modalOpen}
         onOpenChange={setModalOpen}
         selectedCellData={selectedCellData}
-        produtos={produtos}
+        produtos={filteredCatalogProducts}
         saveDePara={saveDePara}
         onSaveDeParaChange={setSaveDePara}
         onConfirm={handleConfirmAssociation}
@@ -546,13 +554,14 @@ export function OcrTablesViewer({
         onProductSearchChange={setProductSearch}
         selectedProductIds={selectedProductIds}
         setSelectedProductIds={setSelectedProductIds}
+        contexto={contexto}
       />
 
       <OcrBulkLoadDialog
         open={bulkLoadOpen}
         onOpenChange={setBulkLoadOpen}
         tabela={selectedBulkTable}
-        produtos={produtos}
+        produtos={filteredCatalogProducts}
         deParas={deParas || []}
         uf={uf}
         dataPauta={dataPauta}

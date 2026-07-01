@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface ProdutoDialogProps {
   isOpen: boolean;
@@ -71,6 +72,21 @@ export function ProdutoDialog({
                 value={formData.conteudo_volume != null ? String(formData.conteudo_volume) : ''}
                 onChange={(e) => setFormData({ ...formData, conteudo_volume: e.target.value ? Number(e.target.value) : null })}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="tipo">Tipo de Produto *</Label>
+              <Select
+                value={String(formData.tipo || 'proprio')}
+                onValueChange={(val) => setFormData({ ...formData, tipo: val })}
+              >
+                <SelectTrigger className="w-full bg-background text-xs">
+                  <SelectValue placeholder="Selecione o tipo..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="proprio">Próprio</SelectItem>
+                  <SelectItem value="terceiros">Terceiros</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>

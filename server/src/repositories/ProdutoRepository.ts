@@ -9,6 +9,7 @@ export interface ProdutoRow {
   descricao_interna: string;
   embalagem?: string;
   conteudo_volume?: number;
+  tipo?: string;
 }
 
 class ProdutoRepository {
@@ -21,8 +22,10 @@ class ProdutoRepository {
         descricao_interna VARCHAR(255) NOT NULL,
         embalagem VARCHAR(50),
         conteudo_volume INT,
+        tipo VARCHAR(20) DEFAULT 'proprio',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+      ALTER TABLE dim_produto ADD COLUMN IF NOT EXISTS tipo VARCHAR(20) DEFAULT 'proprio';
     `;
     return db.query(queryText);
   }
@@ -73,22 +76,22 @@ class ProdutoRepository {
   }
 
   async create(produto: ProdutoRow): Promise<QueryResult> {
-    const { nk_codigo_interno, gtin_13, descricao_interna, embalagem, conteudo_volume } = produto;
+    const { nk_codigo_interno, gtin_13, descricao_interna, embalagem, conteudo_volume, tipo } = produto;
     return db.query(
-      `INSERT INTO dim_produto (nk_codigo_interno, gtin_13, descricao_interna, embalagem, conteudo_volume)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [nk_codigo_interno || null, gtin_13 || null, descricao_interna, embalagem || null, conteudo_volume ?? null]
+      `INSERT INTO dim_produto (nk_codigo_interno, gtin_13, descricao_interna, embalagem, conteudo_volume, tipo)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [nk_codigo_interno || null, gtin_13 || null, descricao_interna, embalagem || null, conteudo_volume ?? null, tipo || 'proprio']
     );
   }
 
   async update(id: number, produto: ProdutoRow): Promise<QueryResult> {
-    const { nk_codigo_interno, gtin_13, descricao_interna, embalagem, conteudo_volume } = produto;
+    const { nk_codigo_interno, gtin_13, descricao_interna, embalagem, conteudo_volume, tipo } = produto;
     return db.query(
       `UPDATE dim_produto
        SET nk_codigo_interno = $1, gtin_13 = $2, descricao_interna = $3,
-           embalagem = $4, conteudo_volume = $5
-       WHERE sk_produto = $6 RETURNING *`,
-      [nk_codigo_interno || null, gtin_13 || null, descricao_interna, embalagem || null, conteudo_volume ?? null, id]
+           embalagem = $4, conteudo_volume = $5, tipo = $6
+       WHERE sk_produto = $7 RETURNING *`,
+      [nk_codigo_interno || null, gtin_13 || null, descricao_interna, embalagem || null, conteudo_volume ?? null, tipo || 'proprio', id]
     );
   }
 

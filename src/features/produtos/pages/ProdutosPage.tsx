@@ -14,6 +14,7 @@ const emptyForm: Record<string, unknown> = {
   descricao_interna: '',
   embalagem: '',
   conteudo_volume: null,
+  tipo: 'proprio',
 };
 
 export default function ProdutosPage() {
@@ -35,6 +36,7 @@ export default function ProdutosPage() {
         descricao_interna: produto.descricao_interna || '',
         embalagem: produto.embalagem || '',
         conteudo_volume: produto.conteudo_volume ?? null,
+        tipo: produto.tipo || 'proprio',
       });
     } else {
       setEditing(null);

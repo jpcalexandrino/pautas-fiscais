@@ -2,7 +2,7 @@ import { Link, useLocation } from '@tanstack/react-router';
 import {
   Home, Database, Package, Settings,
   ArrowLeftRight, Upload,
-  FileText
+  FileText, History
 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import {
@@ -46,6 +46,7 @@ const navData = {
     {
       title: "Administração",
       items: [
+        { title: "Auditoria", url: "/auditoria", icon: History },
         { title: "Configurações", url: "/settings", icon: Settings },
       ],
     },
@@ -84,7 +85,7 @@ export default function AppSidebar() {
       <SidebarContent>
         {navData.mainNav.map((group) => {
           const filteredItems = group.items.filter(item => {
-            if (item.url === '/users' && !isAdmin) return false;
+            if ((item.url === '/users' || item.url === '/auditoria') && !isAdmin) return false;
             return true;
           });
 

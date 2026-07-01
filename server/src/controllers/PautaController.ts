@@ -1,6 +1,9 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { AuthRequest } from '../middleware/authMiddleware';
 import PautaFiscalService from '../services/PautaFiscalService';
 import PautaFiscalRepository from '../repositories/PautaFiscalRepository';
+import AuditRepository from '../repositories/AuditRepository';
+import ProdutoRepository from '../repositories/ProdutoRepository';
 import { TextractCompactor } from '../services/TextractCompactor';
 
 function mapPautaFromDb(row: Record<string, unknown>) {
@@ -19,10 +22,10 @@ function mapPautaFromDb(row: Record<string, unknown>) {
     valor_pauta: row.valor_pauta,
     status: row.status,
     arquivo_origem: row.arquivo_origem,
+    contexto: row.contexto,
     created_at: row.created_at,
   };
 }
-
 
 function formatMonthYear(dateString: string): string {
   const date = new Date(dateString + 'T12:00:00');
@@ -35,7 +38,7 @@ function formatMonthYear(dateString: string): string {
   return `${month} ${year}`;
 }
 
-export async function upload(req: Request, res: Response) {
+export async function upload(req: AuthRequest, res: Response) {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Arquivo não enviado' });
@@ -48,14 +51,15 @@ export async function upload(req: Request, res: Response) {
     if (!dataPauta) {
       return res.status(400).json({ error: 'Data de vigência é obrigatória para o upload' });
     }
+    const contexto = req.body.contexto || 'proprio';
 
     const formattedFilename = `${uf} - ${formatMonthYear(dataPauta)}.pdf`;
 
-    // Verifica se já existe um arquivo com esse nome no banco para evitar duplicatas
-    const existing = await PautaFiscalRepository.findOcrByFilename(formattedFilename);
+    // Verifica se já existe um arquivo com esse nome no banco para evitar duplicatas no mesmo contexto
+    const existing = await PautaFiscalRepository.findOcrByFilename(formattedFilename, contexto);
     if (existing.rows.length > 0) {
       return res.status(400).json({
-        error: `Uma pauta fiscal para ${uf} na vigência ${formatMonthYear(dataPauta)} já foi cadastrada.`
+        error: `Uma pauta fiscal para ${uf} na vigência ${formatMonthYear(dataPauta)} no contexto '${contexto}' já foi cadastrada.`
       });
     }
 
@@ -63,19 +67,30 @@ export async function upload(req: Request, res: Response) {
       req.file.buffer,
       formattedFilename,
       uf,
-      dataPauta
+      dataPauta,
+      contexto
     );
+
+    // Audit log
+    await AuditRepository.log(req.userId, 'IMPORT_ARQUIVO', {
+      filename: formattedFilename,
+      uf,
+      dataPauta,
+      contexto
+    });
+
     res.json(result);
   } catch (error: unknown) {
     res.status(500).json({ error: (error as Error).message });
   }
 }
 
-export async function getAll(req: Request, res: Response) {
+export async function getAll(req: AuthRequest, res: Response) {
   try {
-    const filters: { fk_estado?: number; fk_produto?: number } = {};
+    const filters: { fk_estado?: number; fk_produto?: number; contexto?: string } = {};
     if (req.query.fk_estado) filters.fk_estado = Number(req.query.fk_estado);
     if (req.query.fk_produto) filters.fk_produto = Number(req.query.fk_produto);
+    if (req.query.contexto) filters.contexto = String(req.query.contexto);
 
     const result = await PautaFiscalRepository.getAll(filters);
     res.json(result.rows.map(mapPautaFromDb));
@@ -84,9 +99,8 @@ export async function getAll(req: Request, res: Response) {
   }
 }
 
-
 function calculateOcrFileStats(row: any) {
-  const { id, filename, uf, data_pauta, confirmed_cells, textract_json, created_at } = row;
+  const { id, filename, uf, data_pauta, confirmed_cells, textract_json, contexto, created_at } = row;
   
   let totalPrices = 0;
   try {
@@ -121,6 +135,7 @@ function calculateOcrFileStats(row: any) {
     filename,
     uf,
     data_pauta,
+    contexto,
     created_at,
     total_prices: totalPrices,
     confirmed_count: confirmedCount,
@@ -128,9 +143,10 @@ function calculateOcrFileStats(row: any) {
   };
 }
 
-export async function getArquivosOcr(req: Request, res: Response) {
+export async function getArquivosOcr(req: AuthRequest, res: Response) {
   try {
-    const result = await PautaFiscalRepository.getOcrFiles();
+    const contexto = req.query.contexto ? String(req.query.contexto) : undefined;
+    const result = await PautaFiscalRepository.getOcrFiles(contexto);
     const detailed = result.rows.map(calculateOcrFileStats);
     res.json(detailed);
   } catch (error: unknown) {
@@ -138,10 +154,11 @@ export async function getArquivosOcr(req: Request, res: Response) {
   }
 }
 
-export async function getArquivoOcrByFilename(req: Request, res: Response) {
+export async function getArquivoOcrByFilename(req: AuthRequest, res: Response) {
   try {
     const filename = String(req.params.filename);
-    const result = await PautaFiscalRepository.findOcrByFilename(filename);
+    const contexto = req.query.contexto ? String(req.query.contexto) : 'proprio';
+    const result = await PautaFiscalRepository.findOcrByFilename(filename, contexto);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Arquivo não encontrado' });
     }
@@ -151,10 +168,11 @@ export async function getArquivoOcrByFilename(req: Request, res: Response) {
   }
 }
 
-export async function getTabelasOcr(req: Request, res: Response) {
+export async function getTabelasOcr(req: AuthRequest, res: Response) {
   try {
     const filename = String(req.params.filename);
-    const result = await PautaFiscalRepository.findOcrByFilename(filename);
+    const contexto = req.query.contexto ? String(req.query.contexto) : 'proprio';
+    const result = await PautaFiscalRepository.findOcrByFilename(filename, contexto);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Arquivo não encontrado' });
     }
@@ -167,14 +185,15 @@ export async function getTabelasOcr(req: Request, res: Response) {
   }
 }
 
-export async function confirmarManual(req: Request, res: Response) {
+export async function confirmarManual(req: AuthRequest, res: Response) {
   try {
-    const { fk_produto, fk_produtos, uf, descricao_estado, valor_pauta, data_pauta, arquivo_origem, salvar_de_para, cell_key } = req.body;
+    const { fk_produto, fk_produtos, uf, descricao_estado, valor_pauta, data_pauta, arquivo_origem, salvar_de_para, cell_key, contexto } = req.body;
     if ((!fk_produto && !fk_produtos) || !uf || !descricao_estado || valor_pauta === undefined || !data_pauta || !arquivo_origem) {
       return res.status(400).json({ error: 'Todos os campos obrigatórios devem ser preenchidos' });
     }
 
     const ids = fk_produtos ? fk_produtos.map(Number) : [Number(fk_produto)];
+    const ctx = contexto || 'proprio';
 
     await PautaFiscalService.confirmManual({
       fk_produtos: ids,
@@ -185,6 +204,29 @@ export async function confirmarManual(req: Request, res: Response) {
       arquivo_origem: String(arquivo_origem),
       salvarDePara: Boolean(salvar_de_para),
       cellKey: cell_key ? String(cell_key) : undefined,
+      contexto: ctx
+    });
+
+    // Fetch product details for detailed audit log
+    const productNames: string[] = [];
+    for (const id of ids) {
+      const pRes = await ProdutoRepository.getById(id);
+      if (pRes.rows.length > 0) {
+        const p = pRes.rows[0];
+        productNames.push(`${p.descricao_interna}${p.gtin_13 ? ` (GTIN: ${p.gtin_13})` : ''}`);
+      }
+    }
+
+    // Audit log
+    await AuditRepository.log(req.userId, 'ASSOCIACAO_PRODUTO', {
+      produtos: ids,
+      produtos_descritores: productNames,
+      uf,
+      descricao_estado,
+      valor_pauta,
+      arquivo_origem,
+      contexto: ctx,
+      salvouDePara: Boolean(salvar_de_para)
     });
 
     res.json({ success: true });
@@ -193,12 +235,69 @@ export async function confirmarManual(req: Request, res: Response) {
   }
 }
 
-export async function updateTabelasOcr(req: Request, res: Response) {
+export async function updateTabelasOcr(req: AuthRequest, res: Response) {
   try {
     const filename = String(req.params.filename);
+    const contexto = req.body.contexto || 'proprio';
     const { tabelas } = req.body;
     if (!Array.isArray(tabelas)) {
       return res.status(400).json({ error: 'Lista de tabelas inválida' });
+    }
+
+    // Comparison for detailed audit logs
+    const existingResult = await PautaFiscalRepository.findOcrByFilename(filename, contexto);
+    const diffs: string[] = [];
+
+    if (existingResult.rows.length > 0) {
+      const oldOcr = existingResult.rows[0];
+      const oldRaw = oldOcr.textract_json;
+      const oldTables = (oldRaw && typeof oldRaw === 'object' && 'tables' in oldRaw)
+        ? (oldRaw as any).tables
+        : [];
+
+      if (Array.isArray(oldTables) && oldTables.length > 0) {
+        for (const newTab of tabelas) {
+          const oldTab = oldTables.find((t: any) => t.tabelaIndex === newTab.tabelaIndex);
+          if (!oldTab) {
+            diffs.push(`Adicionou tabela ${newTab.tabelaIndex}`);
+            continue;
+          }
+
+          // Compare headers
+          const headersChanged = JSON.stringify(oldTab.headers) !== JSON.stringify(newTab.headers);
+          if (headersChanged) {
+            diffs.push(`Tabela ${newTab.tabelaIndex}: Cabeçalhos de [${oldTab.headers.join(', ')}] para [${newTab.headers.join(', ')}]`);
+          }
+
+          // Compare rows
+          const oldRows = oldTab.rows || [];
+          const newRows = newTab.rows || [];
+
+          const maxRows = Math.max(oldRows.length, newRows.length);
+          for (let r = 0; r < maxRows; r++) {
+            const oldR = oldRows[r];
+            const newR = newRows[r];
+
+            if (!oldR && newR) {
+              diffs.push(`Tabela ${newTab.tabelaIndex}, L${r + 1}: Adicionou linha [${newR.join(', ')}]`);
+            } else if (oldR && !newR) {
+              diffs.push(`Tabela ${newTab.tabelaIndex}, L${r + 1}: Removeu linha [${oldR.join(', ')}]`);
+            } else if (oldR && newR) {
+              const maxCols = Math.max(oldR.length, newR.length);
+              for (let c = 0; c < maxCols; c++) {
+                const oldVal = (oldR[c] || '').trim();
+                const newVal = (newR[c] || '').trim();
+                if (oldVal !== newVal) {
+                  const colName = newTab.headers[c] || `C${c + 1}`;
+                  diffs.push(`Tabela ${newTab.tabelaIndex}, L${r + 1}, col "${colName}": "${oldVal}" ➔ "${newVal}"`);
+                }
+              }
+            }
+          }
+        }
+      } else {
+        diffs.push('Estrutura de tabelas inicial atualizada');
+      }
     }
 
     const payload = {
@@ -206,11 +305,18 @@ export async function updateTabelasOcr(req: Request, res: Response) {
       tables: tabelas,
     };
 
-    await PautaFiscalRepository.updateOcrTables(filename, payload);
+    await PautaFiscalRepository.updateOcrTables(filename, payload, contexto);
+
+    // Audit log with detailed cell alterations
+    await AuditRepository.log(req.userId, 'ATUALIZACAO_TABELA_OCR', {
+      filename,
+      contexto,
+      alteracoes: diffs.slice(0, 100),
+      total_alteracoes: diffs.length
+    });
+
     res.json({ success: true });
   } catch (error: unknown) {
     res.status(500).json({ error: (error as Error).message });
   }
 }
-
-

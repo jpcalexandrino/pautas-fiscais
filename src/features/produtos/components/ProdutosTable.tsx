@@ -20,10 +20,11 @@ export const ALL_COLUMNS = [
   { key: 'gtin_13', label: 'GTIN' },
   { key: 'descricao_interna', label: 'Descrição' },
   { key: 'embalagem', label: 'Embalagem' },
-  { key: 'conteudo_volume', label: 'Volume' }
+  { key: 'conteudo_volume', label: 'Volume' },
+  { key: 'tipo', label: 'Tipo' }
 ];
 
-export const DEFAULT_COLUMNS = ['codigo_interno', 'gtin_13', 'descricao_interna', 'embalagem', 'conteudo_volume'];
+export const DEFAULT_COLUMNS = ['codigo_interno', 'gtin_13', 'descricao_interna', 'embalagem', 'conteudo_volume', 'tipo'];
 
 export function ProdutosTable({ produtos, onEdit, onDelete, loading, deletingId }: ProdutosTableProps) {
   const columns = useMemo<ColumnDef<any>[]>(
@@ -101,6 +102,24 @@ export function ProdutosTable({ produtos, onEdit, onDelete, loading, deletingId 
             size: 100,
             cell: ({ row }) =>
               row.original.conteudo_volume != null ? String(row.original.conteudo_volume) : '-',
+          },
+          {
+            accessorKey: 'tipo',
+            id: 'tipo',
+            header: 'Tipo',
+            size: 110,
+            cell: ({ row }) => {
+              const val = row.original.tipo || 'proprio';
+              return val === 'terceiros' ? (
+                <span className="inline-flex items-center rounded-md bg-amber-50 dark:bg-amber-950/30 px-2 py-1 text-xs font-medium text-amber-800 dark:text-amber-300 ring-1 ring-inset ring-amber-600/20">
+                  Terceiros
+                </span>
+              ) : (
+                <span className="inline-flex items-center rounded-md bg-blue-50 dark:bg-blue-950/30 px-2 py-1 text-xs font-medium text-blue-800 dark:text-blue-300 ring-1 ring-inset ring-blue-600/20">
+                  Próprio
+                </span>
+              );
+            }
           },
         ],
         produtos

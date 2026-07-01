@@ -9,6 +9,7 @@ export interface PautaFiscalRow {
   valor_pauta?: number | null;
   status?: string;
   arquivo_origem?: string | null;
+  contexto?: string;
 }
 
 export interface PautaPendenteRow {
@@ -34,27 +35,42 @@ class PautaFiscalRepository {
         valor_pauta DECIMAL(10,4),
         status VARCHAR(20) DEFAULT 'confirmado',
         arquivo_origem VARCHAR(500),
+        contexto VARCHAR(20) DEFAULT 'proprio',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+      ALTER TABLE fato_pauta_fiscal ADD COLUMN IF NOT EXISTS contexto VARCHAR(20) DEFAULT 'proprio';
     `);
 
-
-    return db.query(`
+    await db.query(`
       CREATE TABLE IF NOT EXISTS pauta_arquivo_ocr (
         id BIGSERIAL PRIMARY KEY,
-        filename VARCHAR(500) NOT NULL UNIQUE,
+        filename VARCHAR(500) NOT NULL,
         uf CHAR(2) NOT NULL,
         textract_json JSONB NOT NULL,
         ai_json JSONB,
         data_pauta DATE,
         confirmed_cells JSONB DEFAULT '[]'::jsonb,
+        contexto VARCHAR(20) DEFAULT 'proprio',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+      ALTER TABLE pauta_arquivo_ocr DROP CONSTRAINT IF EXISTS pauta_arquivo_ocr_filename_key;
+      ALTER TABLE pauta_arquivo_ocr ADD COLUMN IF NOT EXISTS contexto VARCHAR(20) DEFAULT 'proprio';
+    `);
+
+    // Add unique constraint dynamically
+    return db.query(`
+      DO $$
+      BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'pauta_arquivo_ocr_filename_contexto_key') THEN
+              ALTER TABLE pauta_arquivo_ocr ADD CONSTRAINT pauta_arquivo_ocr_filename_contexto_key UNIQUE (filename, contexto);
+          END IF;
+      END;
+      $$;
     `);
   }
 
-  async getAll(filters?: { fk_estado?: number; fk_produto?: number }): Promise<QueryResult> {
+  async getAll(filters?: { fk_estado?: number; fk_produto?: number; contexto?: string }): Promise<QueryResult> {
     const conditions: string[] = [];
     const values: unknown[] = [];
 
@@ -65,6 +81,10 @@ class PautaFiscalRepository {
     if (filters?.fk_produto) {
       values.push(filters.fk_produto);
       conditions.push(`f.fk_produto = $${values.length}`);
+    }
+    if (filters?.contexto) {
+      values.push(filters.contexto);
+      conditions.push(`f.contexto = $${values.length}`);
     }
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -88,11 +108,12 @@ class PautaFiscalRepository {
     return db.query(
       `INSERT INTO fato_pauta_fiscal (
         fk_produto, fk_estado, fk_data,
-        valor_pauta, status, arquivo_origem
-      ) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+        valor_pauta, status, arquivo_origem, contexto
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
       [
         row.fk_produto, row.fk_estado, row.fk_data ?? null,
         row.valor_pauta ?? null, row.status || 'confirmado', row.arquivo_origem ?? null,
+        row.contexto || 'proprio'
       ]
     );
   }
@@ -104,36 +125,36 @@ class PautaFiscalRepository {
     const placeholders: string[] = [];
 
     rows.forEach((row, i) => {
-      const idx = i * 6;
-      placeholders.push(`($${idx + 1},$${idx + 2},$${idx + 3},$${idx + 4},$${idx + 5},$${idx + 6})`);
+      const idx = i * 7;
+      placeholders.push(`($${idx + 1},$${idx + 2},$${idx + 3},$${idx + 4},$${idx + 5},$${idx + 6},$${idx + 7})`);
       values.push(
         row.fk_produto,
         row.fk_estado,
         row.fk_data ?? null,
         row.valor_pauta ?? null,
         row.status || 'confirmado',
-        row.arquivo_origem ?? null
+        row.arquivo_origem ?? null,
+        row.contexto || 'proprio'
       );
     });
 
     return db.query(
       `INSERT INTO fato_pauta_fiscal (
-        fk_produto, fk_estado, fk_data, valor_pauta, status, arquivo_origem
+        fk_produto, fk_estado, fk_data, valor_pauta, status, arquivo_origem, contexto
       ) VALUES ${placeholders.join(',')} RETURNING *`,
       values
     );
   }
 
-
-  async findOcrByFilename(filename: string): Promise<QueryResult> {
-    return db.query('SELECT * FROM pauta_arquivo_ocr WHERE filename = $1', [filename]);
+  async findOcrByFilename(filename: string, contexto: string = 'proprio'): Promise<QueryResult> {
+    return db.query('SELECT * FROM pauta_arquivo_ocr WHERE filename = $1 AND contexto = $2', [filename, contexto]);
   }
 
-  async upsertOcr(filename: string, uf: string, textractJson: any, aiJson?: any, dataPauta?: string): Promise<QueryResult> {
+  async upsertOcr(filename: string, uf: string, textractJson: any, aiJson?: any, dataPauta?: string, contexto: string = 'proprio'): Promise<QueryResult> {
     return db.query(
-      `INSERT INTO pauta_arquivo_ocr (filename, uf, textract_json, ai_json, data_pauta, updated_at)
-       VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
-       ON CONFLICT (filename) DO UPDATE SET
+      `INSERT INTO pauta_arquivo_ocr (filename, uf, textract_json, ai_json, data_pauta, contexto, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
+       ON CONFLICT (filename, contexto) DO UPDATE SET
          uf = EXCLUDED.uf,
          textract_json = EXCLUDED.textract_json,
          ai_json = EXCLUDED.ai_json,
@@ -145,37 +166,41 @@ class PautaFiscalRepository {
         uf.toUpperCase(),
         JSON.stringify(textractJson),
         aiJson ? JSON.stringify(aiJson) : null,
-        dataPauta || null
+        dataPauta || null,
+        contexto
       ]
     );
   }
 
-  async addConfirmedCell(filename: string, cellKey: string): Promise<QueryResult> {
+  async addConfirmedCell(filename: string, cellKey: string, contexto: string = 'proprio'): Promise<QueryResult> {
     return db.query(
       `UPDATE pauta_arquivo_ocr
        SET confirmed_cells = COALESCE(confirmed_cells, '[]'::jsonb) || jsonb_build_array($2::text),
            updated_at = CURRENT_TIMESTAMP
-       WHERE filename = $1`,
-      [filename, cellKey]
+       WHERE filename = $1 AND contexto = $3`,
+      [filename, cellKey, contexto]
     );
   }
 
-  async updateOcrTables(filename: string, textractJson: any): Promise<QueryResult> {
+  async updateOcrTables(filename: string, textractJson: any, contexto: string = 'proprio'): Promise<QueryResult> {
     return db.query(
       `UPDATE pauta_arquivo_ocr
        SET textract_json = $2,
            updated_at = CURRENT_TIMESTAMP
-       WHERE filename = $1`,
-      [filename, JSON.stringify(textractJson)]
+       WHERE filename = $1 AND contexto = $3`,
+      [filename, JSON.stringify(textractJson), contexto]
     );
   }
 
-  async deleteFiscalAndPendenteByFilename(filename: string): Promise<void> {
-    await db.query('DELETE FROM fato_pauta_fiscal WHERE arquivo_origem = $1', [filename]);
+  async deleteFiscalAndPendenteByFilename(filename: string, contexto: string = 'proprio'): Promise<void> {
+    await db.query('DELETE FROM fato_pauta_fiscal WHERE arquivo_origem = $1 AND contexto = $2', [filename, contexto]);
   }
 
-  async getOcrFiles(): Promise<QueryResult> {
-    return db.query('SELECT id, filename, uf, data_pauta, confirmed_cells, textract_json, created_at FROM pauta_arquivo_ocr ORDER BY created_at DESC');
+  async getOcrFiles(contexto?: string): Promise<QueryResult> {
+    if (contexto) {
+      return db.query('SELECT id, filename, uf, data_pauta, confirmed_cells, textract_json, contexto, created_at FROM pauta_arquivo_ocr WHERE contexto = $1 ORDER BY created_at DESC', [contexto]);
+    }
+    return db.query('SELECT id, filename, uf, data_pauta, confirmed_cells, textract_json, contexto, created_at FROM pauta_arquivo_ocr ORDER BY created_at DESC');
   }
 }
 
