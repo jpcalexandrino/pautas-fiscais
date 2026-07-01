@@ -453,7 +453,7 @@ export function OcrBulkLoadDialog({
 
       {/* Dialog secundário para seleção de produto de uma linha */}
       <Dialog open={activeItemIdx !== null} onOpenChange={(open) => !open && setActiveItemIdx(null)}>
-        <DialogContent className="sm:max-w-4xl max-w-4xl w-[92vw] h-[85vh] flex flex-col p-6 rounded-2xl gap-4 bg-background">
+        <DialogContent className="sm:max-w-6xl max-w-6xl w-[92vw] h-[85vh] flex flex-col p-6 rounded-2xl gap-4 bg-background">
           <DialogHeader className="border-b pb-3 flex flex-row items-center justify-between">
             <div>
               <DialogTitle className="text-lg font-bold flex items-center gap-2.5 text-foreground">

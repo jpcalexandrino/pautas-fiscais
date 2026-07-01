@@ -112,7 +112,7 @@ export function OcrAssociationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-w-4xl w-[92vw] h-[85vh] flex flex-col p-6 rounded-2xl gap-4 bg-background">
+      <DialogContent className="sm:max-w-6xl max-w-6xl w-[95vw] h-[85vh] flex flex-col p-6 rounded-2xl gap-4 bg-background">
         <DialogHeader className="border-b pb-3 flex flex-row items-center justify-between">
           <div>
             <DialogTitle className="flex items-center gap-2.5 text-lg font-bold text-foreground">
