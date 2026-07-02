@@ -85,11 +85,11 @@ export function usePautas(filters?: { fk_estado?: number; fk_produto?: number; c
   });
 
   const updateOcrTablesMutation = useMutation({
-    mutationFn: async ({ filename, tabelas, contexto }: { filename: string; tabelas: any[]; contexto?: string }) => {
+    mutationFn: async ({ filename, tabelas, confirmedCells, contexto }: { filename: string; tabelas: any[]; confirmedCells?: string[]; contexto?: string }) => {
       const response = await apiFetch(`/pautas/ocr-files/${encodeURIComponent(filename)}/tabelas`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tabelas, contexto }),
+        body: JSON.stringify({ tabelas, confirmedCells, contexto }),
       });
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));

@@ -53,13 +53,17 @@ export async function upload(req: AuthRequest, res: Response) {
     }
     const contexto = req.body.contexto || 'proprio';
 
-    const formattedFilename = `${uf} - ${formatMonthYear(dataPauta)}.pdf`;
+    const formattedFilename = (() => {
+      const baseName = req.file.originalname.replace(/\.[^/.]+$/, "").trim();
+      return `${uf} - ${formatMonthYear(dataPauta)} - ${baseName}.pdf`;
+    })();
 
     // Verifica se já existe um arquivo com esse nome no banco para evitar duplicatas no mesmo contexto
     const existing = await PautaFiscalRepository.findOcrByFilename(formattedFilename, contexto);
     if (existing.rows.length > 0) {
+      const baseName = req.file.originalname.replace(/\.[^/.]+$/, "").trim();
       return res.status(400).json({
-        error: `Uma pauta fiscal para ${uf} na vigência ${formatMonthYear(dataPauta)} no contexto '${contexto}' já foi cadastrada.`
+        error: `Uma pauta fiscal para ${uf} na vigência ${formatMonthYear(dataPauta)} no contexto '${contexto}' com o arquivo '${baseName}' já foi cadastrada.`
       });
     }
 
@@ -234,12 +238,11 @@ export async function confirmarManual(req: AuthRequest, res: Response) {
     res.status(500).json({ error: (error as Error).message });
   }
 }
-
 export async function updateTabelasOcr(req: AuthRequest, res: Response) {
   try {
     const filename = String(req.params.filename);
     const contexto = req.body.contexto || 'proprio';
-    const { tabelas } = req.body;
+    const { tabelas, confirmedCells } = req.body;
     if (!Array.isArray(tabelas)) {
       return res.status(400).json({ error: 'Lista de tabelas inválida' });
     }
@@ -305,9 +308,7 @@ export async function updateTabelasOcr(req: AuthRequest, res: Response) {
       tables: tabelas,
     };
 
-    await PautaFiscalRepository.updateOcrTables(filename, payload, contexto);
-
-    // Audit log with detailed cell alterations
+    await PautaFiscalRepository.updateOcrTables(filename, payload, confirmedCells, contexto);
     await AuditRepository.log(req.userId, 'ATUALIZACAO_TABELA_OCR', {
       filename,
       contexto,

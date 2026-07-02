@@ -37,13 +37,26 @@ export default function PautasDadosPage() {
         GTIN: p.gtin_13,
         Produto: p.descricao_interna,
         Embalagem: p.embalagem,
-        Volume: p.conteudo_volume,
-        'Valor PMPF': p.valor_pauta,
+        Volume: p.conteudo_volume != null ? Number(p.conteudo_volume) : null,
+        'Valor PMPF': p.valor_pauta != null ? Number(p.valor_pauta) : null,
         Data: formatDateToBR(p.data),
         Arquivo: p.arquivo_origem,
       }));
 
       const ws = XLSX.utils.json_to_sheet(rows);
+
+      // Aplica formatação de moeda R$ na coluna 'Valor PMPF' (coluna H, índice 7)
+      if (ws['!ref']) {
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+          const cellRef = XLSX.utils.encode_cell({ r: R, c: 7 }); // Coluna H
+          const cell = ws[cellRef];
+          if (cell && typeof cell.v === 'number') {
+            cell.z = '"R$ "#,##0.00';
+          }
+        }
+      }
+
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Pautas');
 

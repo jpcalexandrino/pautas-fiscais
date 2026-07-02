@@ -91,10 +91,29 @@ function inferItemDescription(row: string[], headers: string[], colIdx: number, 
   if (marcaIdx !== -1 && row[marcaIdx]) parts.push(row[marcaIdx]);
   if (embalagemIdx !== -1 && row[embalagemIdx] && embalagemIdx !== colIdx) parts.push(row[embalagemIdx]);
   
-  // Ignora cabeçalhos genéricos de preço (ex: PRECO_SUGERIDO, VALOR_PMPF)
+  // Ignora cabeçalhos genéricos de preço (ex: PRECO_SUGERIDO, VALOR_PMPF) ou cabeçalhos genéricos como 'COLUNA 1'
   const isGenericPriceHeader = headers[colIdx] && /preco|valor|pmpf|pauta|custo|sugerido/i.test(headers[colIdx]);
-  if (headers[colIdx] && !isGenericPriceHeader && headers[colIdx] !== headers[marcaIdx] && headers[colIdx] !== headers[embalagemIdx]) {
+  const isGenericColumnName = headers[colIdx] && /coluna|column|\bcol\b/i.test(headers[colIdx]);
+  
+  if (headers[colIdx] && !isGenericPriceHeader && !isGenericColumnName && headers[colIdx] !== headers[marcaIdx] && headers[colIdx] !== headers[embalagemIdx]) {
     parts.push(headers[colIdx]);
+  }
+
+  // Se não encontrou cabeçalho de marca específico, busca a célula de texto mais longa (que representa a descrição do produto)
+  if (marcaIdx === -1) {
+    let longestVal = '';
+    for (let i = 0; i < row.length; i++) {
+      if (i === colIdx) continue;
+      const val = (row[i] || '').trim();
+      // Ignora células vazias, preços ou predominantemente numéricas
+      if (!val || priceRegex.test(val) || /^\d+$/.test(val.replace(/[\.\-\s]/g, ''))) continue;
+      if (val.length > longestVal.length) {
+        longestVal = val;
+      }
+    }
+    if (longestVal) {
+      parts.push(longestVal);
+    }
   }
   
   // Busca por qualquer célula na linha que contenha padrão de volume (ex: 330ml, 330 ml, 500ml)
@@ -273,10 +292,51 @@ export function OcrTablesViewer({
       const newRows = t.rows.filter((_, idx) => idx !== rIdx);
       return { ...t, rows: newRows };
     }));
+
+    setConfirmedCells(prev => {
+      const next = new Set<string>();
+      prev.forEach(key => {
+        const parts = key.split('-');
+        if (parts.length === 3) {
+          const tIdx = parseInt(parts[0], 10);
+          const rowIdx = parseInt(parts[1], 10);
+          const colIdx = parseInt(parts[2], 10);
+
+          if (tIdx === tabelaIdx) {
+            if (rowIdx < rIdx) {
+              next.add(key);
+            } else if (rowIdx > rIdx) {
+              next.add(`${tIdx}-${rowIdx - 1}-${colIdx}`);
+            }
+          } else {
+            next.add(key);
+          }
+        } else {
+          next.add(key);
+        }
+      });
+      return next;
+    });
   };
 
   const handleDeleteTable = (tabelaIdx: number) => {
     setLocalTabelas(prev => prev.filter(t => t.tabelaIndex !== tabelaIdx));
+
+    setConfirmedCells(prev => {
+      const next = new Set<string>();
+      prev.forEach(key => {
+        const parts = key.split('-');
+        if (parts.length === 3) {
+          const tIdx = parseInt(parts[0], 10);
+          if (tIdx !== tabelaIdx) {
+            next.add(key);
+          }
+        } else {
+          next.add(key);
+        }
+      });
+      return next;
+    });
   };
 
   const handleAddRow = (tabelaIdx: number) => {
@@ -290,12 +350,17 @@ export function OcrTablesViewer({
   const handleSaveEdits = async () => {
     if (!updateOcrTables) return;
     try {
-      await updateOcrTables({ filename, tabelas: localTabelas, contexto });
-      toast.success('Tabelas updated successfully!');
+      await updateOcrTables({ 
+        filename, 
+        tabelas: localTabelas, 
+        confirmedCells: Array.from(confirmedCells), 
+        contexto 
+      });
+      toast.success('Tabelas atualizadas com sucesso!');
       setIsEditingMode(false);
     } catch (err: any) {
-      toast.error('Error saving edits', {
-        description: err.message || 'Unexpected error.',
+      toast.error('Erro ao salvar alterações', {
+        description: err.message || 'Erro inesperado.',
       });
     }
   };

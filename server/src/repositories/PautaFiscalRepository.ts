@@ -39,6 +39,7 @@ class PautaFiscalRepository {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
       ALTER TABLE fato_pauta_fiscal ADD COLUMN IF NOT EXISTS contexto VARCHAR(20) DEFAULT 'proprio';
+      ALTER TABLE fato_pauta_fiscal ADD COLUMN IF NOT EXISTS d_e_l_e_t_ VARCHAR(1) DEFAULT ' ';
     `);
 
     await db.query(`
@@ -71,7 +72,7 @@ class PautaFiscalRepository {
   }
 
   async getAll(filters?: { fk_estado?: number; fk_produto?: number; contexto?: string }): Promise<QueryResult> {
-    const conditions: string[] = [];
+    const conditions: string[] = ["f.d_e_l_e_t_ = ' '"];
     const values: unknown[] = [];
 
     if (filters?.fk_estado) {
@@ -105,11 +106,22 @@ class PautaFiscalRepository {
   }
 
   async create(row: PautaFiscalRow): Promise<QueryResult> {
+    await db.query(
+      `UPDATE fato_pauta_fiscal 
+       SET d_e_l_e_t_ = '*' 
+       WHERE fk_produto = $1 
+         AND fk_estado = $2 
+         AND (fk_data = $3 OR (fk_data IS NULL AND $3 IS NULL)) 
+         AND contexto = $4 
+         AND d_e_l_e_t_ = ' '`,
+      [row.fk_produto, row.fk_estado, row.fk_data ?? null, row.contexto || 'proprio']
+    );
+
     return db.query(
       `INSERT INTO fato_pauta_fiscal (
         fk_produto, fk_estado, fk_data,
-        valor_pauta, status, arquivo_origem, contexto
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+        valor_pauta, status, arquivo_origem, contexto, d_e_l_e_t_
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,' ') RETURNING *`,
       [
         row.fk_produto, row.fk_estado, row.fk_data ?? null,
         row.valor_pauta ?? null, row.status || 'confirmado', row.arquivo_origem ?? null,
@@ -182,7 +194,17 @@ class PautaFiscalRepository {
     );
   }
 
-  async updateOcrTables(filename: string, textractJson: any, contexto: string = 'proprio'): Promise<QueryResult> {
+  async updateOcrTables(filename: string, textractJson: any, confirmedCells?: string[], contexto: string = 'proprio'): Promise<QueryResult> {
+    if (confirmedCells) {
+      return db.query(
+        `UPDATE pauta_arquivo_ocr
+         SET textract_json = $2,
+             confirmed_cells = $4,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE filename = $1 AND contexto = $3`,
+        [filename, JSON.stringify(textractJson), contexto, JSON.stringify(confirmedCells)]
+      );
+    }
     return db.query(
       `UPDATE pauta_arquivo_ocr
        SET textract_json = $2,
@@ -193,7 +215,12 @@ class PautaFiscalRepository {
   }
 
   async deleteFiscalAndPendenteByFilename(filename: string, contexto: string = 'proprio'): Promise<void> {
-    await db.query('DELETE FROM fato_pauta_fiscal WHERE arquivo_origem = $1 AND contexto = $2', [filename, contexto]);
+    await db.query(
+      `UPDATE fato_pauta_fiscal 
+       SET d_e_l_e_t_ = '*' 
+       WHERE arquivo_origem = $1 AND contexto = $2 AND d_e_l_e_t_ = ' '`,
+      [filename, contexto]
+    );
   }
 
   async getOcrFiles(contexto?: string): Promise<QueryResult> {
