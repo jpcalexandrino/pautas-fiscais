@@ -84,6 +84,7 @@ export function ProdutoImportDialog({
           'GTIN': '7891234567890',
           'Embalagem': 'LATA',
           'Volume': 100,
+          'Tipo': 'proprio',
         },
         {
           'Descrição': 'PRODUTO EXEMPLO 2 LITROS',
@@ -91,6 +92,7 @@ export function ProdutoImportDialog({
           'GTIN': '7890987654321',
           'Embalagem': 'PET',
           'Volume': 2000,
+          'Tipo': 'terceiros',
         },
       ];
 

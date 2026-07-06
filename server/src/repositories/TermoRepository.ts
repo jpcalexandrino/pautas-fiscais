@@ -4,6 +4,7 @@ import { QueryResult } from 'pg';
 export interface TermoRow {
   sk_termo?: number;
   termo: string;
+  tipo?: string;
   created_at?: Date;
 }
 
@@ -22,11 +23,29 @@ class TermoRepository {
     const queryText = `
       CREATE TABLE IF NOT EXISTS config_termos (
         sk_termo SERIAL PRIMARY KEY,
-        termo VARCHAR(255) UNIQUE NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        termo VARCHAR(255) NOT NULL,
+        tipo VARCHAR(50) NOT NULL DEFAULT 'proprio',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT config_termos_termo_tipo_unique UNIQUE (termo, tipo)
       );
     `;
-    return db.query(queryText);
+    await db.query(queryText);
+
+    // Migração para tabelas existentes
+    await db.query(`
+      ALTER TABLE config_termos ADD COLUMN IF NOT EXISTS tipo VARCHAR(50) NOT NULL DEFAULT 'proprio';
+    `).catch(() => {});
+
+    try {
+      await db.query(`ALTER TABLE config_termos DROP CONSTRAINT IF EXISTS config_termos_termo_key;`);
+      await db.query(`
+        ALTER TABLE config_termos ADD CONSTRAINT config_termos_termo_tipo_unique UNIQUE (termo, tipo);
+      `).catch(() => {});
+    } catch (e) {
+      console.error('Erro ao ajustar constraints de config_termos:', e);
+    }
+
+    return db.query('SELECT 1');
   }
 
   async seed(): Promise<void> {
@@ -35,21 +54,24 @@ class TermoRepository {
     if (count === 0) {
       for (const t of DEFAULT_TERMS) {
         await db.query(
-          `INSERT INTO config_termos (termo) VALUES ($1) ON CONFLICT (termo) DO NOTHING`,
-          [t]
+          `INSERT INTO config_termos (termo, tipo) VALUES ($1, $2) ON CONFLICT (termo, tipo) DO NOTHING`,
+          [t, 'proprio']
         );
       }
     }
   }
 
-  async getAll(): Promise<QueryResult> {
+  async getAll(tipo?: string): Promise<QueryResult> {
+    if (tipo) {
+      return db.query('SELECT * FROM config_termos WHERE tipo = $1 ORDER BY termo ASC', [tipo]);
+    }
     return db.query('SELECT * FROM config_termos ORDER BY termo ASC');
   }
 
-  async create(termo: string): Promise<QueryResult> {
+  async create(termo: string, tipo: string = 'proprio'): Promise<QueryResult> {
     return db.query(
-      'INSERT INTO config_termos (termo) VALUES ($1) RETURNING *',
-      [termo.trim()]
+      'INSERT INTO config_termos (termo, tipo) VALUES ($1, $2) RETURNING *',
+      [termo.trim(), tipo]
     );
   }
 

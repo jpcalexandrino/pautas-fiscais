@@ -211,7 +211,7 @@ export function OcrTablesViewer({
     return produtos.filter((p: any) => (p.tipo || 'proprio') === contexto);
   }, [produtos, contexto]);
 
-  const { terms } = useTerms();
+  const { terms } = useTerms(contexto);
   const activeSlugs = terms.length > 0 ? terms.map((t) => t.termo) : BRAND_SLUGS;
 
   const rowMatchesBrand = (row: string[]) => {

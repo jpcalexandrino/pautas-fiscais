@@ -4,16 +4,18 @@ import { apiFetch } from '@/api/client';
 export interface Termo {
   id: number;
   termo: string;
+  tipo?: string;
   created_at: string;
 }
 
-export function useTerms() {
+export function useTerms(tipo?: string) {
   const queryClient = useQueryClient();
 
   const termsQuery = useQuery<Termo[]>({
-    queryKey: ['config-termos'],
+    queryKey: ['config-termos', tipo],
     queryFn: async () => {
-      const response = await apiFetch('/config/termos');
+      const url = tipo ? `/config/termos?tipo=${tipo}` : '/config/termos';
+      const response = await apiFetch(url);
       if (!response.ok) throw new Error('Falha ao carregar termos de busca');
       return await response.json();
     },
@@ -21,10 +23,10 @@ export function useTerms() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (termo: string) => {
+    mutationFn: async ({ termo, tipo: termType }: { termo: string; tipo?: string }) => {
       const response = await apiFetch('/config/termos', {
         method: 'POST',
-        body: JSON.stringify({ termo }),
+        body: JSON.stringify({ termo, tipo: termType }),
       });
       if (!response.ok) {
         const errData = await response.json();
@@ -54,7 +56,7 @@ export function useTerms() {
     terms: termsQuery.data || [],
     isLoading: termsQuery.isLoading || createMutation.isPending || deleteMutation.isPending,
     error: termsQuery.error?.message || createMutation.error?.message || deleteMutation.error?.message || null,
-    createTerm: createMutation.mutateAsync,
+    createTerm: (termo: string, termType?: string) => createMutation.mutateAsync({ termo, tipo: termType }),
     deleteTerm: deleteMutation.mutateAsync,
     refetchTerms: termsQuery.refetch,
   };

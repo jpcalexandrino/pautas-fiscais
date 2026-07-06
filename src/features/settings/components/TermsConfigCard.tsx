@@ -11,7 +11,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Spinner } from '@/components/ui/spinner';
 
 export function TermsConfigCard() {
-  const { terms, isLoading, createTerm, deleteTerm } = useTerms();
+  const [activeType, setActiveType] = useState<'proprio' | 'terceiros'>('proprio');
+  const { terms, isLoading, createTerm, deleteTerm } = useTerms(activeType);
   const { user } = useAuth();
   const { showConfirm } = useAlert();
   const isAdmin = user?.role === 'admin';
@@ -25,7 +26,7 @@ export function TermsConfigCard() {
 
     setIsSubmitting(true);
     try {
-      await createTerm(newTerm.trim());
+      await createTerm(newTerm.trim(), activeType);
       toast.success('Termo adicionado com sucesso!');
       setNewTerm('');
     } catch (err: any) {
@@ -64,13 +65,37 @@ export function TermsConfigCard() {
       </CardHeader>
       
       <CardContent className="space-y-6">
+        {/* Tabs para distinguir próprio vs terceiros */}
+        <div className="flex border-b border-muted">
+          <button
+            onClick={() => setActiveType('proprio')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
+              activeType === 'proprio'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Próprios
+          </button>
+          <button
+            onClick={() => setActiveType('terceiros')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
+              activeType === 'terceiros'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Terceiros
+          </button>
+        </div>
+
         {isAdmin ? (
           <form onSubmit={handleAddTerm} className="flex gap-2">
             <div className="flex-1">
               <Label htmlFor="newTerm" className="sr-only">Novo Termo</Label>
               <Input
                 id="newTerm"
-                placeholder="Ex: dopamina, imperio, puro malte"
+                placeholder={activeType === 'proprio' ? "Ex: dopamina, imperio, puro malte" : "Ex: heineken, amstel, skol"}
                 value={newTerm}
                 onChange={(e) => setNewTerm(e.target.value)}
                 disabled={isSubmitting}
