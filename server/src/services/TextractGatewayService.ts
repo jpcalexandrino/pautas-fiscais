@@ -23,7 +23,8 @@ class TextractGatewayService {
    */
   async extractFromPdf(
     buffer: Buffer,
-    filename: string
+    filename: string,
+    uf?: string
   ): Promise<TextractGatewayResult> {
     const SYNAPSE_API_URL = process.env.SYNAPSE_API_URL;
     const SYNAPSE_API_KEY = process.env.SYNAPSE_API_KEY_TEXTRACT;
@@ -35,7 +36,8 @@ class TextractGatewayService {
       );
     }
 
-    const fullUrl = `${SYNAPSE_API_URL}/${SYNAPSE_TEXTRACT_SLUG}/direct?format=json`;
+    const format = (uf && uf.toUpperCase() === 'SE') ? 'csv' : 'json';
+    const fullUrl = `${SYNAPSE_API_URL}/${SYNAPSE_TEXTRACT_SLUG}/direct?format=${format}`;
 
     // O endpoint /direct espera multipart/form-data com o PDF na chave "file"
     const formData = new FormData();
@@ -64,9 +66,16 @@ class TextractGatewayService {
       );
     }
 
-    const responseData: unknown = await response.json().catch(() => {
-      throw new Error('Gateway Textract retornou resposta inválida (não é JSON).');
-    });
+    const contentType = response.headers.get('content-type') || '';
+    let responseData: unknown;
+    if (contentType.includes('application/json')) {
+      responseData = await response.json().catch(() => {
+        throw new Error('Gateway Textract retornou resposta inválida (não é JSON).');
+      });
+    } else {
+      const text = await response.text();
+      responseData = { format: 'csv', csv: text };
+    }
 
     return { data: responseData, filename };
   }

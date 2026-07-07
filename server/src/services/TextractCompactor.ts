@@ -1,3 +1,4 @@
+import * as xlsx from 'xlsx';
 import { Logger } from '../utils/logger';
 import { BRAND_SLUGS } from './brandSlugs';
 import { getLayoutForUF } from './LayoutRegistry';
@@ -28,6 +29,19 @@ export class TextractCompactor {
       if ('data' in data && data.data && typeof data.data === 'object') {
         nestedData = data.data;
       }
+    }
+
+    if (nestedData && typeof nestedData === 'object' && nestedData.format === 'csv' && typeof nestedData.csv === 'string') {
+      const tables = this.extractTables(data, uf);
+      const finalLines: string[] = [];
+      for (const t of tables) {
+        finalLines.push(`| ${t.headers.join(' | ')} |`);
+        finalLines.push(`| ${t.headers.map(() => '---').join(' | ')} |`);
+        for (const row of t.rows) {
+          finalLines.push(`| ${row.join(' | ')} |`);
+        }
+      }
+      return finalLines.join('\n');
     }
 
     // Case 1: Structured layout from pre-parsed table data
@@ -68,7 +82,11 @@ export class TextractCompactor {
 
     const BRAND_SLUGS_LOWER = BRAND_SLUGS.map(s => s.toLowerCase());
     const pageNumbers = Object.keys(blocksByPage).map(Number).sort((a, b) => a - b);
-    const stateSE: StateSE = { currentSubheaderSE: '', isBeerSection: true };
+    // Estado por coluna: evita que o subcabeçalho da coluna esquerda contamine a coluna direita
+    const stateSEByCol: Record<string, StateSE> = {
+      left: { currentSubheaderSE: '', isBeerSection: true },
+      right: { currentSubheaderSE: '', isBeerSection: true },
+    };
     const finalLines: string[] = [];
 
     for (const pageNum of pageNumbers) {
@@ -116,18 +134,21 @@ export class TextractCompactor {
 
       for (const block of sortedPageBlocks) {
         if (block.BlockType === 'LINE' && uf === 'SE') {
+          const colKey = this._getColKey(block);
+          const colState = stateSEByCol[colKey];
           const text = (block.Text || '').trim();
           if (text) {
             if (this._isNonBeerSubheader(text)) {
-              stateSE.isBeerSection = false;
-              stateSE.currentSubheaderSE = '';
+              colState.isBeerSection = false;
+              colState.currentSubheaderSE = '';
             } else if (this._isSubheaderSE(text)) {
-              stateSE.isBeerSection = true;
-              stateSE.currentSubheaderSE = text;
+              colState.isBeerSection = true;
+              colState.currentSubheaderSE = text;
             }
           }
         } else if (block.BlockType === 'TABLE') {
-          const tableMd = this._reconstructTableFromBlocks(block, blockMap, wordIdsInTables, uf, stateSE);
+          const stateForBlock = uf === 'SE' ? stateSEByCol[this._getColKey(block)] : stateSEByCol['left'];
+          const tableMd = this._reconstructTableFromBlocks(block, blockMap, wordIdsInTables, uf, stateForBlock);
           if (tableMd) {
             tableMarkdowns.push(tableMd);
           }
@@ -175,6 +196,37 @@ export class TextractCompactor {
       return nestedData.tables;
     }
 
+    if (nestedData && typeof nestedData === 'object' && nestedData.format === 'csv' && typeof nestedData.csv === 'string') {
+      try {
+        const workbook = xlsx.read(nestedData.csv, { type: 'string', raw: true });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const rawRows = xlsx.utils.sheet_to_json<any[]>(sheet, { header: 1, defval: '', raw: true });
+
+        if (rawRows.length > 0) {
+          const headerIndex = rawRows.findIndex(row => row.some(cell => String(cell).trim() !== ''));
+          const headers = headerIndex !== -1 ? rawRows[headerIndex].map(h => String(h || '').trim()) : [];
+          const rows = headerIndex !== -1 
+            ? rawRows.slice(headerIndex + 1).map(row => row.map(cell => String(cell === null || cell === undefined ? '' : cell).trim()))
+            : [];
+          
+          const ufUpper = uf ? uf.toUpperCase() : '';
+          const stateSE = { currentSubheaderSE: '', isBeerSection: true };
+          const compactedTable = this._compactTable(rows, ufUpper, stateSE);
+
+          return [{
+            tabelaIndex: 1,
+            pagina: 1,
+            headers,
+            rows: compactedTable
+          }];
+        }
+      } catch (err) {
+        console.error('Failed to parse CSV in extractTables:', err);
+      }
+      return [];
+    }
+
     const ufUpper = uf ? uf.toUpperCase() : '';
     const resultados: EstruturaTabela[] = [];
 
@@ -212,6 +264,30 @@ export class TextractCompactor {
           rows
         });
       }
+
+      // Adiciona itens adicionais detectados como Key-Value pairs (texto solto)
+      if (nestedData.keyValuePairs && typeof nestedData.keyValuePairs === 'object') {
+        const virtualRows: string[][] = [];
+        for (const [key, value] of Object.entries(nestedData.keyValuePairs)) {
+          const valStr = value !== undefined ? String(value).trim() : '';
+          const keyStr = key !== undefined ? String(key).trim() : '';
+          if (keyStr && valStr) {
+            const isProductRelevant = this._isRowRelevant(keyStr);
+            const hasPrice = /\d+[\.,]\d+/.test(valStr) || /^\s*(?:R\$\s*)?\d+\s*$/i.test(valStr);
+            if (isProductRelevant && hasPrice) {
+              virtualRows.push([keyStr, valStr]);
+            }
+          }
+        }
+        if (virtualRows.length > 0) {
+          resultados.push({
+            tabelaIndex: resultados.length + 1,
+            pagina: 1,
+            headers: ['PRODUTO/MARCA/TIPO', 'VALOR (R$)'],
+            rows: virtualRows
+          });
+        }
+      }
       return resultados;
     }
 
@@ -232,7 +308,11 @@ export class TextractCompactor {
 
     const pageNumbers = Object.keys(blocksByPage).map(Number).sort((a, b) => a - b);
     let globalTableIdx = 1;
-    const stateSE: StateSE = { currentSubheaderSE: '', isBeerSection: true };
+    // Estado por coluna: evita que o subcabeçalho da coluna esquerda contamine a coluna direita
+    const stateSEByCol: Record<string, StateSE> = {
+      left: { currentSubheaderSE: '', isBeerSection: true },
+      right: { currentSubheaderSE: '', isBeerSection: true },
+    };
 
     for (const pageNum of pageNumbers) {
       const pageBlocks = blocksByPage[pageNum];
@@ -261,21 +341,24 @@ export class TextractCompactor {
 
       for (const block of sortedPageBlocks) {
         if (block.BlockType === 'LINE' && ufUpper === 'SE') {
+          const colKey = this._getColKey(block);
+          const colState = stateSEByCol[colKey];
           const text = (block.Text || '').trim();
           if (text) {
             if (this._isNonBeerSubheader(text)) {
-              stateSE.isBeerSection = false;
-              stateSE.currentSubheaderSE = '';
+              colState.isBeerSection = false;
+              colState.currentSubheaderSE = '';
             } else if (this._isSubheaderSE(text)) {
-              stateSE.isBeerSection = true;
-              stateSE.currentSubheaderSE = text;
+              colState.isBeerSection = true;
+              colState.currentSubheaderSE = text;
             }
           }
         } else if (block.BlockType === 'TABLE') {
           const tableData = this._reconstructTableData(block, blockMap, wordIdsInTables);
           if (tableData.length === 0) continue;
 
-          const compactedTable = this._compactTable(tableData, ufUpper, stateSE);
+          const stateForBlock = ufUpper === 'SE' ? stateSEByCol[this._getColKey(block)] : stateSEByCol['left'];
+          const compactedTable = this._compactTable(tableData, ufUpper, stateForBlock);
           if (compactedTable.length === 0) continue;
 
           let headers = compactedTable[0];
@@ -321,7 +404,7 @@ export class TextractCompactor {
     return findBlocks(data) || [];
   }
 
-  private static _compactTable(table: string[][], uf: string, state?: { currentSubheaderSE?: string }): string[][] {
+  private static _compactTable(table: string[][], uf: string, state?: { currentSubheaderSE?: string; isBeerSection?: boolean }): string[][] {
     if (table.length === 0) return [];
     const ufUpper = uf.toUpperCase();
 
@@ -408,29 +491,31 @@ export class TextractCompactor {
       return newTable;
     }
 
-    // 3. Tratamento para Sergipe (SE) - Propaga o subcabeçalho (volume/embalagem) para as linhas subsequentes
+    // 3. Tratamento para Sergipe (SE) - Propaga a hierarquia de subcabeçalhos (tipo + embalagem/volume)
+    // O state recebido já é por coluna (left/right), eliminando contaminação entre colunas paralelas.
     if (ufUpper === 'SE') {
+      const normalize = (str: string) => {
+        return str
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '');
+      };
       const newTable: string[][] = [];
-      newTable.push(table[0]); // Mantém o cabeçalho original
+      
+      const col0First = table[0]?.[0] ? table[0][0].trim() : '';
+      const isFirstRowHeader = /produto|marca|tipo|valor|coluna|column/i.test(col0First);
+      
+      let startIdx = 1;
+      if (isFirstRowHeader) {
+        newTable.push(table[0]);
+      } else {
+        newTable.push(['PRODUTO_MARCA_TIPO', 'VALOR_RS']);
+        startIdx = 0;
+      }
 
       let currentSubheader = '';
 
-      // Heurística de volume: varre a tabela para estimar a volumetria correta dos itens
-      let tableHas600ml = false;
-      let tableHas300ml = false;
-      for (const row of table) {
-        if (row && row[0]) {
-          const lower = row[0].toLowerCase();
-          if (lower.includes('600 ml') || lower.includes('600ml') || lower.includes('500 ml') || lower.includes('500ml')) {
-            tableHas600ml = true;
-          }
-          if (lower.includes('300 ml') || lower.includes('300ml') || lower.includes('330 ml') || lower.includes('330ml') || lower.includes('350 ml') || lower.includes('350ml') || lower.includes('355 ml') || lower.includes('355ml')) {
-            tableHas300ml = true;
-          }
-        }
-      }
-
-      for (let rIdx = 1; rIdx < table.length; rIdx++) {
+      for (let rIdx = startIdx; rIdx < table.length; rIdx++) {
         const row = table[rIdx];
         if (row.length === 0) continue;
 
@@ -454,7 +539,7 @@ export class TextractCompactor {
           continue;
         }
 
-        if (!is900or1000ml && ((isSub && !hasPrice) || (!isProductRelevant && !hasPrice && col0.length > 0))) {
+        if (!is900or1000ml && isSub && !hasPrice) {
           currentSubheader = col0;
           if (state) {
             state.isBeerSection = true;
@@ -468,21 +553,71 @@ export class TextractCompactor {
           if (isBeerSection) {
             const newRow = [...row];
             let activeSubheader = currentSubheader || state?.currentSubheaderSE || '';
-            
-            // Corrige o cabeçalho ativo baseado na volumetria dos produtos contidos na tabela
-            if (activeSubheader.includes('276 ml a 399 ml') || activeSubheader.includes('300 ml')) {
-              if (tableHas600ml && !tableHas300ml) {
+
+            // Auto-correção de subcabeçalhos Sergipe baseada no volume/conteúdo detectado no produto
+            const normCol0 = normalize(col0);
+            const normActiveSub = normalize(activeSubheader);
+
+            if (normCol0.includes('500 ml') || normCol0.includes('500ml')) {
+              if (normActiveSub.includes('descartavel') && (normActiveSub.includes('276') || normActiveSub.includes('399'))) {
                 activeSubheader = 'Cerveja em garrafa descartável de 500 ml a 660 ml';
+                currentSubheader = activeSubheader;
+                if (state) state.currentSubheaderSE = activeSubheader;
+              } else if (normActiveSub.includes('retornavel')) {
+                activeSubheader = 'Cerveja em garrafa retornável de 600 ml';
+                currentSubheader = activeSubheader;
+                if (state) state.currentSubheaderSE = activeSubheader;
               }
-            } else if (activeSubheader.includes('500 ml a 660 ml') || activeSubheader.includes('600 ml')) {
-              if (tableHas300ml && !tableHas600ml) {
+            } else if (normCol0.includes('210ml') || normCol0.includes('210 ml')) {
+              if (normActiveSub.includes('descartavel')) {
+                activeSubheader = 'Cerveja em garrafa descartável de 200 ml a 249 ml';
+                currentSubheader = activeSubheader;
+                if (state) state.currentSubheaderSE = activeSubheader;
+              }
+            } else if (normCol0.includes('330ml') || normCol0.includes('330 ml') || normCol0.includes('300ml') || normCol0.includes('300 ml') || normCol0.includes('355ml') || normCol0.includes('355 ml')) {
+              if (normActiveSub.includes('descartavel') && !normActiveSub.includes('276') && !normActiveSub.includes('399')) {
                 activeSubheader = 'Cerveja em garrafa descartável de 276 ml a 399 ml';
+                currentSubheader = activeSubheader;
+                if (state) state.currentSubheaderSE = activeSubheader;
+              }
+            } else if (normCol0.includes('269ml') || normCol0.includes('269 ml')) {
+              if (normCol0.includes('dopamina') && !normActiveSub.includes('ate 355')) {
+                activeSubheader = 'Bebida energética em embalagem até 355 ml';
+                currentSubheader = activeSubheader;
+                if (state) state.currentSubheaderSE = activeSubheader;
+              }
+            } else if (normCol0.includes('473ml') || normCol0.includes('473 ml')) {
+              if (normCol0.includes('dopamina') && !normActiveSub.includes('356') && !normActiveSub.includes('599')) {
+                activeSubheader = 'Bebidas energéticas em embalagem de 356ml a 599ml';
+                currentSubheader = activeSubheader;
+                if (state) state.currentSubheaderSE = activeSubheader;
+              }
+            } else if (normCol0.includes('2000ml') || normCol0.includes('2000 ml') || normCol0.includes('2 L') || normCol0.includes('2l')) {
+              if (normCol0.includes('best power')) {
+                activeSubheader = 'Bebidas energéticas em embalagem com capacidade igual ou superior a 1500 ml';
+                currentSubheader = activeSubheader;
+                if (state) state.currentSubheaderSE = activeSubheader;
               }
             }
 
             if (activeSubheader) {
               newRow[0] = `${col0} (${activeSubheader})`;
             }
+
+            // Normaliza e formata o valor da pauta para 2 casas decimais
+            if (col1) {
+              let priceVal = col1.replace(/R\$\s*/gi, '').trim();
+              priceVal = priceVal.replace(',', '.');
+              const num = parseFloat(priceVal);
+              if (!isNaN(num)) {
+                if (Number.isInteger(num) && num >= 100) {
+                  newRow[1] = (num / 100).toFixed(2);
+                } else {
+                  newRow[1] = num.toFixed(2);
+                }
+              }
+            }
+
             newTable.push(newRow);
           }
         }
@@ -542,70 +677,117 @@ export class TextractCompactor {
   }
 
   private static _isNonBeerSubheader(text: string): boolean {
-    const lower = text.toLowerCase();
+    const normalize = (str: string) => {
+      return str
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    };
+    const normText = normalize(text);
     const nonBeerKeywords = [
-      'refrigerante', 'suco', 'nectar', 'néctar', 'chá', 'cha ', 'bebida lactea', 'bebida láctea'
+      'refrigerante', 'suco', 'nectar', 'cha', 'bebida lactea'
     ];
-    return nonBeerKeywords.some(kw => lower.includes(kw)) && !lower.includes('cerveja') && !lower.includes('chopp');
+    return nonBeerKeywords.some(kw => normText.includes(kw)) && !normText.includes('cerveja') && !normText.includes('chopp');
   }
 
   private static _isSubheaderSE(text: string): boolean {
-    const lower = text.toLowerCase();
+    const normalize = (str: string) => {
+      return str
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    };
+    const normText = normalize(text);
     
     // Ignorar subcabeçalhos de 900ml a 1000ml pois não possuem produtos relevantes e quebram a propagação
-    if (lower.includes('900') || lower.includes('1000') || lower.includes('1.000')) {
+    if (normText.includes('900') || normText.includes('1000') || normText.includes('1.000')) {
       return false;
     }
 
     // Se contiver preço (ex: decimal com vírgula ou ponto), não é um subcabeçalho
-    if (/\d+[\.,]\d+/.test(lower)) {
+    if (/\d+[\.,]\d+/.test(normText)) {
       return false;
     }
     
-    // Se contiver marcas concorrentes, é uma linha de produto concorrente, não subcabeçalho
-    const concorrentes = [
-      'skol', 'brahma', 'antarctica', 'heineken', 'amstel', 'budweiser', 'stella', 'corona',
-      'kaiser', 'crystal', 'itaipava', 'devassa', 'schin', 'conti', 'cerpa', 'colina', 'samba',
-      'proibida', 'spoller', 'serramalte', 'eisenbahn', 'bohemia', 'petra', 'burguesa', 'caracu',
-      '1500', 'original'
+    // Identifica se é comprovadamente um subcabeçalho conhecido
+    const knownSubheaderKeywords = [
+      ['cerveja', 'garrafa'],
+      ['cerveja', 'lata'],
+      ['agua', 'tonica'],
+      ['bebida', 'energetica'],
+      ['bebidas', 'energeticas'],
+      ['bebidas', 'hidroeletrolitica'],
+      ['bebidas', 'isotonica'],
+      ['chope', 'litro'],
+      ['chopp', 'litro']
     ];
-    const hasConcorrente = concorrentes.some(c => lower.includes(c));
-    if (hasConcorrente) return false;
+    const isKnownSubheader = knownSubheaderKeywords.some(kws => kws.every(kw => normText.includes(kw)));
 
-    const hasKeyword = lower.includes('garrafa') ||
-                       lower.includes('lata') ||
-                       lower.includes('retornavel') ||
-                       lower.includes('retornável') ||
-                       lower.includes('descartavel') ||
-                       lower.includes('descartável') ||
-                       lower.includes('copo') ||
-                       lower.includes('barril') ||
-                       (lower.includes('cerveja') && (lower.includes(' de ') || lower.includes('em')));
+    if (!isKnownSubheader) {
+      // Se contiver marcas concorrentes, é uma linha de produto concorrente, não subcabeçalho
+      const concorrentes = [
+        'skol', 'brahma', 'antarctica', 'heineken', 'amstel', 'budweiser', 'stella', 'corona',
+        'kaiser', 'crystal', 'itaipava', 'devassa', 'schin', 'conti', 'cerpa', 'colina', 'samba',
+        'proibida', 'spoller', 'serramalte', 'eisenbahn', 'bohemia', 'petra', 'burguesa', 'caracu',
+        '1500', 'original'
+      ];
+      const hasConcorrente = concorrentes.some(c => {
+        if (c === '1500') {
+          // Evita confundir "1500 ml" (volume) com a cerveja "1500"
+          return normText.includes('1500') && !normText.includes('1500ml') && !normText.includes('1500 ml');
+        }
+        return normText.includes(c);
+      });
+      if (hasConcorrente) return false;
+    }
+
+    const hasKeyword = normText.includes('garrafa') ||
+                       normText.includes('lata') ||
+                       normText.includes('retornavel') ||
+                       normText.includes('descartavel') ||
+                       normText.includes('copo') ||
+                       normText.includes('barril') ||
+                       normText.includes('embalagem') ||
+                       normText.includes('hidroeletrolitica') ||
+                       normText.includes('isotonica') ||
+                       normText.includes('energetica') ||
+                       (normText.includes('cerveja') && (normText.includes(' de ') || normText.includes('em')));
                        
-    return hasKeyword;
+    return hasKeyword || isKnownSubheader;
   }
 
   private static _isRowRelevant(rowText: string): boolean {
-    const lower = rowText.toLowerCase();
+    const normalize = (str: string) => {
+      return str
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    };
+    const normText = normalize(rowText);
 
     const matches = BRAND_SLUGS.some(slug => {
-      const lowerSlug = slug.toLowerCase();
-      if (lowerSlug === '3.0') {
-        return /\b3\.0\b/.test(lower);
+      const normSlug = normalize(slug);
+      if (normSlug === '3.0') {
+        return /\b3\.0\b/.test(normText);
       }
-      return lower.includes(lowerSlug);
+      return normText.includes(normSlug);
     });
 
     if (matches) {
       return true;
     }
 
-    if (lower.includes('cidade imperial')) {
-      const isStyle = /imperial\s+(stout|ipa|sour|red|double|ap|lager|pils|wit|helles|dunkel)/i.test(lower) ||
-                      /(stout|ipa|sour|red|double|ap|lager|pils|wit|helles|dunkel)\s+imperial/i.test(lower);
+    if (normText.includes('cidade imperial')) {
+      const isStyle = /imperial\s+(stout|ipa|sour|red|double|ap|lager|pils|wit|helles|dunkel)/i.test(normText) ||
+                      /(stout|ipa|sour|red|double|ap|lager|pils|wit|helles|dunkel)\s+imperial/i.test(normText);
       if (!isStyle) {
         return true;
       }
+    }
+
+    const seRelevant = ['dopamina', 'best power', 'hysotonic', 'macedonia'];
+    if (seRelevant.some(term => normText.includes(term))) {
+      return true;
     }
 
     return false;
@@ -694,6 +876,17 @@ export class TextractCompactor {
     }
 
     return tableData;
+  }
+
+  /**
+   * Determina se um bloco pertence à coluna esquerda ou direita da página.
+   * Usado para manter estados independentes em tabelas de duas colunas (ex: SE).
+   */
+  private static _getColKey(block: any): 'left' | 'right' {
+    const left = block.Geometry?.BoundingBox?.Left ?? 0;
+    const width = block.Geometry?.BoundingBox?.Width ?? 0;
+    const centerX = left + width / 2;
+    return centerX < 0.5 ? 'left' : 'right';
   }
 
   private static _fallbackTextExtractor(data: unknown): string {

@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { Check, AlertTriangle, Trash2, Plus } from 'lucide-react';
+import { Check, AlertTriangle, Trash2, Plus, X } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import type { EstruturaTabela, IndexedRow } from './OcrTablesViewer';
 
@@ -18,6 +18,34 @@ interface OcrTableCardProps {
   onDeleteRow?: (tabelaIdx: number, rIdx: number) => void;
   onDeleteTable?: (tabelaIdx: number) => void;
   onAddRow?: (tabelaIdx: number) => void;
+  inlineEditingCell?: {
+    tabelaIdx: number;
+    rIdx: number;
+    cIdx: number;
+    value: string;
+  } | null;
+  setInlineEditingCell?: (
+    cell: {
+      tabelaIdx: number;
+      rIdx: number;
+      cIdx: number;
+      value: string;
+    } | null
+  ) => void;
+  inlineEditingHeader?: {
+    tabelaIdx: number;
+    cIdx: number;
+    value: string;
+  } | null;
+  setInlineEditingHeader?: (
+    header: {
+      tabelaIdx: number;
+      cIdx: number;
+      value: string;
+    } | null
+  ) => void;
+  onSaveInlineCell?: (tabelaIdx: number, rIdx: number, cIdx: number, value: string) => Promise<void>;
+  onSaveInlineHeader?: (tabelaIdx: number, cIdx: number, value: string) => Promise<void>;
 }
 
 export function OcrTableCard({
@@ -35,6 +63,12 @@ export function OcrTableCard({
   onDeleteRow,
   onDeleteTable,
   onAddRow,
+  inlineEditingCell,
+  setInlineEditingCell,
+  inlineEditingHeader,
+  setInlineEditingHeader,
+  onSaveInlineCell,
+  onSaveInlineHeader,
 }: OcrTableCardProps) {
   return (
     <Card className={`overflow-hidden border shadow-sm transition-all duration-300 ${isEditingMode ? 'ring-2 ring-primary/20 border-primary/30' : ''}`}>
@@ -74,23 +108,69 @@ export function OcrTableCard({
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-muted/20 border-b border-muted">
-                {tabela.headers.map((header, idx) => (
-                  <th
-                    key={idx}
-                    className="px-4 py-2.5 font-semibold text-muted-foreground uppercase tracking-wider min-w-[120px]"
-                  >
-                    {isEditingMode ? (
-                      <input
-                        value={header}
-                        onChange={(e) => onHeaderEdit?.(tabela.tabelaIndex, idx, e.target.value)}
-                        className="bg-background text-foreground text-xs font-semibold px-2 py-1 rounded border border-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full"
-                        placeholder={`Coluna ${idx + 1}`}
-                      />
-                    ) : (
-                      header || `Coluna ${idx + 1}`
-                    )}
-                  </th>
-                ))}
+                {tabela.headers.map((header, idx) => {
+                  const isEditingHeaderThis = inlineEditingHeader?.tabelaIdx === tabela.tabelaIndex && inlineEditingHeader?.cIdx === idx;
+
+                  return (
+                    <th
+                      key={idx}
+                      className="px-4 py-2.5 font-semibold text-muted-foreground uppercase tracking-wider min-w-[120px] cursor-pointer select-none"
+                      onDoubleClick={() => {
+                        if (!isEditingMode && setInlineEditingHeader) {
+                          setInlineEditingHeader({
+                            tabelaIdx: tabela.tabelaIndex,
+                            cIdx: idx,
+                            value: header || `Coluna ${idx + 1}`,
+                          });
+                        }
+                      }}
+                      title={!isEditingMode ? "Dois cliques para editar" : undefined}
+                    >
+                      {isEditingMode ? (
+                        <input
+                          value={header}
+                          onChange={(e) => onHeaderEdit?.(tabela.tabelaIndex, idx, e.target.value)}
+                          className="bg-background text-foreground text-xs font-semibold px-2 py-1 rounded border border-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full"
+                          placeholder={`Coluna ${idx + 1}`}
+                        />
+                      ) : isEditingHeaderThis ? (
+                        <div className="flex items-center gap-1.5 min-w-[150px]" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            autoFocus
+                            value={inlineEditingHeader.value}
+                            onChange={(e) => setInlineEditingHeader?.({ ...inlineEditingHeader, value: e.target.value })}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                onSaveInlineHeader?.(tabela.tabelaIndex, idx, inlineEditingHeader.value);
+                              } else if (e.key === 'Escape') {
+                                setInlineEditingHeader?.(null);
+                              }
+                            }}
+                            className="bg-background text-foreground text-xs font-semibold px-2 py-1 rounded border border-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary flex-1"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => onSaveInlineHeader?.(tabela.tabelaIndex, idx, inlineEditingHeader.value)}
+                            className="p-1 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors"
+                            title="Salvar"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setInlineEditingHeader?.(null)}
+                            className="p-1 bg-muted hover:bg-muted/80 text-foreground border rounded transition-colors"
+                            title="Cancelar"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        header || `Coluna ${idx + 1}`
+                      )}
+                    </th>
+                  );
+                })}
                 {isEditingMode && (
                   <th className="px-4 py-2.5 font-semibold text-muted-foreground uppercase tracking-wider w-[60px] text-center">
                     Ações
@@ -116,9 +196,24 @@ export function OcrTableCard({
                       const isPrice = isPriceCell(cell, tabela.headers[cIdx]);
                       const cellKey = `${tabela.tabelaIndex}-${rIdx}-${cIdx}`;
                       const isConfirmed = confirmedCells.has(cellKey);
+                      const isEditingCellThis = inlineEditingCell?.tabelaIdx === tabela.tabelaIndex && inlineEditingCell?.rIdx === rIdx && inlineEditingCell?.cIdx === cIdx;
 
                       return (
-                        <td key={cIdx} className="px-4 py-2 text-foreground/90 whitespace-nowrap">
+                        <td
+                          key={cIdx}
+                          className="px-4 py-2 text-foreground/90 whitespace-nowrap cursor-pointer select-none"
+                          onDoubleClick={() => {
+                            if (!isEditingMode && setInlineEditingCell) {
+                              setInlineEditingCell({
+                                tabelaIdx: tabela.tabelaIndex,
+                                rIdx,
+                                cIdx,
+                                value: cell,
+                              });
+                            }
+                          }}
+                          title={!isEditingMode ? "Dois cliques para editar" : undefined}
+                        >
                           {cIdx === 0 && showWarning && !isEditingMode && (
                             <span 
                               className="inline-flex items-center gap-1 text-amber-500 mr-1.5 vertical-middle align-middle cursor-help"
@@ -134,6 +229,39 @@ export function OcrTableCard({
                               className="bg-background text-foreground text-xs px-2 py-1 rounded border border-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full"
                               placeholder="-"
                             />
+                          ) : isEditingCellThis ? (
+                            <div className="flex items-center gap-1.5 min-w-[150px]" onClick={(e) => e.stopPropagation()}>
+                              <input
+                                autoFocus
+                                value={inlineEditingCell.value}
+                                onChange={(e) => setInlineEditingCell?.({ ...inlineEditingCell, value: e.target.value })}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    onSaveInlineCell?.(tabela.tabelaIndex, rIdx, cIdx, inlineEditingCell.value);
+                                  } else if (e.key === 'Escape') {
+                                    setInlineEditingCell?.(null);
+                                  }
+                                }}
+                                className="bg-background text-foreground text-xs px-2 py-1 rounded border border-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary flex-1"
+                                placeholder="-"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => onSaveInlineCell?.(tabela.tabelaIndex, rIdx, cIdx, inlineEditingCell.value)}
+                                className="p-1 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors"
+                                title="Salvar"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setInlineEditingCell?.(null)}
+                                className="p-1 bg-muted hover:bg-muted/80 text-foreground border rounded transition-colors"
+                                title="Cancelar"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           ) : isPrice ? (
                             <button
                               onClick={() => onCellClick(tabela.tabelaIndex, rIdx, cIdx, cell, row, tabela.headers)}

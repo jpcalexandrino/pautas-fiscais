@@ -35,7 +35,7 @@ class PautaFiscalService {
         await PautaFiscalRepository.upsertOcr(filename, uf, textractJson, null, dataPauta, contexto);
       }
     } else {
-      const textractResult = await TextractGatewayService.extractFromPdf(buffer, filename);
+      const textractResult = await TextractGatewayService.extractFromPdf(buffer, filename, uf);
       textractJson = textractResult.data;
       await PautaFiscalRepository.upsertOcr(filename, uf, textractJson, null, dataPauta, contexto);
     }

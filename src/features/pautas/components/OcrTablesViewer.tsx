@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode, useMemo } from 'react';
-import { HelpCircle, Info } from 'lucide-react';
+import { HelpCircle, Info, Save, X } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { toast } from 'sonner';
 import { BRAND_SLUGS } from '@shared/utils/constants';
@@ -169,6 +169,19 @@ export function OcrTablesViewer({
   const [confirmedCells, setConfirmedCells] = useState<Set<string>>(new Set());
   const [isEditingMode, setIsEditingMode] = useState(false);
   const [localTabelas, setLocalTabelas] = useState<EstruturaTabela[]>([]);
+
+  const [inlineEditingCell, setInlineEditingCell] = useState<{
+    tabelaIdx: number;
+    rIdx: number;
+    cIdx: number;
+    value: string;
+  } | null>(null);
+
+  const [inlineEditingHeader, setInlineEditingHeader] = useState<{
+    tabelaIdx: number;
+    cIdx: number;
+    value: string;
+  } | null>(null);
 
   // Sincroniza a cópia local quando tabelas mudam
   useEffect(() => {
@@ -363,6 +376,63 @@ export function OcrTablesViewer({
         description: err.message || 'Erro inesperado.',
       });
     }
+  };
+
+  const handleSaveInlineCell = async (tabelaIdx: number, rIdx: number, cIdx: number, value: string) => {
+    const updatedTabelas = localTabelas.map(t => {
+      if (t.tabelaIndex !== tabelaIdx) return t;
+      const newRows = [...t.rows];
+      newRows[rIdx] = [...newRows[rIdx]];
+      newRows[rIdx][cIdx] = value;
+      return { ...t, rows: newRows };
+    });
+    setLocalTabelas(updatedTabelas);
+
+    if (updateOcrTables) {
+      try {
+        await updateOcrTables({ 
+          filename, 
+          tabelas: updatedTabelas, 
+          confirmedCells: Array.from(confirmedCells), 
+          contexto 
+        });
+        toast.success('Célula atualizada com sucesso!');
+      } catch (err: any) {
+        toast.error('Erro ao salvar alteração', {
+          description: err.message || 'Erro inesperado.',
+        });
+        setLocalTabelas(tabelas);
+      }
+    }
+    setInlineEditingCell(null);
+  };
+
+  const handleSaveInlineHeader = async (tabelaIdx: number, cIdx: number, value: string) => {
+    const updatedTabelas = localTabelas.map(t => {
+      if (t.tabelaIndex !== tabelaIdx) return t;
+      const newHeaders = [...t.headers];
+      newHeaders[cIdx] = value;
+      return { ...t, headers: newHeaders };
+    });
+    setLocalTabelas(updatedTabelas);
+
+    if (updateOcrTables) {
+      try {
+        await updateOcrTables({ 
+          filename, 
+          tabelas: updatedTabelas, 
+          confirmedCells: Array.from(confirmedCells), 
+          contexto 
+        });
+        toast.success('Cabeçalho atualizado com sucesso!');
+      } catch (err: any) {
+        toast.error('Erro ao salvar alteração', {
+          description: err.message || 'Erro inesperado.',
+        });
+        setLocalTabelas(tabelas);
+      }
+    }
+    setInlineEditingHeader(null);
   };
 
   const handleCellClick = (tabelaIdx: number, rIdx: number, cIdx: number, value: string, row: string[], headers: string[]) => {
@@ -601,6 +671,12 @@ export function OcrTablesViewer({
               onDeleteRow={handleDeleteRow}
               onDeleteTable={handleDeleteTable}
               onAddRow={handleAddRow}
+              inlineEditingCell={inlineEditingCell}
+              setInlineEditingCell={setInlineEditingCell}
+              inlineEditingHeader={inlineEditingHeader}
+              setInlineEditingHeader={setInlineEditingHeader}
+              onSaveInlineCell={handleSaveInlineCell}
+              onSaveInlineHeader={handleSaveInlineHeader}
             />
           ))}
         </div>
@@ -636,6 +712,30 @@ export function OcrTablesViewer({
         isPriceCell={isPriceCell}
         inferItemDescription={inferItemDescription}
       />
+
+      {isEditingMode && (
+        <div className="fixed bottom-6 right-6 z-50 bg-card border rounded-xl p-4 shadow-xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <span className="text-xs font-semibold text-muted-foreground mr-2">Modo Edição Ativo</span>
+          <button
+            type="button"
+            onClick={handleSaveEdits}
+            disabled={isUpdatingOcrTables}
+            className="text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm disabled:opacity-50"
+          >
+            <Save className="w-3.5 h-3.5" />
+            {isUpdatingOcrTables ? 'Salvando...' : 'Salvar Alterações'}
+          </button>
+          <button
+            type="button"
+            onClick={handleToggleEditingMode}
+            disabled={isUpdatingOcrTables}
+            className="text-xs font-semibold bg-muted hover:bg-muted/80 text-foreground border px-3 py-2 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+            Cancelar
+          </button>
+        </div>
+      )}
     </div>
   );
 }

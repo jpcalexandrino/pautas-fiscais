@@ -105,7 +105,19 @@ export const LayoutRegistry: Record<string, UFLayout> = {
     }
   },
   SE: {
-    guideline: 'A tabela possui apenas 2 colunas principais: PRODUTO/MARCA/TIPO e VALOR (R$). As embalagens e faixas de volumes correspondentes são descritas em linhas divisórias horizontais de seção (ex: "Cerveja em garrafa descartável de 200ml a 240ml" ou "Cerveja em lata de 300ml a 399ml"). Você DEVE propagar a embalagem e a faixa de volume descritas nessas linhas divisórias para todos os itens listados logo abaixo dela, até que apareça uma nova linha divisória de seção.',
+    guideline: `A pauta de Sergipe possui uma hierarquia de TRÊS NÍVEIS que deve ser respeitada rigorosamente:
+
+NÍVEL 1 — Tipo de produto (ex: "Cerveja", "Refrigerante", "Suco"):
+  - Quando o tipo muda para algo que não seja cerveja ou chopp, desconsidere todos os itens subsequentes até aparecer uma seção de cerveja.
+
+NÍVEL 2 — Subcabeçalho de embalagem + faixa de volume (ex: "Cerveja em garrafa descartável de 276 ml a 399 ml", "Cerveja em lata de 300ml a 399ml"):
+  - Propague essa informação para TODOS os itens listados abaixo desta linha, até que apareça um novo subcabeçalho de seção.
+  - O subcabeçalho é sempre uma descrição longa sem preço associado.
+
+NÍVEL 3 — Linhas de produto: PRODUTO/MARCA/TIPO | VALOR (R$).
+  - Monte a "descricao_estado" concatenando o nome do produto com o subcabeçalho ativo do Nível 2.
+
+ATENÇÃO — COLUNAS PARALELAS: A tabela pode ter duas colunas lado a lado no PDF (coluna esquerda e coluna direita). Cada coluna possui sua própria cadeia de subcabeçalhos INDEPENDENTE. NUNCA propague o subcabeçalho da coluna esquerda para os produtos da coluna direita ou vice-versa. Trate cada coluna de forma completamente isolada.`,
     getTableHeaders: (numCols: number) => {
       if (numCols === 2) return ['PRODUTO_MARCA_TIPO', 'VALOR_RS'];
       return Array.from({ length: numCols }).map((_, i) => `COLUNA_${i + 1}`);
