@@ -4,6 +4,7 @@ import DeParaProdutoEstadoRepository from '../repositories/DeParaProdutoEstadoRe
 import PautaFiscalRepository from '../repositories/PautaFiscalRepository';
 import CalendarioRepository from '../repositories/CalendarioRepository';
 import { parseDateToSkData, parseStringToDate } from '../utils/normalize';
+import { PDFSplitter } from './PDFSplitter';
 
 export interface ProcessPautaResult {
   autoInserted: number;
@@ -35,7 +36,15 @@ class PautaFiscalService {
         await PautaFiscalRepository.upsertOcr(filename, uf, textractJson, null, dataPauta, contexto);
       }
     } else {
-      const textractResult = await TextractGatewayService.extractFromPdf(buffer, filename, uf);
+      let finalBuffer = buffer;
+      if (uf.toUpperCase() === 'SE') {
+        try {
+          finalBuffer = await PDFSplitter.splitVertically(buffer);
+        } catch (err) {
+          console.error('Failed to split PDF vertically:', err);
+        }
+      }
+      const textractResult = await TextractGatewayService.extractFromPdf(finalBuffer, filename, uf);
       textractJson = textractResult.data;
       await PautaFiscalRepository.upsertOcr(filename, uf, textractJson, null, dataPauta, contexto);
     }

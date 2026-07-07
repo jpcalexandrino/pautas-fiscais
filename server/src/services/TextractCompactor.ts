@@ -539,7 +539,7 @@ export class TextractCompactor {
           continue;
         }
 
-        if (!is900or1000ml && isSub && !hasPrice) {
+        if (isSub && !hasPrice) {
           currentSubheader = col0;
           if (state) {
             state.isBeerSection = true;
@@ -554,53 +554,74 @@ export class TextractCompactor {
             const newRow = [...row];
             let activeSubheader = currentSubheader || state?.currentSubheaderSE || '';
 
-            // Auto-correção de subcabeçalhos Sergipe baseada no volume/conteúdo detectado no produto
+            // Auto-correção heurística baseada EM CONFLITOS DE VOLUME explicitados no nome do item
             const normCol0 = normalize(col0);
             const normActiveSub = normalize(activeSubheader);
 
-            if (normCol0.includes('500 ml') || normCol0.includes('500ml')) {
-              if (normActiveSub.includes('descartavel') && (normActiveSub.includes('276') || normActiveSub.includes('399'))) {
-                activeSubheader = 'Cerveja em garrafa descartável de 500 ml a 660 ml';
-                currentSubheader = activeSubheader;
-                if (state) state.currentSubheaderSE = activeSubheader;
-              } else if (normActiveSub.includes('retornavel')) {
-                activeSubheader = 'Cerveja em garrafa retornável de 600 ml';
-                currentSubheader = activeSubheader;
-                if (state) state.currentSubheaderSE = activeSubheader;
-              }
-            } else if (normCol0.includes('210ml') || normCol0.includes('210 ml')) {
-              if (normActiveSub.includes('descartavel')) {
-                activeSubheader = 'Cerveja em garrafa descartável de 200 ml a 249 ml';
-                currentSubheader = activeSubheader;
-                if (state) state.currentSubheaderSE = activeSubheader;
-              }
-            } else if (normCol0.includes('330ml') || normCol0.includes('330 ml') || normCol0.includes('300ml') || normCol0.includes('300 ml') || normCol0.includes('355ml') || normCol0.includes('355 ml')) {
-              if (normActiveSub.includes('descartavel') && !normActiveSub.includes('276') && !normActiveSub.includes('399')) {
-                activeSubheader = 'Cerveja em garrafa descartável de 276 ml a 399 ml';
-                currentSubheader = activeSubheader;
-                if (state) state.currentSubheaderSE = activeSubheader;
-              }
-            } else if (normCol0.includes('269ml') || normCol0.includes('269 ml')) {
-              if (normCol0.includes('dopamina') && !normActiveSub.includes('ate 355')) {
-                activeSubheader = 'Bebida energética em embalagem até 355 ml';
-                currentSubheader = activeSubheader;
-                if (state) state.currentSubheaderSE = activeSubheader;
-              }
-            } else if (normCol0.includes('473ml') || normCol0.includes('473 ml')) {
-              if (normCol0.includes('dopamina') && !normActiveSub.includes('356') && !normActiveSub.includes('599')) {
-                activeSubheader = 'Bebidas energéticas em embalagem de 356ml a 599ml';
-                currentSubheader = activeSubheader;
-                if (state) state.currentSubheaderSE = activeSubheader;
-              }
-            } else if (normCol0.includes('2000ml') || normCol0.includes('2000 ml') || normCol0.includes('2 L') || normCol0.includes('2l')) {
-              if (normCol0.includes('best power')) {
-                activeSubheader = 'Bebidas energéticas em embalagem com capacidade igual ou superior a 1500 ml';
-                currentSubheader = activeSubheader;
-                if (state) state.currentSubheaderSE = activeSubheader;
+            const mlMatch = normCol0.match(/(\d+)\s*ml/);
+            const mlVal = mlMatch ? parseInt(mlMatch[1]) : 0;
+
+            if (mlVal > 0) {
+              const isDescartavel = normCol0.includes('descartavel') || normCol0.includes('long neck') || normCol0.includes('ln');
+              const isRetornavel = normCol0.includes('retornavel');
+              const isLata = normCol0.includes('lata') || normCol0.includes('lt');
+              const isBeer = !normCol0.includes('energetico') && !normCol0.includes('energy') && !normCol0.includes('dopamina') && !normCol0.includes('best power') && !normCol0.includes('hysotonic') && !normCol0.includes('isotonic') && !normCol0.includes('tonica') && !normCol0.includes('agua tonica');
+
+              if (isBeer) {
+                if (mlVal === 500) {
+                  if (normActiveSub.includes('descartavel') && (normActiveSub.includes('276') || normActiveSub.includes('399') || normActiveSub.includes('250') || normActiveSub.includes('200'))) {
+                    activeSubheader = 'Cerveja em garrafa descartável de 500 ml a 660 ml';
+                  } else if (normActiveSub.includes('retornavel')) {
+                    activeSubheader = 'Cerveja em garrafa retornável de 600 ml';
+                  }
+                } else if (mlVal === 210) {
+                  if (normActiveSub.includes('descartavel') && !normActiveSub.includes('200') && !normActiveSub.includes('249')) {
+                    activeSubheader = 'Cerveja em garrafa descartável de 200 ml a 249 ml';
+                  }
+                } else if (mlVal === 269 && isLata) {
+                  if (!normActiveSub.includes('250') || !normActiveSub.includes('299')) {
+                    activeSubheader = 'Cerveja em lata de 250 ml a 299 ml';
+                  }
+                } else if (mlVal === 350 && isLata) {
+                  if (!normActiveSub.includes('300') || !normActiveSub.includes('399')) {
+                    activeSubheader = 'Cerveja em lata de 300 ml a 399 ml';
+                  }
+                } else if (mlVal === 473 && isLata) {
+                  if (!normActiveSub.includes('400') || !normActiveSub.includes('473')) {
+                    activeSubheader = 'Cerveja em lata de 400 a 473 ml';
+                  }
+                } else if ((mlVal === 900 || mlVal === 1000 || mlVal === 990) && (isRetornavel || normCol0.includes('bohemia') || normCol0.includes('antarctica') || normCol0.includes('brahma') || normCol0.includes('budweiser'))) {
+                  if (!normActiveSub.includes('900') && !normActiveSub.includes('1000')) {
+                    activeSubheader = 'Cerveja em garrafa de 900ml a 1000 ml';
+                  }
+                }
+              } else {
+                // Para energéticos e outras bebidas que não sejam cerveja
+                if (normCol0.includes('dopamina') || normCol0.includes('energetico') || normCol0.includes('energy') || normCol0.includes('best power')) {
+                  if (mlVal === 269 || mlVal <= 355) {
+                    activeSubheader = 'Bebida energética em embalagem até 355 ml';
+                  } else if (mlVal === 473 || (mlVal >= 356 && mlVal <= 599)) {
+                    activeSubheader = 'Bebidas energéticas em embalagem de 356ml a 599ml';
+                  } else if (mlVal >= 1500) {
+                    activeSubheader = 'Bebidas energéticas em embalagem com capacidade igual ou superior a 1500 ml';
+                  }
+                } else if (normCol0.includes('hysotonic') || normCol0.includes('isotonic') || normCol0.includes('hidroeletrolitica')) {
+                  if (mlVal < 600) {
+                    activeSubheader = 'Bebidas hidroeletroliticas (isotônicas) em embalagem com capacidade inferior a 600ml';
+                  }
+                } else if (normCol0.includes('agua tonica') || normCol0.includes('tonica')) {
+                  if (normCol0.includes('lata') || mlVal === 350) {
+                    activeSubheader = 'Água tônica em lata de 350 ml';
+                  } else {
+                    activeSubheader = 'Água tônica em garrafa PET';
+                  }
+                }
               }
             }
 
             if (activeSubheader) {
+              currentSubheader = activeSubheader;
+              if (state) state.currentSubheaderSE = activeSubheader;
               newRow[0] = `${col0} (${activeSubheader})`;
             }
 
@@ -698,11 +719,6 @@ export class TextractCompactor {
         .replace(/[\u0300-\u036f]/g, '');
     };
     const normText = normalize(text);
-    
-    // Ignorar subcabeçalhos de 900ml a 1000ml pois não possuem produtos relevantes e quebram a propagação
-    if (normText.includes('900') || normText.includes('1000') || normText.includes('1.000')) {
-      return false;
-    }
 
     // Se contiver preço (ex: decimal com vírgula ou ponto), não é um subcabeçalho
     if (/\d+[\.,]\d+/.test(normText)) {
