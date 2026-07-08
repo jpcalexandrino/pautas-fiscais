@@ -76,7 +76,7 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
             Informe sua senha atual e a nova senha que deseja utilizar.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="currentPassword">Senha Atual</Label>
             <Input
