@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/api/client';
 import { Spinner } from '@/components/ui/spinner';
@@ -69,10 +69,22 @@ const parseOcrAlteration = (alt: string) => {
 
 export default function AuditPage() {
   const { user } = useAuth();
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [actionFilter, setActionFilter] = useState('all');
+  const [startDate, setStartDate] = useState(() => sessionStorage.getItem('audit_logs_start_date') || '');
+  const [endDate, setEndDate] = useState(() => sessionStorage.getItem('audit_logs_end_date') || '');
+  const [actionFilter, setActionFilter] = useState(() => sessionStorage.getItem('audit_logs_action_filter') || 'all');
   const [selectedAuditLog, setSelectedAuditLog] = useState<AuditLog | null>(null);
+
+  useEffect(() => {
+    sessionStorage.setItem('audit_logs_start_date', startDate);
+  }, [startDate]);
+
+  useEffect(() => {
+    sessionStorage.setItem('audit_logs_end_date', endDate);
+  }, [endDate]);
+
+  useEffect(() => {
+    sessionStorage.setItem('audit_logs_action_filter', actionFilter);
+  }, [actionFilter]);
 
   const { data: logs = [], isLoading } = useQuery<AuditLog[]>({
     queryKey: ['audit-logs'],

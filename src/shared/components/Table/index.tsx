@@ -124,13 +124,43 @@ const Table = <T extends TableCustomData<T>>({
     maxHeight,
 }: TableProps<T>) => {
     const tableRef = useRef<HTMLDivElement | null>(null)
-    const [pagination, setPagination] = useState({
-        pageIndex: 0,
-        pageSize: defaultPageSize,
+    const [pagination, setPagination] = useState(() => {
+        if (tableId) {
+            const saved = sessionStorage.getItem(`table_pag_${tableId}`)
+            if (saved) {
+                try {
+                    return JSON.parse(saved)
+                } catch (e) {}
+            }
+        }
+        return {
+            pageIndex: 0,
+            pageSize: defaultPageSize,
+        }
     })
-    const [sorting, setSorting] = useState<SortingState>([])
+    const [sorting, setSorting] = useState<SortingState>(() => {
+        if (tableId) {
+            const saved = sessionStorage.getItem(`table_sort_${tableId}`)
+            if (saved) {
+                try {
+                    return JSON.parse(saved)
+                } catch (e) {}
+            }
+        }
+        return []
+    })
     const [expanded, setExpanded] = useState<ExpandedState>({})
-    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => {
+        if (tableId) {
+            const saved = sessionStorage.getItem(`table_filters_${tableId}`)
+            if (saved) {
+                try {
+                    return JSON.parse(saved)
+                } catch (e) {}
+            }
+        }
+        return []
+    })
     const [selectedRows, setSelectedRows] = useState<RowSelectionState>({})
 
     // Controlled local states for Visibility, Pinning and ColumnOrder with localStorage persistence if tableId is present
@@ -195,6 +225,24 @@ const Table = <T extends TableCustomData<T>>({
             localStorage.setItem(`table_order_${tableId}`, JSON.stringify(columnOrder))
         }
     }, [tableId, columnOrder])
+
+    useEffect(() => {
+        if (tableId) {
+            sessionStorage.setItem(`table_pag_${tableId}`, JSON.stringify(pagination))
+        }
+    }, [tableId, pagination])
+
+    useEffect(() => {
+        if (tableId) {
+            sessionStorage.setItem(`table_sort_${tableId}`, JSON.stringify(sorting))
+        }
+    }, [tableId, sorting])
+
+    useEffect(() => {
+        if (tableId) {
+            sessionStorage.setItem(`table_filters_${tableId}`, JSON.stringify(columnFilters))
+        }
+    }, [tableId, columnFilters])
 
     const state: Partial<TableState> = useMemo(
         () => ({

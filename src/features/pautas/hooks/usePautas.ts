@@ -40,6 +40,7 @@ export function usePautas(filters?: { fk_estado?: number; fk_produto?: number; c
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pautas'] });
       queryClient.invalidateQueries({ queryKey: ['pautas-ocr-files'] });
+      queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
     },
   });
 
@@ -81,6 +82,7 @@ export function usePautas(filters?: { fk_estado?: number; fk_produto?: number; c
       queryClient.invalidateQueries({ queryKey: ['pautas'] });
       queryClient.invalidateQueries({ queryKey: ['de-para'] });
       queryClient.invalidateQueries({ queryKey: ['pautas-ocr-tables'] });
+      queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
     },
   });
 
@@ -99,6 +101,7 @@ export function usePautas(filters?: { fk_estado?: number; fk_produto?: number; c
     },
     onSuccess: (_, { filename }) => {
       queryClient.invalidateQueries({ queryKey: ['pautas-ocr-tables', filename] });
+      queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
     },
   });
 

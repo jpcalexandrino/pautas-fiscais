@@ -36,10 +36,9 @@ class PautaFiscalRepository {
         status VARCHAR(20) DEFAULT 'confirmado',
         arquivo_origem VARCHAR(500),
         contexto VARCHAR(20) DEFAULT 'proprio',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        d_e_l_e_t_ VARCHAR(1) DEFAULT ' '
       );
-      ALTER TABLE fato_pauta_fiscal ADD COLUMN IF NOT EXISTS contexto VARCHAR(20) DEFAULT 'proprio';
-      ALTER TABLE fato_pauta_fiscal ADD COLUMN IF NOT EXISTS d_e_l_e_t_ VARCHAR(1) DEFAULT ' ';
     `);
 
     await db.query(`
@@ -56,7 +55,6 @@ class PautaFiscalRepository {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
       ALTER TABLE pauta_arquivo_ocr DROP CONSTRAINT IF EXISTS pauta_arquivo_ocr_filename_key;
-      ALTER TABLE pauta_arquivo_ocr ADD COLUMN IF NOT EXISTS contexto VARCHAR(20) DEFAULT 'proprio';
     `);
 
     // Add unique constraint dynamically
@@ -102,6 +100,18 @@ class PautaFiscalRepository {
        ${where}
        ORDER BY f.created_at DESC`,
       values
+    );
+  }
+
+  async findActive(fk_produto: number, fk_estado: number, fk_data: number | null, contexto: string = 'proprio'): Promise<QueryResult> {
+    return db.query(
+      `SELECT * FROM fato_pauta_fiscal 
+       WHERE fk_produto = $1 
+         AND fk_estado = $2 
+         AND (fk_data = $3 OR (fk_data IS NULL AND $3 IS NULL)) 
+         AND contexto = $4 
+         AND d_e_l_e_t_ = ' '`,
+      [fk_produto, fk_estado, fk_data, contexto]
     );
   }
 

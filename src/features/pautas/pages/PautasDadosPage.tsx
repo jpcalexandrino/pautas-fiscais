@@ -31,6 +31,7 @@ export default function PautasDadosPage() {
         : pautas;
 
       const rows = dataToExport.map((p: any) => ({
+        'Tipo de Pauta': p.contexto === 'terceiros' || p.contexto === 'terceiro' ? 'Terceiro' : 'Próprio',
         UF: p.uf,
         Estado: p.nome_estado,
         'Código ERP': p.codigo_interno,
@@ -45,11 +46,11 @@ export default function PautasDadosPage() {
 
       const ws = XLSX.utils.json_to_sheet(rows);
 
-      // Aplica formatação de moeda R$ na coluna 'Valor PMPF' (coluna H, índice 7)
+      // Aplica formatação de moeda R$ na coluna 'Valor PMPF' (coluna I, índice 8)
       if (ws['!ref']) {
         const range = XLSX.utils.decode_range(ws['!ref']);
         for (let R = range.s.r + 1; R <= range.e.r; ++R) {
-          const cellRef = XLSX.utils.encode_cell({ r: R, c: 7 }); // Coluna H
+          const cellRef = XLSX.utils.encode_cell({ r: R, c: 8 }); // Coluna I
           const cell = ws[cellRef];
           if (cell && typeof cell.v === 'number') {
             cell.z = '"R$ "#,##0.00';

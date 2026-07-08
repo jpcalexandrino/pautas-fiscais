@@ -14,19 +14,20 @@ interface PautasDataTableProps {
 }
 
 export const ALL_COLUMNS = [
+  { key: 'contexto', label: 'Tipo de Pauta' },
   { key: 'uf', label: 'UF' },
   { key: 'nome_estado', label: 'Estado' },
-  { key: 'descricao_interna', label: 'Produto' },
+  { key: 'descricao_interna', label: 'Descrição' },
   { key: 'codigo_interno', label: 'Código ERP' },
-  { key: 'gtin_13', label: 'GTIN' },
+  { key: 'gtin_13', label: 'Código GTIN' },
   { key: 'embalagem', label: 'Embalagem' },
-  { key: 'conteudo_volume', label: 'Volume' },
+  { key: 'conteudo_volume', label: 'Volume da embalagem' },
   { key: 'valor_pauta', label: 'PMPF' },
-  { key: 'data', label: 'Data' },
+  { key: 'data', label: 'Data de vigência' },
   { key: 'arquivo_origem', label: 'Arquivo' }
 ];
 
-export const DEFAULT_COLUMNS = ['uf', 'descricao_interna', 'gtin_13', 'valor_pauta', 'data'];
+export const DEFAULT_COLUMNS = ['contexto', 'uf', 'descricao_interna', 'gtin_13', 'valor_pauta', 'data'];
 
 export function formatDateToBR(dateStr: any): string {
   if (!dateStr) return '-';
@@ -42,6 +43,27 @@ export function PautasDataTable({ pautas, loading, getTableInstance }: PautasDat
   const columns = useMemo<ColumnDef<any>[]>(
     () => calculateColumnSizes([
       {
+        accessorKey: 'contexto',
+        id: 'contexto',
+        header: 'Tipo de Pauta',
+        size: 130,
+        cell: ({ row }) => {
+          const value = row.original.contexto;
+          if (value === 'terceiros' || value === 'terceiro') {
+            return (
+              <Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 font-semibold px-2 py-0.5">
+                Terceiro
+              </Badge>
+            );
+          }
+          return (
+            <Badge variant="outline" className="border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-400 font-semibold px-2 py-0.5">
+              Próprio
+            </Badge>
+          );
+        },
+      },
+      {
         accessorFn: (row) => `${row.uf || ''} - ${row.nome_estado || ''}`,
         id: 'uf',
         header: 'UF - Estado',
@@ -53,9 +75,23 @@ export function PautasDataTable({ pautas, loading, getTableInstance }: PautasDat
         ),
       },
       {
+        accessorKey: 'gtin_13',
+        id: 'gtin_13',
+        header: 'Código GTIN',
+        size: 140,
+        cell: ({ row }) => String(row.original.gtin_13 || '-'),
+      },
+      {
+        accessorKey: 'codigo_interno',
+        id: 'codigo_interno',
+        header: 'Código ERP',
+        size: 120,
+        cell: ({ row }) => String(row.original.codigo_interno || '-'),
+      },
+      {
         accessorKey: 'descricao_interna',
         id: 'descricao_interna',
-        header: 'Produto',
+        header: 'Descrição',
         size: 250,
         cell: ({ row }) => (
           <span
@@ -67,20 +103,6 @@ export function PautasDataTable({ pautas, loading, getTableInstance }: PautasDat
         ),
       },
       {
-        accessorKey: 'codigo_interno',
-        id: 'codigo_interno',
-        header: 'Código ERP',
-        size: 120,
-        cell: ({ row }) => String(row.original.codigo_interno || '-'),
-      },
-      {
-        accessorKey: 'gtin_13',
-        id: 'gtin_13',
-        header: 'GTIN',
-        size: 140,
-        cell: ({ row }) => String(row.original.gtin_13 || '-'),
-      },
-      {
         accessorKey: 'embalagem',
         id: 'embalagem',
         header: 'Embalagem',
@@ -90,8 +112,8 @@ export function PautasDataTable({ pautas, loading, getTableInstance }: PautasDat
       {
         accessorKey: 'conteudo_volume',
         id: 'conteudo_volume',
-        header: 'Volume',
-        size: 100,
+        header: 'Volume da Embalagem',
+        size: 150,
         cell: ({ row }) => (row.original.conteudo_volume != null ? String(row.original.conteudo_volume) : '-'),
       },
       {
@@ -104,8 +126,8 @@ export function PautasDataTable({ pautas, loading, getTableInstance }: PautasDat
       {
         accessorFn: (row) => formatDateToBR(row.data),
         id: 'data',
-        header: 'Data',
-        size: 120,
+        header: 'Data de Vigência',
+        size: 140,
         cell: ({ row }) => formatDateToBR(row.original.data),
       },
       {

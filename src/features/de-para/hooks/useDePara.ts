@@ -28,7 +28,10 @@ export function useDePara(uf?: string) {
       }
       return await response.json();
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['de-para'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['de-para'] });
+      queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+    },
   });
 
   const updateMutation = useMutation({
@@ -43,7 +46,10 @@ export function useDePara(uf?: string) {
       }
       return await response.json();
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['de-para'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['de-para'] });
+      queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+    },
   });
 
   const deleteMutation = useMutation({
@@ -52,7 +58,10 @@ export function useDePara(uf?: string) {
       if (!response.ok) throw new Error('Falha ao deletar De-Para');
       return true;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['de-para'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['de-para'] });
+      queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+    },
   });
 
   const bulkImportMutation = useMutation({
@@ -66,7 +75,10 @@ export function useDePara(uf?: string) {
       }
       return await response.json();
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['de-para'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['de-para'] });
+      queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+    },
   });
 
   return {

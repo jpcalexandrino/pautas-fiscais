@@ -25,7 +25,6 @@ class ProdutoRepository {
         tipo VARCHAR(20) DEFAULT 'proprio',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
-      ALTER TABLE dim_produto ADD COLUMN IF NOT EXISTS tipo VARCHAR(20) DEFAULT 'proprio';
     `;
     return db.query(queryText);
   }

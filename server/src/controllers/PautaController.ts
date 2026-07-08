@@ -199,7 +199,7 @@ export async function confirmarManual(req: AuthRequest, res: Response) {
     const ids = fk_produtos ? fk_produtos.map(Number) : [Number(fk_produto)];
     const ctx = contexto || 'proprio';
 
-    await PautaFiscalService.confirmManual({
+    const result = await PautaFiscalService.confirmManual({
       fk_produtos: ids,
       uf: String(uf),
       descricao_estado: String(descricao_estado),
@@ -221,17 +221,21 @@ export async function confirmarManual(req: AuthRequest, res: Response) {
       }
     }
 
-    // Audit log
-    await AuditRepository.log(req.userId, 'ASSOCIACAO_PRODUTO', {
-      produtos: ids,
-      produtos_descritores: productNames,
-      uf,
-      descricao_estado,
-      valor_pauta,
-      arquivo_origem,
-      contexto: ctx,
-      salvouDePara: Boolean(salvar_de_para)
-    });
+    // Audit log - apenas registra se houve inserção ou atualização real de preços
+    const hasChanges = result.results.some(r => r.status === 'inserted' || r.status === 'updated');
+    if (hasChanges) {
+      await AuditRepository.log(req.userId, 'ASSOCIACAO_PRODUTO', {
+        produtos: ids,
+        produtos_descritores: productNames,
+        uf,
+        descricao_estado,
+        valor_pauta,
+        arquivo_origem,
+        contexto: ctx,
+        salvouDePara: Boolean(salvar_de_para),
+        alteracoes: result.results
+      });
+    }
 
     res.json({ success: true });
   } catch (error: unknown) {

@@ -67,7 +67,14 @@ class PautaFiscalService {
     salvarDePara?: boolean;
     cellKey?: string;
     contexto?: string;
-  }): Promise<void> {
+  }): Promise<{
+    results: {
+      fk_produto: number;
+      status: 'inserted' | 'updated' | 'skipped';
+      valor_anterior?: number;
+      valor_novo: number;
+    }[];
+  }> {
     const estado = await this._getEstado(params.uf);
     const fk_data = params.data_pauta ? parseDateToSkData(params.data_pauta) : null;
 
@@ -79,17 +86,72 @@ class PautaFiscalService {
     }
 
     const ctx = params.contexto || 'proprio';
+    const results: {
+      fk_produto: number;
+      status: 'inserted' | 'updated' | 'skipped';
+      valor_anterior?: number;
+      valor_novo: number;
+    }[] = [];
 
     for (const fk_produto of params.fk_produtos) {
-      await PautaFiscalRepository.create({
+      const existingRes = await PautaFiscalRepository.findActive(
         fk_produto,
-        fk_estado: estado.sk_estado,
+        estado.sk_estado,
         fk_data,
-        valor_pauta: params.valor_pauta,
-        arquivo_origem: params.arquivo_origem,
-        status: 'confirmado',
-        contexto: ctx
-      });
+        ctx
+      );
+
+      const newPrice = Number(params.valor_pauta);
+
+      if (existingRes.rows.length > 0) {
+        const existingRow = existingRes.rows[0];
+        const oldPrice = Number(existingRow.valor_pauta);
+
+        if (oldPrice === newPrice) {
+          // Se tudo a mesma coisa, não precisa fazer nada
+          results.push({
+            fk_produto,
+            status: 'skipped',
+            valor_novo: newPrice
+          });
+          continue;
+        }
+
+        // Se o valor mudou, atualiza (soft-delete antigo + insere novo)
+        await PautaFiscalRepository.create({
+          fk_produto,
+          fk_estado: estado.sk_estado,
+          fk_data,
+          valor_pauta: params.valor_pauta,
+          arquivo_origem: params.arquivo_origem,
+          status: 'confirmado',
+          contexto: ctx
+        });
+
+        results.push({
+          fk_produto,
+          status: 'updated',
+          valor_anterior: oldPrice,
+          valor_novo: newPrice
+        });
+      } else {
+        // Novo registro
+        await PautaFiscalRepository.create({
+          fk_produto,
+          fk_estado: estado.sk_estado,
+          fk_data,
+          valor_pauta: params.valor_pauta,
+          arquivo_origem: params.arquivo_origem,
+          status: 'confirmado',
+          contexto: ctx
+        });
+
+        results.push({
+          fk_produto,
+          status: 'inserted',
+          valor_novo: newPrice
+        });
+      }
 
       if (params.salvarDePara) {
         await DeParaProdutoEstadoRepository.create({
@@ -105,6 +167,8 @@ class PautaFiscalService {
     if (params.cellKey) {
       await PautaFiscalRepository.addConfirmedCell(params.arquivo_origem, params.cellKey, ctx);
     }
+
+    return { results };
   }
 
   private async _getEstado(uf: string) {

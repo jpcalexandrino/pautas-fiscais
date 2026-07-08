@@ -227,7 +227,7 @@ export function OcrBulkLoadDialog({
         valor_pauta: item.valorNum,
         data_pauta: dataPauta,
         arquivo_origem: filename,
-        salvar_de_para: saveDePara,
+        salvar_de_para: saveDePara && item.matchType !== 'de-para',
         cell_key: item.cellKey,
       }));
 

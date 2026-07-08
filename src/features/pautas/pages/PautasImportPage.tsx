@@ -10,7 +10,9 @@ import { Upload, Database, Search, Check, UploadCloud, FileText, X, ArrowRight, 
 import { toast } from 'sonner';
 
 export default function PautasImportPage() {
-  const [contexto, setContexto] = useState<'proprio' | 'terceiros'>('proprio');
+  const [contexto, setContexto] = useState<'proprio' | 'terceiros'>(() => {
+    return (sessionStorage.getItem('pautas_import_contexto') as 'proprio' | 'terceiros') || 'proprio';
+  });
   const { data: estados = [] } = useEstados();
   const {
     uploadPauta,
@@ -19,16 +21,39 @@ export default function PautasImportPage() {
     confirmManualPauta,
     updateOcrTables,
     isUpdatingOcrTables,
+    loading: isLoadingPautas,
   } = usePautas({ contexto });
 
   const { produtos = [] } = useProdutos();
 
-  const [auditFilename, setAuditFilename] = useState<string>('');
+  const [auditFilename, setAuditFilename] = useState<string>(() => {
+    return sessionStorage.getItem('pautas_import_filename') || '';
+  });
   const [vigenciaDate, setVigenciaDate] = useState<string>('');
 
   // Estados para filtros de arquivos
-  const [filterMonth, setFilterMonth] = useState<string>('all');
-  const [filterYear, setFilterYear] = useState<string>('all');
+  const [filterMonth, setFilterMonth] = useState<string>(() => {
+    return sessionStorage.getItem('pautas_import_month') || 'all';
+  });
+  const [filterYear, setFilterYear] = useState<string>(() => {
+    return sessionStorage.getItem('pautas_import_year') || 'all';
+  });
+
+  useEffect(() => {
+    sessionStorage.setItem('pautas_import_contexto', contexto);
+  }, [contexto]);
+
+  useEffect(() => {
+    sessionStorage.setItem('pautas_import_filename', auditFilename);
+  }, [auditFilename]);
+
+  useEffect(() => {
+    sessionStorage.setItem('pautas_import_month', filterMonth);
+  }, [filterMonth]);
+
+  useEffect(() => {
+    sessionStorage.setItem('pautas_import_year', filterYear);
+  }, [filterYear]);
 
   const monthsList = [
     { value: '01', label: 'Janeiro' },
@@ -66,21 +91,27 @@ export default function PautasImportPage() {
     return matchMonth && matchYear;
   });
 
-  // Estados para o formulário de upload
+   // Estados para o formulário de upload
   const [uploadUf, setUploadUf] = useState<string>('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadVigenciaDate, setUploadVigenciaDate] = useState<string>('');
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [mode, setMode] = useState<'select' | 'upload'>('select');
+  const [mode, setMode] = useState<'select' | 'upload'>(() => {
+    return (sessionStorage.getItem('pautas_import_mode') as 'select' | 'upload') || 'select';
+  });
+
+  useEffect(() => {
+    sessionStorage.setItem('pautas_import_mode', mode);
+  }, [mode]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Se não houver arquivos no banco, inicia no modo de upload automaticamente
   useEffect(() => {
-    if (ocrFiles.length === 0) {
+    if (!isLoadingPautas && ocrFiles.length === 0) {
       setMode('upload');
     }
-  }, [ocrFiles.length]);
+  }, [isLoadingPautas, ocrFiles.length]);
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
