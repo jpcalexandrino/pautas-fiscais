@@ -554,13 +554,6 @@ export function OcrTablesViewer({
         </div>
       ) : (
         <div className="space-y-8">
-          <div className="text-xs text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 p-3 rounded-md flex items-start gap-2 max-w-xl">
-            <Info className="w-4 h-4 mt-0.5 shrink-0" />
-            <p>
-              <strong>Associação Manual Rápida:</strong> Clique sobre qualquer valor de preço de pauta (células azuis de valor, ex: <code>3,12</code>) para associá-lo diretamente a um produto e gravá-lo no banco.
-            </p>
-          </div>
-
           {filteredTabelas.map((tabela) => (
             <OcrTableCard
               key={tabela.tabelaIndex}

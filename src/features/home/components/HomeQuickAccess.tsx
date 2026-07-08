@@ -1,7 +1,7 @@
 import { useNavigate } from '@tanstack/react-router';
 import { Upload, ArrowRight, Database, ArrowLeftRight, Tag } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface QuickAccessItem {
   icon: LucideIcon;
@@ -41,30 +41,33 @@ export default function HomeQuickAccess() {
   const navigate = useNavigate();
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       {quickAccessItems.map((feature, idx) => {
         const Icon = feature.icon;
         return (
           <Card
             key={idx}
-            className="group hover:border-primary/40 hover:shadow-md transition-all duration-300 cursor-pointer flex flex-col justify-between"
+            className="group hover:border-primary/40 hover:shadow-xs transition-all duration-200 cursor-pointer flex flex-col justify-between border-muted/50 rounded-xl bg-card overflow-hidden"
             onClick={() => navigate({ to: feature.to as any })}
           >
-            <CardHeader className="pb-4">
-              <div className="w-10 h-10 rounded-xl bg-background border-2 border-primary flex items-center justify-center shrink-0 shadow-sm text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 mb-2">
-                <Icon className="w-5 h-5 text-primary group-hover:text-primary-foreground transition-colors" />
+            <CardContent className="p-5 flex flex-col justify-between flex-1 gap-4">
+              <div className="space-y-3">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 text-primary transition-all duration-300">
+                  <Icon className="w-4 h-4 text-primary" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-sm font-bold text-foreground tracking-tight">{feature.title}</h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {feature.description}
+                  </p>
+                </div>
               </div>
-              <CardTitle className="text-sm font-bold tracking-tight">{feature.title}</CardTitle>
-              <CardDescription className="text-xs leading-relaxed line-clamp-3 pt-1">
-                {feature.description}
-              </CardDescription>
-            </CardHeader>
-            <CardFooter className="border-t bg-muted/30 dark:bg-muted/10 px-6 py-3 flex items-center justify-between">
-              <span className="text-[11px] font-medium text-muted-foreground group-hover:text-primary transition-colors">
-                Acessar módulo
-              </span>
-              <ArrowRight className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-all transform group-hover:translate-x-1" />
-            </CardFooter>
+
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-primary pt-2">
+                <span>Acessar</span>
+                <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+              </div>
+            </CardContent>
           </Card>
         );
       })}

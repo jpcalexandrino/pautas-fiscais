@@ -2,7 +2,7 @@ import { Link, useLocation } from '@tanstack/react-router';
 import {
   Home, Database, Package, Settings,
   ArrowLeftRight, Upload,
-  FileText, History
+  ScanText, History
 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import {
@@ -68,8 +68,8 @@ export default function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link to="/">
-                <div className="flex items-center justify-center shrink-0 size-8 bg-primary dark:bg-primary rounded-md border border-primary dark:border-primary">
-                  <FileText className='text-white dark:text-white'/>
+                <div className="flex items-center justify-center shrink-0 size-8 bg-primary dark:bg-primary rounded-lg border border-primary dark:border-primary">
+                  <ScanText className='text-white dark:text-white size-8'/>
                 </div>
                 {!collapsed && (
                   <div className="grid flex-1 text-left text-sm leading-tight">

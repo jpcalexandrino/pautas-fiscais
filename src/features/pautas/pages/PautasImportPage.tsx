@@ -6,8 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { DatePicker } from '@/components/ui/date-picker';
-import { Upload, Database, Search, Check, UploadCloud, FileText, X, ArrowRight, ArrowLeft } from 'lucide-react';
+import { UploadCloud, FileText, X, Search, Check } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 export default function PautasImportPage() {
   const [contexto, setContexto] = useState<'proprio' | 'terceiros'>(() => {
@@ -156,7 +157,6 @@ export default function PautasImportPage() {
     if (auditFilename) {
       const selectedFileObj = ocrFiles.find((f: any) => f.filename === auditFilename);
       if (selectedFileObj && selectedFileObj.data_pauta) {
-        // Se a data_pauta for retornada como string ISO datetime de banco, pega apenas a parte da data YYYY-MM-DD
         const datePart = typeof selectedFileObj.data_pauta === 'string'
           ? selectedFileObj.data_pauta.split('T')[0]
           : '';
@@ -213,16 +213,12 @@ export default function PautasImportPage() {
         description: 'Verifique e associe os produtos.',
       });
 
-      // Auto-seleciona o arquivo recém-carregado para carregar a tabela na hora
       setAuditFilename(result.arquivo);
       if (uploadVigenciaDate) {
         setVigenciaDate(uploadVigenciaDate);
       }
       
-      // Muda de volta para o modo de seleção com animação
       setMode('select');
-      
-      // Limpa os campos do formulário de upload
       setSelectedFile(null);
       setUploadUf('');
       setUploadVigenciaDate('');
@@ -236,11 +232,11 @@ export default function PautasImportPage() {
   };
 
   return (
-    <div className="animate-fade-in pb-10 space-y-6 max-w-7xl mx-auto px-4 sm:px-0">
+    <div className="animate-fade-in pb-10 space-y-8 w-full px-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Importar & Auditar Pautas Fiscais</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Selecione um PDF de pauta já processado no banco de dados ou envie um novo arquivo para estruturar e auditar preços de pauta.
+          Selecione um PDF de pauta no banco de dados ou envie um novo arquivo para estruturar e auditar preços de pauta.
         </p>
       </div>
 
@@ -250,322 +246,260 @@ export default function PautasImportPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Seção Superior de Controle */}
-          <div className="w-full bg-card border rounded-2xl shadow-md overflow-hidden transition-all duration-300">
-            <div className="relative overflow-hidden">
-              <div 
-                className="flex w-[200%] transition-transform duration-500 ease-in-out"
-                style={{ transform: mode === 'select' ? 'translateX(0)' : 'translateX(-50%)' }}
-              >
-                {/* 1. PAINEL SELECIONAR DO BANCO */}
-                <div className="w-1/2 p-6 shrink-0 space-y-6">
-                  {/* Header Row */}
-                  <div className="flex items-center justify-between border-b pb-3">
-                    <div className="flex items-center gap-3 text-primary font-semibold text-sm">
-                      <div className="p-2 rounded-lg bg-primary/10">
-                        <Database className="size-4" />
-                      </div>
-                      <div className="text-left">
-                        <h2 className="text-sm font-semibold text-foreground">Selecionar Pauta Existente</h2>
-                        <p className="text-[11px] text-muted-foreground font-normal">Selecione um arquivo PDF que já foi carregado e defina a vigência.</p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setMode('upload')}
-                      className="text-xs text-primary hover:underline flex items-center gap-1 font-semibold cursor-pointer shrink-0 bg-primary/5 hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
-                    >
-                      Enviar novo PDF <ArrowRight className="size-3" />
-                    </button>
-                  </div>
-
-                  {/* Form Grid */}
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
-                    {/* Filtros à esquerda */}
-                    <div className="lg:col-span-4 p-4 border-r space-y-4">
-                      <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5 pb-2">
-                        <Search className="size-3.5 text-primary" />
-                        Filtrar por Período
-                      </h3>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                          <label className="text-[11px] font-semibold text-muted-foreground">Mês</label>
-                          <Select value={filterMonth} onValueChange={setFilterMonth} disabled={ocrFiles.length === 0}>
-                            <SelectTrigger className="w-full bg-background text-xs h-9">
-                              <SelectValue placeholder="Todos" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all" className="text-xs">Todos os meses</SelectItem>
-                              {monthsList.map((m) => (
-                                <SelectItem key={m.value} value={m.value} className="text-xs">{m.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="text-[11px] font-semibold text-muted-foreground">Ano</label>
-                          <Select value={filterYear} onValueChange={setFilterYear} disabled={ocrFiles.length === 0}>
-                            <SelectTrigger className="w-full bg-background text-xs h-9">
-                              <SelectValue placeholder="Todos" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all" className="text-xs">Todos os anos</SelectItem>
-                              {availableYears.map((year) => (
-                                <SelectItem key={year} value={year} className="text-xs">{year}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Seleção do arquivo no centro/direita */}
-                    <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                      {/* Selecionar Contexto */}
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-muted-foreground">Contexto *</label>
-                        <Select
-                          value={contexto}
-                          onValueChange={(val: any) => {
-                            setContexto(val);
-                            setAuditFilename('');
-                          }}
-                        >
-                          <SelectTrigger className="w-full bg-background text-xs h-10">
-                            <SelectValue placeholder="Selecione o contexto" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="proprio" className="text-xs">Produtos Próprios</SelectItem>
-                            <SelectItem value="terceiros" className="text-xs">Produtos de Terceiros</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Selecionar Arquivo */}
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-muted-foreground">Arquivo de Pauta *</label>
-                        <Select
-                          value={auditFilename || undefined}
-                          onValueChange={(val) => setAuditFilename(val)}
-                          disabled={filteredOcrFiles.length === 0}
-                        >
-                          <SelectTrigger className="w-full bg-background text-xs h-10">
-                            <SelectValue placeholder={filteredOcrFiles.length === 0 ? "Nenhum arquivo" : "Selecione o arquivo..."} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {filteredOcrFiles.map((file: any) => (
-                              <SelectItem key={file.id} value={file.filename} className="text-xs">
-                                {file.filename}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Exibir UF */}
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-muted-foreground">Estado (UF)</label>
-                        {selectedAuditUf ? (
-                          <div className="flex items-center gap-2 h-10 px-3 border rounded-md bg-muted/40 text-xs font-medium text-foreground">
-                            <span className="bg-primary/15 text-primary px-1.5 py-0.5 rounded text-[10px] font-bold">
-                              {selectedAuditUf}
-                            </span>
-                            <span className="truncate text-muted-foreground text-[11px]">
-                              {estados.find((e: any) => e.uf === selectedAuditUf)?.nome || ''}
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center h-10 px-3 border border-dashed rounded-md bg-muted/20 text-xs text-muted-foreground/60 italic">
-                            Sem seleção
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Selecionar Vigência */}
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-muted-foreground flex items-center justify-between">
-                          <span>Data de Vigência *</span>
-                          {sugestoesDatas.includes(vigenciaDate) && (
-                            <span className="text-[9px] text-emerald-600 bg-emerald-500/10 px-1 py-0.5 rounded font-semibold animate-pulse">
-                              Detectada
-                            </span>
-                          )}
-                        </label>
-                        <DatePicker
-                          value={vigenciaDate}
-                          onChange={setVigenciaDate}
-                          disabled={true}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 2. PAINEL ENVIAR NOVO PDF */}
-                <div className="w-1/2 p-6 shrink-0 space-y-6">
-                  {/* Header Row */}
-                  <div className="flex items-center justify-between border-b pb-3">
-                    <div className="flex items-center gap-3 text-primary font-semibold text-sm">
-                      <div className="p-2 rounded-lg bg-primary/10">
-                        <Upload className="size-4" />
-                      </div>
-                      <div className="text-left">
-                        <h2 className="text-sm font-semibold text-foreground">Enviar Novo PDF de Pauta</h2>
-                        <p className="text-[11px] text-muted-foreground font-normal">Faça o upload do novo PDF para processar.</p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setMode('select')}
-                      className="text-xs text-primary hover:underline flex items-center gap-1 font-semibold cursor-pointer shrink-0 bg-primary/5 hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
-                    >
-                      <ArrowLeft className="size-3" /> Voltar para Selecionar
-                    </button>
-                  </div>
-
-                  {/* Upload controls */}
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-1 items-start">
-                    {/* Dropzone Area */}
-                    <div className="space-y-1.5 lg:col-span-5">
-                      <label className="text-xs font-semibold text-muted-foreground">Arquivo PDF *</label>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="application/pdf"
-                        className="hidden"
-                        onChange={handleFileChange}
-                        disabled={isUploading}
-                      />
-                      <div
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
-                        onClick={() => !isUploading && fileInputRef.current?.click()}
-                        className={`
-                          border-2 border-dashed rounded-lg p-3 text-center cursor-pointer transition-all duration-200 min-h-[90px] flex flex-col items-center justify-center gap-1
-                          ${isDragging 
-                            ? 'border-primary bg-primary/5 scale-[0.98]' 
-                            : 'border-muted-foreground/20 hover:border-primary/50 hover:bg-muted/30'
-                          }
-                          ${selectedFile ? 'border-emerald-500/30 bg-emerald-500/5' : ''}
-                          ${isUploading ? 'pointer-events-none opacity-60' : ''}
-                        `}
-                      >
-                        {selectedFile ? (
-                          <div className="flex items-center justify-between w-full px-2">
-                            <div className="flex items-center gap-2 truncate">
-                              <div className="p-1 rounded bg-emerald-500/10 text-emerald-600 shrink-0">
-                                <FileText className="size-4" />
-                              </div>
-                              <div className="text-left truncate">
-                                <div className="text-[11px] font-semibold text-foreground truncate max-w-[120px] sm:max-w-[150px]">
-                                  {selectedFile.name}
-                                </div>
-                                <div className="text-[9px] text-muted-foreground">
-                                  {(selectedFile.size / 1024).toFixed(0)} KB
-                                </div>
-                              </div>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedFile(null);
-                                  if (fileInputRef.current) fileInputRef.current.value = '';
-                              }}
-                              className="text-destructive hover:bg-destructive/10 p-1 rounded transition-colors shrink-0 cursor-pointer"
-                            >
-                              <X className="size-3.5" />
-                            </button>
-                          </div>
-                        ) : (
-                          <>
-                            <UploadCloud className={`size-5 text-muted-foreground/60 transition-transform ${isDragging ? 'scale-110 text-primary' : ''}`} />
-                            <div className="text-xs text-muted-foreground font-medium">
-                              Arraste seu PDF ou <span className="text-primary hover:underline font-semibold">procure</span>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Fields + Button */}
-                    <div className="lg:col-span-7 grid grid-cols-3 gap-3 items-end">
-                      {/* Selecionar Contexto */}
-                      <div className="space-y-1.5 col-span-1">
-                        <label className="text-xs font-semibold text-muted-foreground">Contexto *</label>
-                        <Select value={contexto} onValueChange={(val: any) => setContexto(val)} disabled={isUploading}>
-                          <SelectTrigger className="bg-background text-xs h-10">
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="proprio" className="text-xs">Produtos Próprios</SelectItem>
-                            <SelectItem value="terceiros" className="text-xs">Produtos de Terceiros</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Select UF */}
-                      <div className="space-y-1.5 col-span-1">
-                        <label className="text-xs font-semibold text-muted-foreground">Estado (UF) *</label>
-                        <Select value={uploadUf} onValueChange={setUploadUf} disabled={isUploading}>
-                          <SelectTrigger className="bg-background text-xs h-10">
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-56">
-                            {estados.map((e: any) => (
-                              <SelectItem key={e.uf} value={e.uf} className="text-xs">
-                                {e.uf} - {e.nome}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Data de Vigência da Pauta */}
-                      <div className="space-y-1.5 col-span-1">
-                        <label className="text-xs font-semibold text-muted-foreground">Vigência *</label>
-                        <DatePicker
-                          value={uploadVigenciaDate}
-                          onChange={setUploadVigenciaDate}
-                          disabled={isUploading}
-                          placeholder="Selecione"
-                        />
-                      </div>
-
-                      {/* Botão de Envio */}
-                      <div className="col-span-3 pt-1">
-                        <Button
-                          className={`w-full text-xs h-10 font-semibold transition-all duration-200 ${
-                            selectedFile && uploadUf && uploadVigenciaDate && !isUploading
-                              ? 'bg-primary text-primary-foreground shadow-md hover:shadow-lg' 
-                              : 'bg-muted text-muted-foreground border'
-                          }`}
-                          onClick={handleUploadAndAudit}
-                          disabled={!selectedFile || !uploadUf || !uploadVigenciaDate || isUploading}
-                        >
-                          {isUploading ? (
-                            <>
-                              <Spinner className="w-4 h-4 animate-spin mr-2" />
-                              Processando...
-                            </>
-                          ) : (
-                            <>
-                              <Check className="size-4 mr-2" />
-                              Processar e Auditar
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-            </div>
+          {/* Seletor de Modo Limpo & Minimalista */}
+          <div className="flex border-b border-muted pb-px justify-start gap-6">
+            <button
+              onClick={() => setMode('select')}
+              className={cn(
+                "pb-3 text-sm font-medium border-b-2 transition-all cursor-pointer",
+                mode === 'select'
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Pautas Cadastradas
+            </button>
+            <button
+              onClick={() => setMode('upload')}
+              className={cn(
+                "pb-3 text-sm font-medium border-b-2 transition-all cursor-pointer",
+                mode === 'upload'
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Carregar Novo PDF
+            </button>
           </div>
 
-          {/* Seção Inferior: Tabelas de Auditoria */}
+          {/* Painel do Modo Selecionado */}
+          {mode === 'select' ? (
+            <div className="bg-card border border-muted/50 rounded-xl p-5 shadow-sm space-y-5 animate-fade-in">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                {/* Contexto */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground">Contexto</label>
+                  <Select
+                    value={contexto}
+                    onValueChange={(val: any) => {
+                      setContexto(val);
+                      setAuditFilename('');
+                    }}
+                  >
+                    <SelectTrigger className="w-full bg-background text-xs h-10">
+                      <SelectValue placeholder="Selecione o contexto" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="proprio" className="text-xs">Produtos Próprios</SelectItem>
+                      <SelectItem value="terceiros" className="text-xs">Produtos de Terceiros</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Filtro Período */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground">Filtrar Período</label>
+                  <div className="flex gap-2">
+                    <Select value={filterMonth} onValueChange={setFilterMonth} disabled={ocrFiles.length === 0}>
+                      <SelectTrigger className="w-full bg-background text-xs h-10">
+                        <SelectValue placeholder="Mês" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all" className="text-xs">Todos os meses</SelectItem>
+                        {monthsList.map((m) => (
+                          <SelectItem key={m.value} value={m.value} className="text-xs">{m.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={filterYear} onValueChange={setFilterYear} disabled={ocrFiles.length === 0}>
+                      <SelectTrigger className="w-full bg-background text-xs h-10">
+                        <SelectValue placeholder="Ano" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all" className="text-xs">Todos os anos</SelectItem>
+                        {availableYears.map((year) => (
+                          <SelectItem key={year} value={year} className="text-xs">{year}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Arquivo PDF */}
+                <div className="space-y-1.5 md:col-span-2">
+                  <label className="text-xs font-semibold text-muted-foreground">Arquivo de Pauta</label>
+                  <Select
+                    value={auditFilename || undefined}
+                    onValueChange={(val) => setAuditFilename(val)}
+                    disabled={filteredOcrFiles.length === 0}
+                  >
+                    <SelectTrigger className="w-full bg-background text-xs h-10">
+                      <SelectValue placeholder={filteredOcrFiles.length === 0 ? "Nenhum arquivo" : "Selecione o arquivo..."} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {filteredOcrFiles.map((file: any) => (
+                        <SelectItem key={file.id} value={file.filename} className="text-xs">
+                          {file.filename}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Informações detalhadas inline (Vigência e Estado) */}
+              {auditFilename && (
+                <div className="flex flex-wrap items-center gap-4 pt-3 border-t border-muted/30 text-xs">
+                  <span className="text-muted-foreground">UF do Estado:</span>
+                  {selectedAuditUf ? (
+                    <span className="inline-flex items-center bg-primary/10 text-primary px-2.5 py-1 rounded-md font-semibold">
+                      {selectedAuditUf} - {estados.find((e: any) => e.uf === selectedAuditUf)?.nome || ''}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground/60 italic">Não identificado</span>
+                  )}
+
+                  <span className="text-muted-foreground ml-2">Data de Vigência:</span>
+                  {vigenciaDate ? (
+                    <span className="inline-flex items-center bg-muted border text-muted-foreground px-2.5 py-1 rounded-md font-medium">
+                      {vigenciaDate.split('-').reverse().join('/')}
+                    </span>
+                  ) : (
+                    <span className="text-amber-600 bg-amber-500/10 px-2 py-1 rounded-md font-medium">
+                      Vigência não definida
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-card border border-muted/50 rounded-xl p-5 shadow-sm space-y-5 animate-fade-in">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+                {/* PDF Dropzone */}
+                <div className="md:col-span-5 space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground">Arquivo PDF *</label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="application/pdf"
+                    className="hidden"
+                    onChange={handleFileChange}
+                    disabled={isUploading}
+                  />
+                  <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    onClick={() => !isUploading && fileInputRef.current?.click()}
+                    className={cn(
+                      "border border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors min-h-[90px] flex flex-col items-center justify-center gap-1 bg-muted/10 hover:bg-muted/30 border-muted-foreground/20 hover:border-primary/50",
+                      isDragging && "border-primary bg-primary/5",
+                      selectedFile && "border-emerald-500/30 bg-emerald-500/5",
+                      isUploading && "pointer-events-none opacity-60"
+                    )}
+                  >
+                    {selectedFile ? (
+                      <div className="flex items-center justify-between w-full px-2">
+                        <div className="flex items-center gap-2 truncate">
+                          <FileText className="size-5 text-emerald-600 shrink-0" />
+                          <div className="text-left truncate">
+                            <p className="text-xs font-semibold text-foreground truncate max-w-[140px] sm:max-w-[180px]">
+                              {selectedFile.name}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {(selectedFile.size / 1024).toFixed(0)} KB
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedFile(null);
+                            if (fileInputRef.current) fileInputRef.current.value = '';
+                          }}
+                          className="text-muted-foreground hover:text-destructive p-1 rounded transition-colors shrink-0 cursor-pointer"
+                        >
+                          <X className="size-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <UploadCloud className="size-6 text-muted-foreground/60" />
+                        <p className="text-xs text-muted-foreground font-medium">
+                          Arraste o PDF ou <span className="text-primary hover:underline font-semibold">procure no dispositivo</span>
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Form Fields + Button */}
+                <div className="md:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-3.5 items-end">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-muted-foreground">Contexto *</label>
+                    <Select value={contexto} onValueChange={(val: any) => setContexto(val)} disabled={isUploading}>
+                      <SelectTrigger className="bg-background text-xs h-10">
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="proprio" className="text-xs">Produtos Próprios</SelectItem>
+                        <SelectItem value="terceiros" className="text-xs">Produtos de Terceiros</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-muted-foreground">Estado (UF) *</label>
+                    <Select value={uploadUf} onValueChange={setUploadUf} disabled={isUploading}>
+                      <SelectTrigger className="bg-background text-xs h-10">
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-56">
+                        {estados.map((e: any) => (
+                          <SelectItem key={e.uf} value={e.uf} className="text-xs">
+                            {e.uf} - {e.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-muted-foreground">Vigência *</label>
+                    <DatePicker
+                      value={uploadVigenciaDate}
+                      onChange={setUploadVigenciaDate}
+                      disabled={isUploading}
+                      placeholder="Selecione"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-3 pt-2">
+                    <Button
+                      className="w-full text-xs h-10 font-semibold transition-all duration-150"
+                      onClick={handleUploadAndAudit}
+                      disabled={!selectedFile || !uploadUf || !uploadVigenciaDate || isUploading}
+                    >
+                      {isUploading ? (
+                        <>
+                          <Spinner className="w-4 h-4 animate-spin mr-2" />
+                          Processando...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="size-4 mr-2" />
+                          Processar e Auditar
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tabelas de Auditoria */}
           {auditFilename ? (
             <div className="pt-2">
               <OcrTablesViewer

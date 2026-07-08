@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react';
-import { Check, AlertTriangle, Trash2, Plus, X } from 'lucide-react';
+import { Check, AlertTriangle, Trash2, Plus, X, Menu } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import type { EstruturaTabela, IndexedRow } from './OcrTablesViewer';
 
@@ -71,8 +72,8 @@ export function OcrTableCard({
   onSaveInlineHeader,
 }: OcrTableCardProps) {
   return (
-    <Card className={`overflow-hidden border shadow-sm transition-all duration-300 ${isEditingMode ? 'ring-2 ring-primary/20 border-primary/30' : ''}`}>
-      <div className="bg-muted/40 px-4 py-3 border-b flex justify-between items-center">
+    <Card className={`overflow-hidden border border-muted/50 shadow-sm transition-all duration-300 ${isEditingMode ? 'ring-1 ring-primary/30 border-primary/40' : ''}`}>
+      <div className="px-4 py-3.5 border-b border-muted/40 flex justify-between items-center bg-card">
         <h3 className="font-semibold text-sm text-foreground flex items-center gap-2">
           Tabela {tabela.tabelaIndex}
           {isEditingMode && (
@@ -84,22 +85,26 @@ export function OcrTableCard({
         <div className="flex items-center gap-2">
           {isEditingMode ? (
             onDeleteTable && (
-              <button
-                type="button"
+              <Button
+                variant="destructive"
+                size="sm"
                 onClick={() => onDeleteTable(tabela.tabelaIndex)}
-                className="text-[11px] font-semibold bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20 hover:border-destructive/30 px-2.5 py-1 rounded flex items-center gap-1 transition-all cursor-pointer"
+                className="text-[11px] h-7 font-semibold"
               >
-                <Trash2 className="w-3 h-3" />
+                <Trash2 className="w-3.5 h-3.5 mr-1" />
                 Excluir Tabela
-              </button>
+              </Button>
             )
           ) : (
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => onBulkLoadClick(tabela)}
-              className="text-[11px] font-medium bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 hover:border-primary/30 px-2.5 py-1 rounded transition-all cursor-pointer"
+              className="text-[11px] h-7 font-medium border-primary/20 text-primary hover:bg-primary/10"
             >
+              <Menu />
               Carga em Lote
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -107,14 +112,14 @@ export function OcrTableCard({
         <div className="overflow-x-auto max-w-full scrollbar-thin">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-muted/20 border-b border-muted">
+              <tr className="bg-muted/10 border-b border-muted/30">
                 {tabela.headers.map((header, idx) => {
                   const isEditingHeaderThis = inlineEditingHeader?.tabelaIdx === tabela.tabelaIndex && inlineEditingHeader?.cIdx === idx;
 
                   return (
                     <th
                       key={idx}
-                      className="px-4 py-2.5 font-semibold text-muted-foreground uppercase tracking-wider min-w-[120px] cursor-pointer select-none"
+                      className="px-4 py-3.5 font-bold text-muted-foreground uppercase tracking-wide text-xs min-w-[120px] cursor-default select-none"
                       onDoubleClick={() => {
                         if (!isEditingMode && setInlineEditingHeader) {
                           setInlineEditingHeader({
@@ -130,7 +135,7 @@ export function OcrTableCard({
                         <input
                           value={header}
                           onChange={(e) => onHeaderEdit?.(tabela.tabelaIndex, idx, e.target.value)}
-                          className="bg-background text-foreground text-xs font-semibold px-2 py-1 rounded border border-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full"
+                          className="bg-transparent hover:bg-background/80 focus:bg-background text-foreground text-xs font-semibold px-2 py-0.5 rounded border border-transparent hover:border-muted focus:border-primary focus:ring-1 focus:ring-primary w-full transition-all"
                           placeholder={`Coluna ${idx + 1}`}
                         />
                       ) : isEditingHeaderThis ? (
@@ -172,13 +177,13 @@ export function OcrTableCard({
                   );
                 })}
                 {isEditingMode && (
-                  <th className="px-4 py-2.5 font-semibold text-muted-foreground uppercase tracking-wider w-[60px] text-center">
+                  <th className="px-4 py-3.5 font-bold text-muted-foreground uppercase tracking-wide text-xs w-[60px] text-center">
                     Ações
                   </th>
                 )}
               </tr>
             </thead>
-            <tbody className="divide-y divide-muted/60">
+            <tbody className="divide-y divide-muted/30">
               {tabela.indexedRows.map((rowObj) => {
                 const { data: row, originalIndex: rIdx } = rowObj;
                 const isBrandRow = rowMatchesBrand(row);
@@ -188,8 +193,10 @@ export function OcrTableCard({
                 return (
                   <tr
                     key={rIdx}
-                    className={`hover:bg-muted/10 transition-colors odd:bg-muted/5 ${
-                      isBrandRow && !isEditingMode ? 'bg-primary/[0.03] dark:bg-primary/[0.02] border-l-2' : ''
+                    className={`hover:bg-muted/10 transition-colors ${
+                      isBrandRow && !isEditingMode 
+                        ? 'bg-primary/[0.025] dark:bg-primary/[0.04]' 
+                        : ''
                     }`}
                   >
                     {row.map((cell, cIdx) => {
@@ -201,7 +208,7 @@ export function OcrTableCard({
                       return (
                         <td
                           key={cIdx}
-                          className="px-4 py-2 text-foreground/90 whitespace-nowrap cursor-pointer select-none"
+                          className="px-4 py-2.5 text-foreground/90 whitespace-nowrap cursor-default select-none align-middle"
                           onDoubleClick={() => {
                             if (!isEditingMode && setInlineEditingCell) {
                               setInlineEditingCell({
@@ -216,7 +223,7 @@ export function OcrTableCard({
                         >
                           {cIdx === 0 && showWarning && !isEditingMode && (
                             <span 
-                              className="inline-flex items-center gap-1 text-amber-500 mr-1.5 vertical-middle align-middle cursor-help"
+                              className="inline-flex items-center gap-1 text-amber-500 mr-1.5 align-middle cursor-help"
                               title="Esta linha corresponde aos termos cadastrados, mas nenhum preço válido de pauta foi detectado. Possível falha de leitura no OCR."
                             >
                               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
@@ -226,7 +233,7 @@ export function OcrTableCard({
                             <input
                               value={cell}
                               onChange={(e) => onCellEdit?.(tabela.tabelaIndex, rIdx, cIdx, e.target.value)}
-                              className="bg-background text-foreground text-xs px-2 py-1 rounded border border-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary w-full"
+                              className="bg-transparent hover:bg-background/80 focus:bg-background text-foreground text-xs px-2 py-0.5 rounded border border-transparent hover:border-muted focus:border-primary focus:ring-1 focus:ring-primary w-full transition-all"
                               placeholder="-"
                             />
                           ) : isEditingCellThis ? (
@@ -265,14 +272,14 @@ export function OcrTableCard({
                           ) : isPrice ? (
                             <button
                               onClick={() => onCellClick(tabela.tabelaIndex, rIdx, cIdx, cell, row, tabela.headers)}
-                              className={`font-semibold border px-2 py-1 rounded transition-all inline-flex items-center gap-1 cursor-pointer ${
+                              className={`font-semibold px-2 py-0.5 rounded text-xs transition-colors inline-flex items-center gap-1 cursor-pointer ${
                                 isConfirmed
-                                  ? 'bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400 font-bold'
-                                  : 'bg-primary/5 hover:bg-primary/20 border-primary/20 hover:border-primary/40 text-primary'
+                                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold'
+                                  : 'bg-primary/5 hover:bg-primary/15 text-primary'
                               }`}
                             >
                               R$ {cell.replace(/R\$\s*/i, '')}
-                              {isConfirmed && <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />}
+                              {isConfirmed && <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
                             </button>
                           ) : (
                             searchTerm ? highlightText(cell, searchTerm) : cell
@@ -281,7 +288,7 @@ export function OcrTableCard({
                       );
                     })}
                     {isEditingMode && (
-                      <td className="px-4 py-2 text-center whitespace-nowrap">
+                      <td className="px-4 py-2.5 text-center whitespace-nowrap align-middle">
                         <button
                           type="button"
                           onClick={() => onDeleteRow?.(tabela.tabelaIndex, rIdx)}
@@ -299,11 +306,11 @@ export function OcrTableCard({
           </table>
         </div>
         {isEditingMode && onAddRow && (
-          <div className="p-3 bg-muted/20 border-t flex justify-center">
+          <div className="p-3 bg-muted/5 border-t border-muted/30 flex justify-center">
             <button
               type="button"
               onClick={() => onAddRow(tabela.tabelaIndex)}
-              className="text-xs font-semibold text-primary hover:text-primary-foreground bg-primary/5 hover:bg-primary border border-primary/20 hover:border-primary/40 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer"
+              className="text-xs font-semibold text-primary hover:text-primary-foreground bg-primary/5 hover:bg-primary px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               Adicionar Linha

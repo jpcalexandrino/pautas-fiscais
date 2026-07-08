@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, HelpCircle, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, HelpCircle, AlertCircle, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTerms } from '../hooks/useTerms';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,19 +18,65 @@ export function TermsConfigCard() {
   const isAdmin = user?.role === 'admin';
 
   const [newTerm, setNewTerm] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAddTerm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTerm.trim()) return;
 
+    // Split terms by comma, semicolon or new lines
+    const parsedTerms = newTerm
+      .split(/[,;\n]+/)
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+
+    if (parsedTerms.length === 0) return;
+
     setIsSubmitting(true);
+    let addedCount = 0;
+    let skippedCount = 0;
+    let failedCount = 0;
+
     try {
-      await createTerm(newTerm.trim(), activeType);
-      toast.success('Termo adicionado com sucesso!');
+      for (const termText of parsedTerms) {
+        // Client-side case-insensitive duplicate check
+        const isDuplicate = terms.some(
+          (t) => t.termo.toLowerCase() === termText.toLowerCase()
+        );
+
+        if (isDuplicate) {
+          skippedCount++;
+          continue;
+        }
+
+        try {
+          await createTerm(termText, activeType);
+          addedCount++;
+        } catch (err) {
+          failedCount++;
+        }
+      }
+
+      if (parsedTerms.length === 1) {
+        if (addedCount === 1) {
+          toast.success('Termo adicionado com sucesso!');
+        } else if (skippedCount === 1) {
+          toast.warning('Este termo já está cadastrado!');
+        } else {
+          toast.error('Erro ao adicionar o termo.');
+        }
+      } else {
+        toast.success(
+          `Adicionados: ${addedCount} | Pulados (já existentes): ${skippedCount}${
+            failedCount > 0 ? ` | Erros: ${failedCount}` : ''
+          }`
+        );
+      }
       setNewTerm('');
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao adicionar termo.');
+      toast.error(err.message || 'Erro ao processar termos.');
     } finally {
       setIsSubmitting(false);
     }
@@ -53,6 +99,10 @@ export function TermsConfigCard() {
     }
   };
 
+  const filteredTerms = terms.filter((t) =>
+    t.termo.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <Card className="shadow-lg border border-muted/60 dark:border-muted/30">
       <CardHeader>
@@ -68,7 +118,11 @@ export function TermsConfigCard() {
         {/* Tabs para distinguir próprio vs terceiros */}
         <div className="flex border-b border-muted">
           <button
-            onClick={() => setActiveType('proprio')}
+            onClick={() => {
+              setActiveType('proprio');
+              setSearchQuery('');
+              setShowSearch(false);
+            }}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
               activeType === 'proprio'
                 ? 'border-primary text-primary'
@@ -78,7 +132,11 @@ export function TermsConfigCard() {
             Próprios
           </button>
           <button
-            onClick={() => setActiveType('terceiros')}
+            onClick={() => {
+              setActiveType('terceiros');
+              setSearchQuery('');
+              setShowSearch(false);
+            }}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
               activeType === 'terceiros'
                 ? 'border-primary text-primary'
@@ -95,7 +153,11 @@ export function TermsConfigCard() {
               <Label htmlFor="newTerm" className="sr-only">Novo Termo</Label>
               <Input
                 id="newTerm"
-                placeholder={activeType === 'proprio' ? "Ex: dopamina, imperio, puro malte" : "Ex: heineken, amstel, skol"}
+                placeholder={
+                  activeType === 'proprio'
+                    ? "Ex: dopamina, imperio, puro malte (ou separados por vírgula)"
+                    : "Ex: heineken, amstel, skol (ou separados por vírgula)"
+                }
                 value={newTerm}
                 onChange={(e) => setNewTerm(e.target.value)}
                 disabled={isSubmitting}
@@ -114,6 +176,44 @@ export function TermsConfigCard() {
           </div>
         )}
 
+        {/* Cabeçalho da Lista de Termos com Botão de Busca */}
+        {terms.length > 0 && (
+          <div className="space-y-3 pt-2">
+            <div className="flex justify-between items-center border-b border-muted/30 pb-2">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Termos Ativos ({filteredTerms.length})
+              </Label>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowSearch(!showSearch);
+                  if (showSearch) {
+                    setSearchQuery('');
+                  }
+                }}
+                className="h-7 px-2.5 text-muted-foreground hover:text-foreground gap-1.5 text-xs hover:bg-muted"
+              >
+                <Search className="w-3.5 h-3.5" />
+                {showSearch ? 'Fechar busca' : 'Pesquisar'}
+              </Button>
+            </div>
+
+            {showSearch && (
+              <div className="relative animate-fade-in">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  autoFocus
+                  placeholder="Pesquisar termos nesta lista..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 w-full h-9"
+                />
+              </div>
+            )}
+          </div>
+        )}
+
         {isLoading && terms.length === 0 ? (
           <div className="flex justify-center py-8">
             <Spinner className="w-6 h-6 text-primary" />
@@ -123,34 +223,34 @@ export function TermsConfigCard() {
             <HelpCircle className="w-8 h-8 text-muted-foreground/60 mx-auto" />
             <p>Nenhum termo cadastrado.</p>
           </div>
+        ) : filteredTerms.length === 0 ? (
+          <div className="text-center py-8 border rounded-lg border-dashed text-muted-foreground text-sm space-y-2 animate-fade-in">
+            <Search className="w-8 h-8 text-muted-foreground/60 mx-auto" />
+            <p>Nenhum termo corresponde à pesquisa "{searchQuery}".</p>
+          </div>
         ) : (
-          <div className="space-y-2">
-            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Termos Ativos ({terms.length})
-            </Label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-              {terms.map((t) => (
-                <div
-                  key={t.id}
-                  className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/30 transition-all duration-200 group animate-fade-in"
-                >
-                  <span className="text-sm font-medium truncate pr-2 select-all" title={t.termo}>
-                    {t.termo}
-                  </span>
-                  
-                  {isAdmin && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(t.id, t.termo)}
-                      className="size-7 opacity-0 group-hover:opacity-100 hover:text-destructive hover:bg-destructive/10 rounded-md transition-opacity duration-200"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+            {filteredTerms.map((t) => (
+              <div
+                key={t.id}
+                className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/30 transition-all duration-200 group animate-fade-in"
+              >
+                <span className="text-sm font-medium truncate pr-2 select-all" title={t.termo}>
+                  {t.termo}
+                </span>
+                
+                {isAdmin && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDelete(t.id, t.termo)}
+                    className="size-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:text-destructive hover:bg-destructive/10 rounded-md transition-opacity duration-200"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                )}
+              </div>
+            ))}
           </div>
         )}
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Eye, EyeOff, User, Lock, DoorOpen, FileText } from 'lucide-react';
+import { Eye, EyeOff, User, Lock, DoorOpen, ScanText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Input } from '@/components/ui/input';
@@ -45,7 +45,7 @@ export default function LoginPage() {
         {/* Logo / Header */}
         <div className="flex flex-col items-center text-center mb-10">
           <div className="flex items-center justify-center size-16 mb-4 bg-primary dark:bg-primary rounded-md border border-primary dark:border-primary">
-            <FileText className="text-white size-8" />
+            <ScanText className="text-white size-8" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight mb-2">Pricer</h1>
           <p className="text-muted-foreground text-sm">Entre com suas credenciais para acessar o sistema</p>

@@ -34,70 +34,42 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* Settings Navigation Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Settings Navigation Cards Compact */}
+      <div className="flex flex-wrap gap-3">
         {isAdmin && (
-          <Card
+          <button
             onClick={() => setActiveTab('users')}
             className={cn(
-              "cursor-pointer transition-all duration-300 border hover:shadow-md hover:scale-[1.01] active:scale-[0.99]",
+              "flex items-center gap-3 px-4 py-3 rounded-lg border text-left transition-colors duration-150 cursor-pointer w-full sm:w-[220px]",
               activeTab === 'users'
-                ? "border-primary bg-primary/5 dark:bg-primary/10 shadow-sm"
-                : "border-muted bg-card hover:bg-muted/10"
+                ? "border-primary bg-primary/5 dark:bg-primary/10 text-primary shadow-sm"
+                : "border-muted bg-card hover:bg-muted/40 text-foreground"
             )}
           >
-            <CardContent className="flex items-start gap-4 p-5">
-              <div className={cn(
-                "p-3 rounded-lg border",
-                activeTab === 'users'
-                  ? "bg-primary border-primary text-white"
-                  : "bg-muted border-muted text-muted-foreground"
-              )}>
-                <Users className="w-5 h-5" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="font-semibold text-base">Controle de Usuários</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Gerencie acessos, atribua perfis (admin/user) e controle quem pode usar o sistema.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+            <Users className="w-4 h-4 shrink-0" />
+            <span className="text-sm font-medium">Controle de Usuários</span>
+          </button>
         )}
 
-        <Card
+        <button
           onClick={() => setActiveTab('terms')}
           className={cn(
-            "cursor-pointer transition-all duration-300 border hover:shadow-md hover:scale-[1.01] active:scale-[0.99]",
+            "flex items-center gap-3 px-4 py-3 rounded-lg border text-left transition-colors duration-150 cursor-pointer w-full sm:w-[220px]",
             activeTab === 'terms'
-              ? "border-primary bg-primary/5 dark:bg-primary/10 shadow-sm"
-              : "border-muted bg-card hover:bg-muted/10"
+              ? "border-primary bg-primary/5 dark:bg-primary/10 text-primary shadow-sm"
+              : "border-muted bg-card hover:bg-muted/40 text-foreground"
           )}
         >
-          <CardContent className="flex items-start gap-4 p-5">
-            <div className={cn(
-              "p-3 rounded-lg border",
-              activeTab === 'terms'
-                ? "bg-primary border-primary text-white"
-                : "bg-muted border-muted text-muted-foreground"
-            )}>
-              <Tag className="w-5 h-5" />
-            </div>
-            <div className="space-y-1 flex-1">
-              <div className="flex justify-between items-center">
-                <h3 className="font-semibold text-base">Termos das Pautas</h3>
-                {terms.length > 0 && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary/20 text-primary">
-                    {terms.length} {terms.length === 1 ? 'termo' : 'termos'}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Cadastre ou delete os termos e marcas de produtos a serem detectados e lidos.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+          <Tag className="w-4 h-4 shrink-0" />
+          <div className="flex items-center justify-between flex-1 min-w-0">
+            <span className="text-sm font-medium truncate">Termos das Pautas</span>
+            {terms.length > 0 && (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary/20 text-primary shrink-0 ml-2">
+                {terms.length}
+              </span>
+            )}
+          </div>
+        </button>
       </div>
 
       {/* Active Configuration Panel */}

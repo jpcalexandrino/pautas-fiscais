@@ -214,7 +214,7 @@ export default function AuditPage() {
               <span>Contexto: <strong className="text-foreground capitalize">{d.contexto}</strong></span>
             </div>
             {d.alteracoes && d.alteracoes.length > 0 && (
-              <div className="mt-1 pl-2 border-l-2 border-primary/20 text-[9px] text-muted-foreground/90 space-y-0.5 font-mono max-h-24 overflow-y-auto bg-muted/20 p-1.5 rounded-md">
+              <div className="mt-1 pl-2 border-l-2 border-primary/20 text-[9px] text-muted-foreground/90 space-y-0.5 max-h-24 overflow-y-auto bg-muted/20 p-1.5 rounded-md">
                 {d.alteracoes.map((alt: string, i: number) => (
                   <div key={i}>• {alt}</div>
                 ))}
@@ -226,7 +226,7 @@ export default function AuditPage() {
           </div>
         );
       default:
-        return <div className="text-xs font-mono">{JSON.stringify(d)}</div>;
+        return <div className="text-xs">{JSON.stringify(d)}</div>;
     }
   };
 
@@ -654,7 +654,7 @@ export default function AuditPage() {
                                             Col: {parsed.coluna}
                                           </span>
                                         </div>
-                                        <div className="flex items-center gap-2 font-mono flex-1 justify-end">
+                                        <div className="flex items-center gap-2 flex-1 justify-end">
                                           <span className="text-rose-600 dark:text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded line-through decoration-rose-500 max-w-[120px] truncate" title={parsed.de}>
                                             {parsed.de || 'vazio'}
                                           </span>
@@ -673,7 +673,7 @@ export default function AuditPage() {
                                             Tab {parsed.tabela} • Adicionou Linha {parsed.linha}
                                           </span>
                                         </div>
-                                        <div className="font-mono text-muted-foreground bg-muted/20 p-1.5 rounded-lg text-[10px] break-all">
+                                        <div className="text-muted-foreground bg-muted/20 p-1.5 rounded-lg text-[10px] break-all">
                                           {parsed.conteudo}
                                         </div>
                                       </div>
@@ -686,7 +686,7 @@ export default function AuditPage() {
                                             Tab {parsed.tabela} • Removeu Linha {parsed.linha}
                                           </span>
                                         </div>
-                                        <div className="font-mono text-muted-foreground bg-muted/20 p-1.5 rounded-lg text-[10px] line-through opacity-70 break-all">
+                                        <div className="text-muted-foreground bg-muted/20 p-1.5 rounded-lg text-[10px] line-through opacity-70 break-all">
                                           {parsed.conteudo}
                                         </div>
                                       </div>
@@ -694,7 +694,7 @@ export default function AuditPage() {
                                   }
 
                                   return (
-                                    <div key={i} className="p-2.5 flex items-start gap-1.5 text-[10px] font-mono text-muted-foreground">
+                                    <div key={i} className="p-2.5 flex items-start gap-1.5 text-[10px] text-muted-foreground">
                                       <span className="text-primary font-bold shrink-0">•</span>
                                       <span>{parsed.text}</span>
                                     </div>
@@ -706,7 +706,7 @@ export default function AuditPage() {
                         </div>
                       );
                     default:
-                      return <pre className="p-3 bg-muted border rounded-xl overflow-x-auto text-[10px] font-mono">{JSON.stringify(d, null, 2)}</pre>;
+                      return <pre className="p-3 bg-muted border rounded-xl overflow-x-auto text-[10px]">{JSON.stringify(d, null, 2)}</pre>;
                   }
                 })()}
               </div>
