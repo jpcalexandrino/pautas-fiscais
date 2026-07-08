@@ -234,7 +234,7 @@ export default function PautasImportPage() {
   return (
     <div className="animate-fade-in pb-10 space-y-8 w-full px-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Importar & Auditar Pautas Fiscais</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Importar e Auditar Pautas Fiscais</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Selecione um PDF de pauta no banco de dados ou envie um novo arquivo para estruturar e auditar preços de pauta.
         </p>
