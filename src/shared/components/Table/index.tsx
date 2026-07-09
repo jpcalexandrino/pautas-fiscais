@@ -112,6 +112,17 @@ const Table = <T extends TableCustomData<T>>({
         return mergedArray.filter(Boolean)
     }, [columnsMemo])
 
+    const defaultColumnWithFilter = useMemo(() => ({
+        filterFn: (row: any, columnId: string, value: any) => {
+            const rowValue = row.getValue(columnId)
+            if (rowValue === undefined || rowValue === null) return false
+            const search = String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+            const cell = String(rowValue).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+            return cell.includes(search)
+        },
+        ...defaultColumn,
+    }), [defaultColumn])
+
     const table = useReactTable({
         data,
         columns: columnsMemo,
@@ -133,7 +144,7 @@ const Table = <T extends TableCustomData<T>>({
         },
         filterFromLeafRows: true,
         columnResizeMode: 'onChange',
-        defaultColumn,
+        defaultColumn: defaultColumnWithFilter,
         autoResetExpanded: false,
         getRowId,
         getSubRows: (row) => row.subRows as T[],
