@@ -184,7 +184,7 @@ export function PautasDataTable({ pautas, loading, getTableInstance }: PautasDat
       )}
       <div className="overflow-hidden rounded-xl border border-border dark:border-white/15 flex flex-1 flex-col bg-card">
         <TableComponent
-          className="max-h-[550px]"
+          className="max-h-[700px]"
           columns={columns}
           data={paginatedData}
           getTableInstance={getTableInstance}

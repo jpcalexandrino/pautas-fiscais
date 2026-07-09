@@ -135,7 +135,7 @@ export function DeParaTable({ items, onEdit, onDelete, loading }: DeParaTablePro
       )}
       <div className="overflow-hidden rounded-lg border border-border dark:border-white/15 bg-card shadow-xs flex-1 min-h-0 flex flex-col">
         <TableComponent
-          className="max-h-[550px]"
+          className="max-h-[700px]"
           columns={columns}
           data={paginatedData}
           tableState={tableState}

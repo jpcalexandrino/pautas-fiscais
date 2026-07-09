@@ -443,7 +443,7 @@ export default function AuditPage() {
       ) : (
         <div className="overflow-hidden rounded-lg border bg-card shadow-xs">
           <TableComponent
-            className="max-h-[600px]"
+            className="max-h-[750px]"
             columns={columns}
             data={paginatedLogs}
             tableState={tableState}
