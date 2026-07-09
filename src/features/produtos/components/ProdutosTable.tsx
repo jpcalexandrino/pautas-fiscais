@@ -1,10 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { MoreHorizontal, Edit, Trash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/spinner';
 import TableComponent from '@/components/Table';
-import { type ColumnDef } from '@tanstack/react-table';
+import { type ColumnDef, type TableState } from '@tanstack/react-table';
 import { calculateColumnSizes } from '@/shared/utils/table';
 
 interface ProdutosTableProps {
@@ -27,6 +27,20 @@ export const ALL_COLUMNS = [
 export const DEFAULT_COLUMNS = ['codigo_interno', 'gtin_13', 'descricao_interna', 'embalagem', 'conteudo_volume', 'tipo'];
 
 export function ProdutosTable({ produtos, onEdit, onDelete, loading, deletingId }: ProdutosTableProps) {
+  const [tableState, setTableState] = useState<Partial<TableState>>({
+    pagination: {
+      pageIndex: 0,
+      pageSize: 20,
+    },
+  });
+
+  const paginatedData = useMemo(() => {
+    const pageIndex = tableState.pagination?.pageIndex ?? 0;
+    const pageSize = tableState.pagination?.pageSize ?? 20;
+    const start = pageIndex * pageSize;
+    return produtos.slice(start, start + pageSize);
+  }, [produtos, tableState.pagination]);
+
   const columns = useMemo<ColumnDef<any>[]>(
     () =>
       calculateColumnSizes(
@@ -36,7 +50,7 @@ export function ProdutosTable({ produtos, onEdit, onDelete, loading, deletingId 
             header: 'Ações',
             enableSorting: false,
             enableColumnFilter: false,
-            size: 100,
+            size: 120,
             cell: ({ row }) => {
               const isDeleting = deletingId === Number(row.original.id);
               return (
@@ -144,16 +158,33 @@ export function ProdutosTable({ produtos, onEdit, onDelete, loading, deletingId 
   }
 
   return (
-    <div className="flex flex-col space-y-4">
+    <div className="flex flex-col space-y-4 relative">
+      {loading && (
+        <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-20 rounded-lg">
+          <Spinner className="w-8 h-8" />
+        </div>
+      )}
       <div className="overflow-hidden rounded-lg border border-border dark:border-white/15 bg-card shadow-xs flex-1 min-h-0 flex flex-col">
         <TableComponent
-          tableId="produtos"
+          className="max-h-[550px]"
           columns={columns}
-          data={produtos}
-          isLoading={loading}
-          paginate={true}
-          defaultPageSize={20}
-          maxHeight="550px"
+          data={paginatedData}
+          tableState={tableState}
+          onPaginationChange={(updater: any) => {
+            setTableState((prev) => {
+              const current = prev.pagination ?? { pageIndex: 0, pageSize: 20 };
+              const next = typeof updater === 'function' ? updater(current) : updater;
+              return {
+                ...prev,
+                pagination: next,
+              };
+            });
+          }}
+          pagination={{
+            totalItems: produtos.length,
+            totalPages: Math.ceil(produtos.length / (tableState.pagination?.pageSize ?? 20)),
+            pageSize: tableState.pagination?.pageSize ?? 20,
+          }}
         />
       </div>
     </div>

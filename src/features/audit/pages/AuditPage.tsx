@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/api/client';
 import { Spinner } from '@/components/ui/spinner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, User, Calendar, Layers, ShieldCheck, Check } from 'lucide-react';
 import TableComponent from '@/components/Table';
-import { type ColumnDef } from '@tanstack/react-table';
+import { type ColumnDef, type TableState } from '@tanstack/react-table';
 import { useAuth } from '@/contexts/AuthContext';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
@@ -73,6 +73,12 @@ export default function AuditPage() {
   const [endDate, setEndDate] = useState(() => sessionStorage.getItem('audit_logs_end_date') || '');
   const [actionFilter, setActionFilter] = useState(() => sessionStorage.getItem('audit_logs_action_filter') || 'all');
   const [selectedAuditLog, setSelectedAuditLog] = useState<AuditLog | null>(null);
+  const [tableState, setTableState] = useState<Partial<TableState>>({
+    pagination: {
+      pageIndex: 0,
+      pageSize: 20,
+    },
+  });
 
   useEffect(() => {
     sessionStorage.setItem('audit_logs_start_date', startDate);
@@ -253,7 +259,14 @@ export default function AuditPage() {
     return matchesAction && matchesStartDate && matchesEndDate;
   });
 
-  const columns: ColumnDef<AuditLog>[] = [
+  const paginatedLogs = useMemo(() => {
+    const pageIndex = tableState.pagination?.pageIndex ?? 0;
+    const pageSize = tableState.pagination?.pageSize ?? 20;
+    const start = pageIndex * pageSize;
+    return filteredLogs.slice(start, start + pageSize);
+  }, [filteredLogs, tableState.pagination]);
+
+  const columns: ColumnDef<any>[] = [
     {
       accessorFn: (row) => new Date(row.created_at).toLocaleString('pt-BR'),
       id: 'created_at',
@@ -331,7 +344,7 @@ export default function AuditPage() {
     {
       id: 'actions',
       header: 'Ações',
-      size: 90,
+      size: 120,
       enableColumnFilter: false,
       cell: ({ row }) => (
         <Button
@@ -430,13 +443,25 @@ export default function AuditPage() {
       ) : (
         <div className="overflow-hidden rounded-lg border bg-card shadow-xs">
           <TableComponent
-            tableId="auditoria"
+            className="max-h-[600px]"
             columns={columns}
-            data={filteredLogs}
-            isLoading={isLoading}
-            paginate={true}
-            defaultPageSize={20}
-            maxHeight="600px"
+            data={paginatedLogs}
+            tableState={tableState}
+            onPaginationChange={(updater: any) => {
+              setTableState((prev) => {
+                const current = prev.pagination ?? { pageIndex: 0, pageSize: 20 };
+                const next = typeof updater === 'function' ? updater(current) : updater;
+                return {
+                  ...prev,
+                  pagination: next,
+                };
+              });
+            }}
+            pagination={{
+              totalItems: filteredLogs.length,
+              totalPages: Math.ceil(filteredLogs.length / (tableState.pagination?.pageSize ?? 20)),
+              pageSize: tableState.pagination?.pageSize ?? 20,
+            }}
           />
         </div>
       )}

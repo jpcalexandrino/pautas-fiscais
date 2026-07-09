@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Spinner } from '@/components/ui/spinner';
 import TableComponent from '@/components/Table';
-import { type ColumnDef } from '@tanstack/react-table';
+import { type ColumnDef, type TableState } from '@tanstack/react-table';
 import { calculateColumnSizes } from '@/shared/utils/table';
 import { formatCurrency } from '@/shared/utils/formatters';
 import { Badge } from '@/components/ui/badge';
@@ -40,6 +40,20 @@ export function formatDateToBR(dateStr: any): string {
 }
 
 export function PautasDataTable({ pautas, loading, getTableInstance }: PautasDataTableProps) {
+  const [tableState, setTableState] = useState<Partial<TableState>>({
+    pagination: {
+      pageIndex: 0,
+      pageSize: 20,
+    },
+  });
+
+  const paginatedData = useMemo(() => {
+    const pageIndex = tableState.pagination?.pageIndex ?? 0;
+    const pageSize = tableState.pagination?.pageSize ?? 20;
+    const start = pageIndex * pageSize;
+    return pautas.slice(start, start + pageSize);
+  }, [pautas, tableState.pagination]);
+
   const columns = useMemo<ColumnDef<any>[]>(
     () => calculateColumnSizes([
       {
@@ -164,20 +178,32 @@ export function PautasDataTable({ pautas, loading, getTableInstance }: PautasDat
   return (
     <div className="flex flex-col space-y-4 relative">
       {loading && pautas.length > 0 && (
-        <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-10">
+        <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-10 rounded-xl">
           <Spinner className="w-8 h-8" />
         </div>
       )}
       <div className="overflow-hidden rounded-xl border border-border dark:border-white/15 flex flex-1 flex-col bg-card">
         <TableComponent
-          tableId="pautas"
+          className="max-h-[550px]"
           columns={columns}
-          data={pautas}
-          isLoading={loading}
-          paginate={true}
-          defaultPageSize={20}
+          data={paginatedData}
           getTableInstance={getTableInstance}
-          maxHeight="550px"
+          tableState={tableState}
+          onPaginationChange={(updater: any) => {
+            setTableState((prev) => {
+              const current = prev.pagination ?? { pageIndex: 0, pageSize: 20 };
+              const next = typeof updater === 'function' ? updater(current) : updater;
+              return {
+                ...prev,
+                pagination: next,
+              };
+            });
+          }}
+          pagination={{
+            totalItems: pautas.length,
+            totalPages: Math.ceil(pautas.length / (tableState.pagination?.pageSize ?? 20)),
+            pageSize: tableState.pagination?.pageSize ?? 20,
+          }}
         />
       </div>
     </div>

@@ -1,10 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { MoreHorizontal, Edit, Trash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/spinner';
 import TableComponent from '@/components/Table';
-import { type ColumnDef } from '@tanstack/react-table';
+import { type ColumnDef, type TableState } from '@tanstack/react-table';
 import { calculateColumnSizes } from '@/shared/utils/table';
 
 interface DeParaTableProps {
@@ -27,7 +27,20 @@ export const ALL_COLUMNS = [
 export const DEFAULT_COLUMNS = ['uf', 'termo_descricao_estado', 'gtin_estado', 'produto_descricao'];
 
 export function DeParaTable({ items, onEdit, onDelete, loading }: DeParaTableProps) {
-  
+  const [tableState, setTableState] = useState<Partial<TableState>>({
+    pagination: {
+      pageIndex: 0,
+      pageSize: 20,
+    },
+  });
+
+  const paginatedData = useMemo(() => {
+    const pageIndex = tableState.pagination?.pageIndex ?? 0;
+    const pageSize = tableState.pagination?.pageSize ?? 20;
+    const start = pageIndex * pageSize;
+    return items.slice(start, start + pageSize);
+  }, [items, tableState.pagination]);
+
   const columns = useMemo<ColumnDef<any>[]>(
     () => calculateColumnSizes([
       {
@@ -35,7 +48,7 @@ export function DeParaTable({ items, onEdit, onDelete, loading }: DeParaTablePro
         header: 'Ações',
         enableSorting: false,
         enableColumnFilter: false,
-        size: 100,
+        size: 120,
         cell: ({ row }) => (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -105,8 +118,6 @@ export function DeParaTable({ items, onEdit, onDelete, loading }: DeParaTablePro
     [onEdit, onDelete, items]
   );
 
-
-
   if (loading && items.length === 0) {
     return (
       <div className="flex justify-center py-12">
@@ -116,16 +127,33 @@ export function DeParaTable({ items, onEdit, onDelete, loading }: DeParaTablePro
   }
 
   return (
-    <div className="flex flex-col space-y-4 h-full">
+    <div className="flex flex-col space-y-4 h-full relative">
+      {loading && (
+        <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-20 rounded-lg">
+          <Spinner className="w-8 h-8" />
+        </div>
+      )}
       <div className="overflow-hidden rounded-lg border border-border dark:border-white/15 bg-card shadow-xs flex-1 min-h-0 flex flex-col">
         <TableComponent
-          tableId="depara"
+          className="max-h-[550px]"
           columns={columns}
-          data={items}
-          isLoading={loading}
-          paginate={true}
-          defaultPageSize={20}
-          maxHeight="550px"
+          data={paginatedData}
+          tableState={tableState}
+          onPaginationChange={(updater: any) => {
+            setTableState((prev) => {
+              const current = prev.pagination ?? { pageIndex: 0, pageSize: 20 };
+              const next = typeof updater === 'function' ? updater(current) : updater;
+              return {
+                ...prev,
+                pagination: next,
+              };
+            });
+          }}
+          pagination={{
+            totalItems: items.length,
+            totalPages: Math.ceil(items.length / (tableState.pagination?.pageSize ?? 20)),
+            pageSize: tableState.pagination?.pageSize ?? 20,
+          }}
         />
       </div>
     </div>

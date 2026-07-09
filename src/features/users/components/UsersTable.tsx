@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { MoreHorizontal, Edit, Trash, Shield, User } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { MoreHorizontal, Edit, Trash, Shield, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -10,7 +10,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
 import TableComponent from '@/components/Table';
-import { type ColumnDef } from '@tanstack/react-table';
+import { type ColumnDef, type TableState } from '@tanstack/react-table';
 import { calculateColumnSizes } from '@/shared/utils/table';
 
 interface User {
@@ -30,6 +30,20 @@ interface UsersTableProps {
 }
 
 export const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDelete, loading, isAdmin = false }) => {
+  const [tableState, setTableState] = useState<Partial<TableState>>({
+    pagination: {
+      pageIndex: 0,
+      pageSize: 20,
+    },
+  });
+
+  const paginatedData = useMemo(() => {
+    const pageIndex = tableState.pagination?.pageIndex ?? 0;
+    const pageSize = tableState.pagination?.pageSize ?? 20;
+    const start = pageIndex * pageSize;
+    return users.slice(start, start + pageSize);
+  }, [users, tableState.pagination]);
+
   const columns = useMemo<ColumnDef<any>[]>(() => {
     const cols: ColumnDef<any>[] = [];
 
@@ -37,7 +51,7 @@ export const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDelete,
       cols.push({
         id: 'actions',
         header: 'Ações',
-        size: 100,
+        size: 120,
         cell: ({ row }) => (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -91,7 +105,7 @@ export const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDelete,
             </Badge>
           ) : (
             <Badge variant="outline" className="gap-1 border-slate-500/30 bg-slate-500/10 text-slate-700 dark:text-slate-400 font-semibold px-2 py-0.5">
-              <User className="w-3 h-3" /> Usuário Comum
+              <UserIcon className="w-3 h-3" /> Usuário Comum
             </Badge>
           ),
       },
@@ -125,16 +139,33 @@ export const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDelete,
   }
 
   return (
-    <div className="flex flex-col space-y-4">
+    <div className="flex flex-col space-y-4 relative">
+      {loading && (
+        <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-20 rounded-lg">
+          <Spinner className="w-8 h-8" />
+        </div>
+      )}
       <div className="overflow-hidden rounded-lg border border-border dark:border-white/15 bg-card shadow-xs flex-1 min-h-0 flex flex-col">
         <TableComponent
-          tableId="users"
+          className="max-h-[550px]"
           columns={columns}
-          data={users}
-          isLoading={loading}
-          paginate
-          defaultPageSize={20}
-          maxHeight="550px"
+          data={paginatedData}
+          tableState={tableState}
+          onPaginationChange={(updater: any) => {
+            setTableState((prev) => {
+              const current = prev.pagination ?? { pageIndex: 0, pageSize: 20 };
+              const next = typeof updater === 'function' ? updater(current) : updater;
+              return {
+                ...prev,
+                pagination: next,
+              };
+            });
+          }}
+          pagination={{
+            totalItems: users.length,
+            totalPages: Math.ceil(users.length / (tableState.pagination?.pageSize ?? 20)),
+            pageSize: tableState.pagination?.pageSize ?? 20,
+          }}
         />
       </div>
     </div>
