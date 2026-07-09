@@ -379,7 +379,7 @@ export default function AuditPage() {
           </div>
         </div>
         
-        <div className="w-full md:w-48 space-y-1.5">
+        <div className="space-y-1.5">
           <label className="text-xs font-bold text-muted-foreground uppercase">Ação</label>
           <Select value={actionFilter} onValueChange={setActionFilter}>
             <SelectTrigger className="h-10 text-xs bg-background">
