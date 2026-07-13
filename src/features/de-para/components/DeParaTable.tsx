@@ -32,14 +32,34 @@ export function DeParaTable({ items, onEdit, onDelete, loading }: DeParaTablePro
       pageIndex: 0,
       pageSize: 20,
     },
+    columnFilters: [],
   });
+
+  const filteredData = useMemo(() => {
+    let result = items;
+    const filters = tableState.columnFilters || [];
+    for (const filter of filters) {
+      const { id, value } = filter;
+      if (value === undefined || value === null || value === '') continue;
+      const search = String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      result = result.filter((item) => {
+        let itemVal = item[id];
+        if (id === 'uf') {
+          itemVal = `${item.uf || ''} - ${item.nome_estado || ''}`;
+        }
+        if (itemVal === undefined || itemVal === null) return false;
+        return String(itemVal).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes(search);
+      });
+    }
+    return result;
+  }, [items, tableState.columnFilters]);
 
   const paginatedData = useMemo(() => {
     const pageIndex = tableState.pagination?.pageIndex ?? 0;
     const pageSize = tableState.pagination?.pageSize ?? 20;
     const start = pageIndex * pageSize;
-    return items.slice(start, start + pageSize);
-  }, [items, tableState.pagination]);
+    return filteredData.slice(start, start + pageSize);
+  }, [filteredData, tableState.pagination]);
 
   const columns = useMemo<ColumnDef<any>[]>(
     () => calculateColumnSizes([
@@ -149,9 +169,20 @@ export function DeParaTable({ items, onEdit, onDelete, loading }: DeParaTablePro
               };
             });
           }}
+          onColumnFiltersChange={(updater: any) => {
+            setTableState((prev) => {
+              const current = prev.columnFilters ?? [];
+              const next = typeof updater === 'function' ? updater(current) : updater;
+              return {
+                ...prev,
+                columnFilters: next,
+                pagination: prev.pagination ? { ...prev.pagination, pageIndex: 0 } : undefined,
+              };
+            });
+          }}
           pagination={{
-            totalItems: items.length,
-            totalPages: Math.ceil(items.length / (tableState.pagination?.pageSize ?? 20)),
+            totalItems: filteredData.length,
+            totalPages: Math.ceil(filteredData.length / (tableState.pagination?.pageSize ?? 20)),
             pageSize: tableState.pagination?.pageSize ?? 20,
           }}
         />

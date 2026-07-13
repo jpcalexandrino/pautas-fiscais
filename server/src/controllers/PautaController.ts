@@ -53,15 +53,17 @@ export async function upload(req: AuthRequest, res: Response) {
     }
     const contexto = req.body.contexto || 'proprio';
 
+    const decodedOriginalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
+
     const formattedFilename = (() => {
-      const baseName = req.file.originalname.replace(/\.[^/.]+$/, "").trim();
+      const baseName = decodedOriginalName.replace(/\.[^/.]+$/, "").trim();
       return `${uf} - ${formatMonthYear(dataPauta)} - ${baseName}.pdf`;
     })();
 
     // Verifica se já existe um arquivo com esse nome no banco para evitar duplicatas no mesmo contexto
     const existing = await PautaFiscalRepository.findOcrByFilename(formattedFilename, contexto);
     if (existing.rows.length > 0) {
-      const baseName = req.file.originalname.replace(/\.[^/.]+$/, "").trim();
+      const baseName = decodedOriginalName.replace(/\.[^/.]+$/, "").trim();
       return res.status(400).json({
         error: `Uma pauta fiscal para ${uf} na vigência ${formatMonthYear(dataPauta)} no contexto '${contexto}' com o arquivo '${baseName}' já foi cadastrada.`
       });

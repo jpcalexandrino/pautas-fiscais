@@ -45,14 +45,38 @@ export function PautasDataTable({ pautas, loading, getTableInstance }: PautasDat
       pageIndex: 0,
       pageSize: 20,
     },
+    columnFilters: [],
   });
+
+  const filteredData = useMemo(() => {
+    let result = pautas;
+    const filters = tableState.columnFilters || [];
+    for (const filter of filters) {
+      const { id, value } = filter;
+      if (value === undefined || value === null || value === '') continue;
+      const search = String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      result = result.filter((item) => {
+        let itemVal = item[id];
+        if (id === 'uf') {
+          itemVal = `${item.uf || ''} - ${item.nome_estado || ''}`;
+        } else if (id === 'valor_pauta') {
+          itemVal = item.valor_pauta != null ? formatCurrency(Number(item.valor_pauta)) : '';
+        } else if (id === 'data') {
+          itemVal = formatDateToBR(item.data);
+        }
+        if (itemVal === undefined || itemVal === null) return false;
+        return String(itemVal).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes(search);
+      });
+    }
+    return result;
+  }, [pautas, tableState.columnFilters]);
 
   const paginatedData = useMemo(() => {
     const pageIndex = tableState.pagination?.pageIndex ?? 0;
     const pageSize = tableState.pagination?.pageSize ?? 20;
     const start = pageIndex * pageSize;
-    return pautas.slice(start, start + pageSize);
-  }, [pautas, tableState.pagination]);
+    return filteredData.slice(start, start + pageSize);
+  }, [filteredData, tableState.pagination]);
 
   const columns = useMemo<ColumnDef<any>[]>(
     () => calculateColumnSizes([
@@ -199,9 +223,20 @@ export function PautasDataTable({ pautas, loading, getTableInstance }: PautasDat
               };
             });
           }}
+          onColumnFiltersChange={(updater: any) => {
+            setTableState((prev) => {
+              const current = prev.columnFilters ?? [];
+              const next = typeof updater === 'function' ? updater(current) : updater;
+              return {
+                ...prev,
+                columnFilters: next,
+                pagination: prev.pagination ? { ...prev.pagination, pageIndex: 0 } : undefined,
+              };
+            });
+          }}
           pagination={{
-            totalItems: pautas.length,
-            totalPages: Math.ceil(pautas.length / (tableState.pagination?.pageSize ?? 20)),
+            totalItems: filteredData.length,
+            totalPages: Math.ceil(filteredData.length / (tableState.pagination?.pageSize ?? 20)),
             pageSize: tableState.pagination?.pageSize ?? 20,
           }}
         />

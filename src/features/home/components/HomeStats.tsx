@@ -66,7 +66,7 @@ export default function HomeStats({ stats, isLoading }: HomeStatsProps) {
         <Card className="hover:border-primary/30 transition-all rounded-xl border border-muted/50 shadow-2xs">
           <CardContent className="p-5 flex flex-col justify-between h-[135px]">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-muted-foreground/80 uppercase tracking-wide">Produtos no Catálogo</span>
+              <span className="text-xs font-bold text-muted-foreground/80 uppercase tracking-wide">Produtos Cadastrados</span>
               <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                 <Package className="h-4 w-4" />
               </div>
