@@ -45,6 +45,7 @@ export const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDelete,
     data: users,
     defaultPageSize: 20,
     customFilterHandlers,
+    storageKey: 'table_state_users',
   });
 
   const columns = useMemo<ColumnDef<User>[]>(() => {

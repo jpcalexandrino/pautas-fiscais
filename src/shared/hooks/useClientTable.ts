@@ -1,24 +1,44 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { TableState } from '@tanstack/react-table';
 
 export interface UseClientTableProps<T> {
   data: T[];
   defaultPageSize?: number;
   customFilterHandlers?: Record<string, (item: T, searchValue: string) => boolean>;
+  storageKey?: string;
 }
 
 export function useClientTable<T extends Record<string, any>>({
   data,
   defaultPageSize = 20,
   customFilterHandlers = {},
+  storageKey,
 }: UseClientTableProps<T>) {
-  const [tableState, setTableState] = useState<Partial<TableState>>({
-    pagination: {
-      pageIndex: 0,
-      pageSize: defaultPageSize,
-    },
-    columnFilters: [],
+  const [tableState, setTableState] = useState<Partial<TableState>>(() => {
+    if (storageKey) {
+      const stored = sessionStorage.getItem(storageKey);
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch {
+          // ignore
+        }
+      }
+    }
+    return {
+      pagination: {
+        pageIndex: 0,
+        pageSize: defaultPageSize,
+      },
+      columnFilters: [],
+    };
   });
+
+  useEffect(() => {
+    if (storageKey) {
+      sessionStorage.setItem(storageKey, JSON.stringify(tableState));
+    }
+  }, [tableState, storageKey]);
 
   const filteredData = useMemo(() => {
     let result = data;

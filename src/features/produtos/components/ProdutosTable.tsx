@@ -38,6 +38,7 @@ export function ProdutosTable({ produtos, onEdit, onDelete, loading, deletingId 
   } = useClientTable<Produto>({
     data: produtos,
     defaultPageSize: 20,
+    storageKey: 'table_state_produtos',
   });
 
   const columns = useMemo<ColumnDef<Produto>[]>(

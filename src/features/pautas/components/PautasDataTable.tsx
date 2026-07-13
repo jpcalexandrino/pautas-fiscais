@@ -67,6 +67,7 @@ export function PautasDataTable({ pautas, loading, getTableInstance }: PautasDat
     data: pautas,
     defaultPageSize: 20,
     customFilterHandlers,
+    storageKey: 'table_state_pautas',
   });
 
   const columns = useMemo<ColumnDef<Pauta>[]>(

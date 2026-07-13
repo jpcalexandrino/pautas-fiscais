@@ -46,6 +46,7 @@ export function DeParaTable({ items, onEdit, onDelete, loading }: DeParaTablePro
     data: items,
     defaultPageSize: 20,
     customFilterHandlers,
+    storageKey: 'table_state_depara',
   });
 
   const columns = useMemo<ColumnDef<DePara>[]>(
