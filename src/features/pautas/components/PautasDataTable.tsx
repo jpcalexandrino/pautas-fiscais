@@ -1,13 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Spinner } from '@/components/ui/spinner';
 import TableComponent from '@/components/Table';
-import { type ColumnDef, type TableState } from '@tanstack/react-table';
+import { type ColumnDef } from '@tanstack/react-table';
 import { calculateColumnSizes } from '@/shared/utils/table';
 import { formatCurrency } from '@/shared/utils/formatters';
 import { Badge } from '@/components/ui/badge';
+import { useClientTable } from '@/shared/hooks/useClientTable';
+import type { Pauta } from '@/shared/types';
 
 interface PautasDataTableProps {
-  pautas: Record<string, unknown>[];
+  pautas: Pauta[];
   estados: Record<string, unknown>[];
   loading: boolean;
   getTableInstance?: (table: any) => void;
@@ -40,45 +42,34 @@ export function formatDateToBR(dateStr: any): string {
 }
 
 export function PautasDataTable({ pautas, loading, getTableInstance }: PautasDataTableProps) {
-  const [tableState, setTableState] = useState<Partial<TableState>>({
-    pagination: {
-      pageIndex: 0,
-      pageSize: 20,
+  const customFilterHandlers = useMemo(() => ({
+    uf: (item: Pauta, searchValue: string) => {
+      const ufStr = `${item.uf || ''} - ${item.nome_estado || ''}`;
+      return ufStr.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes(searchValue);
     },
-    columnFilters: [],
+    valor_pauta: (item: Pauta, searchValue: string) => {
+      const formatted = item.valor_pauta != null ? formatCurrency(Number(item.valor_pauta)) : '';
+      return formatted.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes(searchValue);
+    },
+    data: (item: Pauta, searchValue: string) => {
+      const formatted = formatDateToBR(item.data);
+      return formatted.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes(searchValue);
+    }
+  }), []);
+
+  const {
+    tableState,
+    paginatedData,
+    onPaginationChange,
+    onColumnFiltersChange,
+    paginationProps,
+  } = useClientTable<Pauta>({
+    data: pautas,
+    defaultPageSize: 20,
+    customFilterHandlers,
   });
 
-  const filteredData = useMemo(() => {
-    let result = pautas;
-    const filters = tableState.columnFilters || [];
-    for (const filter of filters) {
-      const { id, value } = filter;
-      if (value === undefined || value === null || value === '') continue;
-      const search = String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-      result = result.filter((item) => {
-        let itemVal = item[id];
-        if (id === 'uf') {
-          itemVal = `${item.uf || ''} - ${item.nome_estado || ''}`;
-        } else if (id === 'valor_pauta') {
-          itemVal = item.valor_pauta != null ? formatCurrency(Number(item.valor_pauta)) : '';
-        } else if (id === 'data') {
-          itemVal = formatDateToBR(item.data);
-        }
-        if (itemVal === undefined || itemVal === null) return false;
-        return String(itemVal).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes(search);
-      });
-    }
-    return result;
-  }, [pautas, tableState.columnFilters]);
-
-  const paginatedData = useMemo(() => {
-    const pageIndex = tableState.pagination?.pageIndex ?? 0;
-    const pageSize = tableState.pagination?.pageSize ?? 20;
-    const start = pageIndex * pageSize;
-    return filteredData.slice(start, start + pageSize);
-  }, [filteredData, tableState.pagination]);
-
-  const columns = useMemo<ColumnDef<any>[]>(
+  const columns = useMemo<ColumnDef<Pauta>[]>(
     () => calculateColumnSizes([
       {
         accessorKey: 'contexto',
@@ -87,7 +78,7 @@ export function PautasDataTable({ pautas, loading, getTableInstance }: PautasDat
         size: 130,
         cell: ({ row }) => {
           const value = row.original.contexto;
-          if (value === 'terceiros' || value === 'terceiro') {
+          if (value === 'terceiros') {
             return (
               <Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 font-semibold px-2 py-0.5">
                 Terceiro
@@ -213,34 +204,12 @@ export function PautasDataTable({ pautas, loading, getTableInstance }: PautasDat
           data={paginatedData}
           getTableInstance={getTableInstance}
           tableState={tableState}
-          onPaginationChange={(updater: any) => {
-            setTableState((prev) => {
-              const current = prev.pagination ?? { pageIndex: 0, pageSize: 20 };
-              const next = typeof updater === 'function' ? updater(current) : updater;
-              return {
-                ...prev,
-                pagination: next,
-              };
-            });
-          }}
-          onColumnFiltersChange={(updater: any) => {
-            setTableState((prev) => {
-              const current = prev.columnFilters ?? [];
-              const next = typeof updater === 'function' ? updater(current) : updater;
-              return {
-                ...prev,
-                columnFilters: next,
-                pagination: prev.pagination ? { ...prev.pagination, pageIndex: 0 } : undefined,
-              };
-            });
-          }}
-          pagination={{
-            totalItems: filteredData.length,
-            totalPages: Math.ceil(filteredData.length / (tableState.pagination?.pageSize ?? 20)),
-            pageSize: tableState.pagination?.pageSize ?? 20,
-          }}
+          onPaginationChange={onPaginationChange}
+          onColumnFiltersChange={onColumnFiltersChange}
+          pagination={paginationProps}
         />
       </div>
     </div>
   );
 }
+

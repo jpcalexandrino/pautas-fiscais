@@ -1,16 +1,18 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { MoreHorizontal, Edit, Trash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/spinner';
 import TableComponent from '@/components/Table';
-import { type ColumnDef, type TableState } from '@tanstack/react-table';
+import { type ColumnDef } from '@tanstack/react-table';
 import { calculateColumnSizes } from '@/shared/utils/table';
+import { useClientTable } from '@/shared/hooks/useClientTable';
+import type { DePara } from '@/shared/types';
 
 interface DeParaTableProps {
-  items: Record<string, unknown>[];
-  onEdit: (item: Record<string, unknown>) => void;
-  onDelete: (item: Record<string, unknown>) => void;
+  items: DePara[];
+  onEdit: (item: DePara) => void;
+  onDelete: (item: DePara) => void;
   loading: boolean;
 }
 
@@ -27,41 +29,26 @@ export const ALL_COLUMNS = [
 export const DEFAULT_COLUMNS = ['uf', 'termo_descricao_estado', 'gtin_estado', 'produto_descricao'];
 
 export function DeParaTable({ items, onEdit, onDelete, loading }: DeParaTableProps) {
-  const [tableState, setTableState] = useState<Partial<TableState>>({
-    pagination: {
-      pageIndex: 0,
-      pageSize: 20,
-    },
-    columnFilters: [],
+  const customFilterHandlers = useMemo(() => ({
+    uf: (item: DePara, searchValue: string) => {
+      const ufStr = `${item.uf || ''} - ${item.nome_estado || ''}`;
+      return ufStr.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes(searchValue);
+    }
+  }), []);
+
+  const {
+    tableState,
+    paginatedData,
+    onPaginationChange,
+    onColumnFiltersChange,
+    paginationProps,
+  } = useClientTable<DePara>({
+    data: items,
+    defaultPageSize: 20,
+    customFilterHandlers,
   });
 
-  const filteredData = useMemo(() => {
-    let result = items;
-    const filters = tableState.columnFilters || [];
-    for (const filter of filters) {
-      const { id, value } = filter;
-      if (value === undefined || value === null || value === '') continue;
-      const search = String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-      result = result.filter((item) => {
-        let itemVal = item[id];
-        if (id === 'uf') {
-          itemVal = `${item.uf || ''} - ${item.nome_estado || ''}`;
-        }
-        if (itemVal === undefined || itemVal === null) return false;
-        return String(itemVal).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes(search);
-      });
-    }
-    return result;
-  }, [items, tableState.columnFilters]);
-
-  const paginatedData = useMemo(() => {
-    const pageIndex = tableState.pagination?.pageIndex ?? 0;
-    const pageSize = tableState.pagination?.pageSize ?? 20;
-    const start = pageIndex * pageSize;
-    return filteredData.slice(start, start + pageSize);
-  }, [filteredData, tableState.pagination]);
-
-  const columns = useMemo<ColumnDef<any>[]>(
+  const columns = useMemo<ColumnDef<DePara>[]>(
     () => calculateColumnSizes([
       {
         id: 'actions',
@@ -159,34 +146,12 @@ export function DeParaTable({ items, onEdit, onDelete, loading }: DeParaTablePro
           columns={columns}
           data={paginatedData}
           tableState={tableState}
-          onPaginationChange={(updater: any) => {
-            setTableState((prev) => {
-              const current = prev.pagination ?? { pageIndex: 0, pageSize: 20 };
-              const next = typeof updater === 'function' ? updater(current) : updater;
-              return {
-                ...prev,
-                pagination: next,
-              };
-            });
-          }}
-          onColumnFiltersChange={(updater: any) => {
-            setTableState((prev) => {
-              const current = prev.columnFilters ?? [];
-              const next = typeof updater === 'function' ? updater(current) : updater;
-              return {
-                ...prev,
-                columnFilters: next,
-                pagination: prev.pagination ? { ...prev.pagination, pageIndex: 0 } : undefined,
-              };
-            });
-          }}
-          pagination={{
-            totalItems: filteredData.length,
-            totalPages: Math.ceil(filteredData.length / (tableState.pagination?.pageSize ?? 20)),
-            pageSize: tableState.pagination?.pageSize ?? 20,
-          }}
+          onPaginationChange={onPaginationChange}
+          onColumnFiltersChange={onColumnFiltersChange}
+          pagination={paginationProps}
         />
       </div>
     </div>
   );
 }
+

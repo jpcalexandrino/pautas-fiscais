@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { MoreHorizontal, Edit, Trash, Shield, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,16 +10,10 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
 import TableComponent from '@/components/Table';
-import { type ColumnDef, type TableState } from '@tanstack/react-table';
+import { type ColumnDef } from '@tanstack/react-table';
 import { calculateColumnSizes } from '@/shared/utils/table';
-
-interface User {
-  id: string | number;
-  name: string;
-  email: string;
-  role: 'admin' | 'user';
-  active: boolean;
-}
+import { useClientTable } from '@/shared/hooks/useClientTable';
+import type { User } from '@/shared/types';
 
 interface UsersTableProps {
   users: User[];
@@ -30,44 +24,31 @@ interface UsersTableProps {
 }
 
 export const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDelete, loading, isAdmin = false }) => {
-  const [tableState, setTableState] = useState<Partial<TableState>>({
-    pagination: {
-      pageIndex: 0,
-      pageSize: 20,
+  const customFilterHandlers = useMemo(() => ({
+    role: (item: User, searchValue: string) => {
+      const roleStr = item.role === 'admin' ? 'administrador' : 'usuario comum';
+      return roleStr.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes(searchValue);
     },
-    columnFilters: [],
+    status: (item: User, searchValue: string) => {
+      const statusStr = item.active ? 'ativo' : 'inativo';
+      return statusStr.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes(searchValue);
+    }
+  }), []);
+
+  const {
+    tableState,
+    paginatedData,
+    onPaginationChange,
+    onColumnFiltersChange,
+    paginationProps,
+  } = useClientTable<User>({
+    data: users,
+    defaultPageSize: 20,
+    customFilterHandlers,
   });
 
-  const filteredData = useMemo(() => {
-    let result = users;
-    const filters = tableState.columnFilters || [];
-    for (const filter of filters) {
-      const { id, value } = filter;
-      if (value === undefined || value === null || value === '') continue;
-      const search = String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-      result = result.filter((item) => {
-        let itemVal = item[id as keyof User];
-        if (id === 'role') {
-          itemVal = item.role === 'admin' ? 'administrador' : 'usuario comum';
-        } else if (id === 'status') {
-          itemVal = item.active ? 'ativo' : 'inativo';
-        }
-        if (itemVal === undefined || itemVal === null) return false;
-        return String(itemVal).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes(search);
-      });
-    }
-    return result;
-  }, [users, tableState.columnFilters]);
-
-  const paginatedData = useMemo(() => {
-    const pageIndex = tableState.pagination?.pageIndex ?? 0;
-    const pageSize = tableState.pagination?.pageSize ?? 20;
-    const start = pageIndex * pageSize;
-    return filteredData.slice(start, start + pageSize);
-  }, [filteredData, tableState.pagination]);
-
-  const columns = useMemo<ColumnDef<any>[]>(() => {
-    const cols: ColumnDef<any>[] = [];
+  const columns = useMemo<ColumnDef<User>[]>(() => {
+    const cols: ColumnDef<User>[] = [];
 
     if (isAdmin) {
       cols.push({
@@ -173,34 +154,12 @@ export const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDelete,
           columns={columns}
           data={paginatedData}
           tableState={tableState}
-          onPaginationChange={(updater: any) => {
-            setTableState((prev) => {
-              const current = prev.pagination ?? { pageIndex: 0, pageSize: 20 };
-              const next = typeof updater === 'function' ? updater(current) : updater;
-              return {
-                ...prev,
-                pagination: next,
-              };
-            });
-          }}
-          onColumnFiltersChange={(updater: any) => {
-            setTableState((prev) => {
-              const current = prev.columnFilters ?? [];
-              const next = typeof updater === 'function' ? updater(current) : updater;
-              return {
-                ...prev,
-                columnFilters: next,
-                pagination: prev.pagination ? { ...prev.pagination, pageIndex: 0 } : undefined,
-              };
-            });
-          }}
-          pagination={{
-            totalItems: filteredData.length,
-            totalPages: Math.ceil(filteredData.length / (tableState.pagination?.pageSize ?? 20)),
-            pageSize: tableState.pagination?.pageSize ?? 20,
-          }}
+          onPaginationChange={onPaginationChange}
+          onColumnFiltersChange={onColumnFiltersChange}
+          pagination={paginationProps}
         />
       </div>
     </div>
   );
 };
+

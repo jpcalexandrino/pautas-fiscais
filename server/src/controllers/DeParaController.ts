@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/authMiddleware';
 import * as xlsx from 'xlsx';
 import DeParaProdutoEstadoRepository from '../repositories/DeParaProdutoEstadoRepository';
