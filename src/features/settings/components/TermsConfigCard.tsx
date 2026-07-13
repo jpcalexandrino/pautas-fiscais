@@ -148,9 +148,9 @@ export function TermsConfigCard() {
         </div>
 
         {isAdmin ? (
-          <form onSubmit={handleAddTerm} className="flex gap-2">
-            <div className="flex-1">
-              <Label htmlFor="newTerm" className="sr-only">Novo Termo</Label>
+          <form onSubmit={handleAddTerm} className="space-y-1.5">
+            <Label htmlFor="newTerm" className="mb-4 font-semibold text-muted-foreground">Cadastre um termo</Label>
+            <div className="flex gap-2">
               <Input
                 id="newTerm"
                 placeholder={
@@ -161,13 +161,13 @@ export function TermsConfigCard() {
                 value={newTerm}
                 onChange={(e) => setNewTerm(e.target.value)}
                 disabled={isSubmitting}
-                className="w-full"
+                className="flex-1"
               />
+              <Button type="submit" disabled={isSubmitting || !newTerm.trim()} className="gap-2 shrink-0">
+                {isSubmitting ? <Spinner className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                Adicionar
+              </Button>
             </div>
-            <Button type="submit" disabled={isSubmitting || !newTerm.trim()} className="gap-2 shrink-0">
-              {isSubmitting ? <Spinner className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-              Adicionar
-            </Button>
           </form>
         ) : (
           <div className="text-xs text-muted-foreground bg-muted/40 p-3 rounded-md flex items-start gap-2">

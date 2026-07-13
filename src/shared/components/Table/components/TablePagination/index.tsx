@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 
 import PaginationButton from './components/PaginationButton'
+import { Button } from '@/components/ui/button'
 import {
     Select,
     SelectContent,
@@ -137,9 +138,11 @@ const TablePagination = ({
             </div>
 
             <div className="flex items-center p-2">
-                <button
+                <Button
+                    variant="ghost"
+                    size="icon-xs"
                     className={cn(
-                        'text-muted-foreground h-7 w-[24px] flex items-center justify-center',
+                        'text-muted-foreground h-7 w-[24px] flex items-center justify-center p-0',
                         isFirstPage
                             ? 'text-muted-foreground'
                             : 'hover:bg-neutral-100'
@@ -148,10 +151,12 @@ const TablePagination = ({
                     disabled={isFirstPage}
                 >
                     <ChevronsLeft size={18} strokeWidth={2} />
-                </button>
-                <button
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="icon-xs"
                     className={cn(
-                        'text-muted-foreground h-7 w-[24px] flex items-center justify-center',
+                        'text-muted-foreground h-7 w-[24px] flex items-center justify-center p-0',
                         isFirstPage
                             ? 'text-muted-foreground'
                             : 'hover:bg-neutral-100'
@@ -162,11 +167,13 @@ const TablePagination = ({
                     disabled={isFirstPage}
                 >
                     <ChevronLeft size={16} strokeWidth={2} />
-                </button>
+                </Button>
                 <ul className="flex items-center">{renderPageNumbers()}</ul>
-                <button
+                <Button
+                    variant="ghost"
+                    size="icon-xs"
                     className={cn(
-                        'text-muted-foreground h-7 w-[24px] flex items-center justify-center',
+                        'text-muted-foreground h-7 w-[24px] flex items-center justify-center p-0',
                         isLastPage
                             ? 'text-muted-foreground'
                             : 'hover:bg-neutral-100'
@@ -179,10 +186,12 @@ const TablePagination = ({
                     disabled={isLastPage}
                 >
                     <ChevronRight size={16} strokeWidth={2} />
-                </button>
-                <button
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="icon-xs"
                     className={cn(
-                        'text-muted-foreground h-7 w-[24px] flex items-center justify-center',
+                        'text-muted-foreground h-7 w-[24px] flex items-center justify-center p-0',
                         isLastPage
                             ? 'text-muted-foreground'
                             : 'hover:bg-neutral-100'
@@ -191,7 +200,7 @@ const TablePagination = ({
                     disabled={isLastPage}
                 >
                     <ChevronsRight size={18} strokeWidth={2} />
-                </button>
+                </Button>
             </div>
         </div>
     )

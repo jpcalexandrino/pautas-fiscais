@@ -234,22 +234,26 @@ export function OcrAssociationDialog({
                       className="inline-flex items-center gap-1 bg-primary/10 text-primary text-[10px] font-semibold px-2.5 py-1 rounded-xl"
                     >
                       <span className="truncate max-w-[150px]">{p.descricao_interna}</span>
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon-xs"
                         onClick={() => handleRemoveProduct(p.id)}
-                        className="hover:bg-primary/20 p-0.5 rounded cursor-pointer shrink-0 transition-colors"
+                        className="hover:bg-primary/20 p-0.5 rounded cursor-pointer shrink-0 transition-colors h-4 w-4"
                       >
                         <X className="w-3 h-3 text-primary" />
-                      </button>
+                      </Button>
                     </span>
                   ))}
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="xs"
                     onClick={handleClearAll}
-                    className="text-[10px] font-bold text-destructive hover:text-destructive/80 transition-colors px-2 py-1 cursor-pointer ml-auto"
+                    className="text-[10px] font-bold text-destructive hover:text-destructive/80 hover:bg-transparent transition-colors px-2 py-1 cursor-pointer ml-auto h-auto"
                   >
                     Desmarcar Todos
-                  </button>
+                  </Button>
                 </div>
               )}
 
@@ -265,8 +269,9 @@ export function OcrAssociationDialog({
                   filteredProducts.map((p) => {
                     const isSelected = selectedProductIds.includes(p.id);
                     return (
-                      <button
+                      <Button
                         key={p.id}
+                        variant="ghost"
                         onClick={() => {
                           if (isSelected) {
                             setSelectedProductIds(selectedProductIds.filter((id) => id !== p.id));
@@ -274,9 +279,9 @@ export function OcrAssociationDialog({
                             setSelectedProductIds([...selectedProductIds, p.id]);
                           }
                         }}
-                        className={`w-full text-left px-4 py-2.5 text-xs transition-all flex items-center justify-between leading-snug cursor-pointer ${
+                        className={`w-full text-left justify-between px-4 py-2.5 text-xs h-auto transition-all flex items-center leading-snug cursor-pointer rounded-none border-b border-muted/20 ${
                           isSelected
-                            ? 'bg-primary/[0.04] text-primary font-semibold'
+                            ? 'bg-primary/[0.04] text-primary font-semibold hover:bg-primary/[0.08] hover:text-primary'
                             : 'hover:bg-muted/40 text-foreground/90'
                         }`}
                       >
@@ -305,7 +310,7 @@ export function OcrAssociationDialog({
                         }`}>
                           {isSelected && <Check className="w-3 h-3" />}
                         </div>
-                      </button>
+                      </Button>
                     );
                   })
                 )}

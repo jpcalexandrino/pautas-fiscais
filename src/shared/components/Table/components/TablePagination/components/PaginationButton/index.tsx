@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 
 interface PaginationButtonProps {
     page: number
@@ -13,18 +14,20 @@ const PaginationButton = ({
 }: PaginationButtonProps) => {
     return (
         <li className="min-w-[24px]">
-            <button
+            <Button
+                variant={disabled ? 'default' : 'ghost'}
+                size="icon-xs"
                 className={cn(
-                    'h-7 w-full px-1.5 rounded-md text-sm hover:bg-slate-100 cursor-pointer',
+                    'w-full cursor-pointer h-7 text-sm',
                     disabled
-                        ? 'bg-primary hover:bg-primary/90 text-primary-foreground font-semibold'
-                        : ''
+                        ? 'bg-primary text-primary-foreground font-semibold hover:bg-primary/95'
+                        : 'text-foreground hover:bg-slate-100'
                 )}
                 onClick={onClick}
                 disabled={disabled}
             >
                 {page}
-            </button>
+            </Button>
         </li>
     )
 }

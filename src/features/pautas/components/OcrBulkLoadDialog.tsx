@@ -373,17 +373,18 @@ export function OcrBulkLoadDialog({
                         </td>
                         <td className="p-3 font-semibold text-primary">R$ {item.value.replace(/R\$\s*/i, '')}</td>
                         <td className="p-3">
-                          <button
+                          <Button
                             type="button"
+                            variant="outline"
                             onClick={() => !item.confirmed && setActiveItemIdx(idx)}
-                            className={`w-full text-left p-1.5 border border-muted/50 rounded hover:border-primary/40 hover:bg-muted/40 transition-colors font-medium truncate block max-w-md ${
+                            className={`w-full text-left justify-start p-1.5 h-auto border border-muted/50 rounded hover:border-primary/40 hover:bg-muted/40 transition-colors font-medium truncate block max-w-md ${
                               item.confirmed ? 'cursor-not-allowed bg-muted/10' : 'cursor-pointer'
                             }`}
                           >
                             {matchedProds.length > 0
                               ? matchedProds.map((p) => p.descricao_interna).join(', ')
                               : '(Selecione um ou mais Produtos)'}
-                          </button>
+                          </Button>
                         </td>
                         <td className="p-3 text-center">
                           {item.confirmed ? (
@@ -572,22 +573,26 @@ export function OcrBulkLoadDialog({
                         className="inline-flex items-center gap-1 bg-primary/10 text-primary text-[10px] font-semibold px-2.5 py-1 rounded-xl"
                       >
                         <span className="truncate max-w-[150px]">{p.descricao_interna}</span>
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="icon-xs"
                           onClick={() => handleRemoveProductFromActiveItem(p.id)}
-                          className="hover:bg-primary/20 p-0.5 rounded cursor-pointer shrink-0 transition-colors"
+                          className="hover:bg-primary/20 p-0.5 rounded cursor-pointer shrink-0 transition-colors h-4 w-4"
                         >
                           <X className="w-3 h-3 text-primary" />
-                        </button>
+                        </Button>
                       </span>
                     ))}
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="xs"
                       onClick={handleClearAllForActiveItem}
-                      className="text-[10px] font-bold text-destructive hover:text-destructive/80 transition-colors px-2 py-1 cursor-pointer ml-auto"
+                      className="text-[10px] font-bold text-destructive hover:text-destructive/80 hover:bg-transparent transition-colors px-2 py-1 cursor-pointer ml-auto h-auto"
                     >
                       Desmarcar Todos
-                    </button>
+                    </Button>
                   </div>
                 )}
 
@@ -603,12 +608,13 @@ export function OcrBulkLoadDialog({
                     filteredProducts.map((p) => {
                       const isSelected = activeItem.matchedProductIds.includes(p.id);
                       return (
-                        <button
+                        <Button
                           key={p.id}
+                          variant="ghost"
                           onClick={() => handleProductSelect(p.id)}
-                          className={`w-full text-left px-4 py-2.5 text-xs transition-all flex items-center justify-between leading-snug cursor-pointer ${
+                          className={`w-full text-left justify-between px-4 py-2.5 text-xs h-auto transition-all flex items-center leading-snug cursor-pointer rounded-none border-b border-muted/20 ${
                             isSelected
-                              ? 'bg-primary/[0.04] text-primary font-semibold'
+                              ? 'bg-primary/[0.04] text-primary font-semibold hover:bg-primary/[0.08] hover:text-primary'
                               : 'hover:bg-muted/40 text-foreground/90'
                           }`}
                         >
@@ -621,7 +627,7 @@ export function OcrBulkLoadDialog({
                             </div>
                           </div>
                           {isSelected && <Check className="w-4 h-4 text-primary shrink-0" />}
-                        </button>
+                        </Button>
                       );
                     })
                   )}

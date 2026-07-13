@@ -411,17 +411,19 @@ export default function PautasImportPage() {
                             </p>
                           </div>
                         </div>
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="icon-xs"
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedFile(null);
                             if (fileInputRef.current) fileInputRef.current.value = '';
                           }}
-                          className="text-muted-foreground hover:text-destructive p-1 rounded transition-colors shrink-0 cursor-pointer"
+                          className="text-muted-foreground hover:text-destructive p-1 rounded transition-colors shrink-0 cursor-pointer h-6 w-6"
                         >
                           <X className="size-4" />
-                        </button>
+                        </Button>
                       </div>
                     ) : (
                       <>

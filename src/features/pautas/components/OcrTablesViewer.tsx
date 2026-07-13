@@ -1,6 +1,7 @@
 import { useState, useEffect, type ReactNode, useMemo } from 'react';
 import { HelpCircle, Info, Save, X } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { BRAND_SLUGS } from '@shared/utils/constants';
 import { useTerms } from '@features/settings/hooks/useTerms';
@@ -616,24 +617,26 @@ export function OcrTablesViewer({
       {isEditingMode && (
         <div className="fixed bottom-6 right-6 z-50 bg-card border rounded-xl p-4 shadow-xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-300">
           <span className="text-xs font-semibold text-muted-foreground mr-2">Modo Edição Ativo</span>
-          <button
+          <Button
             type="button"
             onClick={handleSaveEdits}
             disabled={isUpdatingOcrTables}
-            className="text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm disabled:opacity-50"
+            className="text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm disabled:opacity-50 h-9 border-none"
           >
             <Save className="w-3.5 h-3.5" />
             {isUpdatingOcrTables ? 'Salvando...' : 'Salvar Alterações'}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={handleToggleEditingMode}
             disabled={isUpdatingOcrTables}
-            className="text-xs font-semibold bg-muted hover:bg-muted/80 text-foreground border px-3 py-2 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="text-xs font-semibold hover:bg-muted/80 text-foreground flex items-center gap-1.5 cursor-pointer h-9"
           >
             <X className="w-3.5 h-3.5" />
             Cancelar
-          </button>
+          </Button>
         </div>
       )}
     </div>

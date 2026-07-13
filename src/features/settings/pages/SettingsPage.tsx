@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Users, Settings, Tag, Sliders } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Users, Tag } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTerms } from '../hooks/useTerms';
 import UsersPage from '@features/users/pages/UsersPage';
 import { TermsConfigCard } from '../components/TermsConfigCard';
-import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 type ActiveTab = 'users' | 'terms';

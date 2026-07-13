@@ -1,6 +1,7 @@
 import { Search, Info, Edit3, Save, X, HelpCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
 
 interface OcrToolbarProps {
   searchTerm: string;
@@ -58,9 +59,9 @@ export function OcrToolbar({
 
         <Popover>
           <PopoverTrigger asChild>
-            <button className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer transition-colors" title="Como associar preços">
+            <Button variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-foreground cursor-pointer h-7 w-7 p-0" title="Como associar preços">
               <HelpCircle className="w-4 h-4" />
-            </button>
+            </Button>
           </PopoverTrigger>
           <PopoverContent className="w-72 p-3 text-xs leading-relaxed space-y-1.5">
             <p className="font-semibold text-foreground">Como associar preços:</p>
@@ -74,34 +75,38 @@ export function OcrToolbar({
           <div className="flex items-center gap-2">
             {isEditingMode ? (
               <>
-                <button
+                <Button
                   type="button"
                   onClick={onSaveEdits}
                   disabled={isSavingEdits}
-                  className="text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm disabled:opacity-50"
+                  className="text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm disabled:opacity-50 h-8"
                 >
                   <Save className="w-3.5 h-3.5" />
                   {isSavingEdits ? 'Salvando...' : 'Salvar'}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={onToggleEditingMode}
                   disabled={isSavingEdits}
-                  className="text-xs font-semibold bg-muted hover:bg-muted/80 text-foreground border border-muted-foreground/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+                  className="text-xs font-semibold hover:bg-muted/80 text-foreground flex items-center gap-1.5 cursor-pointer h-8"
                 >
                   <X className="w-3.5 h-3.5" />
                   Cancelar
-                </button>
+                </Button>
               </>
             ) : (
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={onToggleEditingMode}
-                className="text-xs font-semibold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 hover:border-primary/30 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="text-xs font-semibold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 hover:border-primary/30 flex items-center gap-1.5 cursor-pointer h-8"
               >
                 <Edit3 className="w-3.5 h-3.5" />
                 Editar Tabelas
-              </button>
+              </Button>
             )}
           </div>
         )}
