@@ -17,7 +17,7 @@ if (isProduction) {
 const requiredEnv = [
   'JWT_SECRET',
   'SYNAPSE_API_URL',
-  'SYNAPSE_API_KEY',
+  'SYNAPSE_API_KEY_TEXTRACT',
 ];
 
 const missingEnv = requiredEnv.filter((key) => !process.env[key]);

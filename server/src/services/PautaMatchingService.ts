@@ -1,7 +1,7 @@
 import ProdutoRepository, { ProdutoRow } from '../repositories/ProdutoRepository';
 import DeParaProdutoEstadoRepository from '../repositories/DeParaProdutoEstadoRepository';
 import { normalizeGtin, normalizeText, isDummyGtin } from '../utils/normalize';
-import type { PautaItemExtraido } from './PautaAIService';
+import type { PautaItemExtraido } from './PautaValidator';
 import { stripAnnotations } from './brandSlugs';
 import { parseBatchDescription, findMatchingProducts } from '../utils/batchMatcher';
 

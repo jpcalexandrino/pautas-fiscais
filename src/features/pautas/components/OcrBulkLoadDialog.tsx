@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/shared/components/ui/label';
 
 interface Produto {
   id: number;
@@ -305,7 +306,7 @@ export function OcrBulkLoadDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-[95vw] w-[95vw] sm:max-w-[75vw] flex flex-col max-h-[95vh] p-6 border border-muted/40 rounded-2xl">
+        <DialogContent className="max-w-[95vw] w-[95vw] sm:max-w-[75vw] flex flex-col max-h-[95vh] border border-muted/40 rounded-2xl">
           <DialogHeader className="pb-3 border-b border-muted/30">
             <DialogTitle className="text-lg font-bold flex items-center gap-2">
               <Check className="w-5 h-5 text-primary" />
@@ -419,12 +420,12 @@ export function OcrBulkLoadDialog({
               checked={saveDePara}
               onCheckedChange={(checked) => setSaveDePara(!!checked)}
             />
-            <label
+            <Label
               htmlFor="bulk-save-de-para"
               className="text-xs text-muted-foreground cursor-pointer select-none"
             >
               Salvar associações no De-Para
-            </label>
+            </Label>
           </div>
 
           <DialogFooter className="gap-2 mt-2 border-t border-muted/30 pt-3">
@@ -536,7 +537,7 @@ export function OcrBulkLoadDialog({
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase">Embalagem</label>
+                      <Label className="text-[10px] font-bold text-muted-foreground uppercase">Embalagem</Label>
                       <Select value={embalagemFilter} onValueChange={setEmbalagemFilter}>
                         <SelectTrigger className="h-8.5 text-xs bg-background">
                           <SelectValue placeholder="Todas" />
@@ -553,7 +554,7 @@ export function OcrBulkLoadDialog({
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase">Volumetria (ex: 473 ml)</label>
+                      <Label className="text-[10px] font-bold text-muted-foreground uppercase">Volumetria (ex: 473 ml)</Label>
                       <Input
                         placeholder="Filtrar volume..."
                         value={volumeFilter}

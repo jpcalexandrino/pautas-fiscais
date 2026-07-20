@@ -169,7 +169,7 @@ export function OcrTableCard({
                             size="icon-xs"
                             onClick={() => setInlineEditingHeader?.(null)}
                             className="text-foreground hover:bg-muted/80"
-                            title="Cancelar"
+                            title="Cancelar"  
                           >
                             <X className="w-3.5 h-3.5" />
                           </Button>

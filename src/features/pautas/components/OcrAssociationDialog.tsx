@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Spinner } from '@/components/ui/spinner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/shared/components/ui/label';
 
 interface Produto {
   id: number;
@@ -112,7 +113,7 @@ export function OcrAssociationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-6xl max-w-6xl w-[95vw] h-[85vh] flex flex-col p-6 rounded-2xl gap-4 bg-background border border-muted/40">
+      <DialogContent className="sm:max-w-6xl max-w-6xl w-[95vw] h-[85vh] flex flex-col rounded-2xl gap-4 bg-background border border-muted/40">
         <DialogHeader className="border-b border-muted/30 pb-3 flex flex-row items-center justify-between">
           <div>
             <DialogTitle className="flex items-center gap-2.5 text-lg font-bold text-foreground">
@@ -197,7 +198,7 @@ export function OcrAssociationDialog({
                 {/* Filtros adicionais: Embalagem e Volumetria */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase">Embalagem</label>
+                    <Label className="text-[10px] font-bold text-muted-foreground uppercase">Embalagem</Label>
                     <Select value={embalagemFilter} onValueChange={setEmbalagemFilter}>
                       <SelectTrigger className="h-8.5 text-xs bg-background">
                         <SelectValue placeholder="Todas" />
@@ -214,7 +215,7 @@ export function OcrAssociationDialog({
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase">Volumetria (ex: 473 ml)</label>
+                    <Label className="text-[10px] font-bold text-muted-foreground uppercase">Volumetria (ex: 473 ml)</Label>
                     <Input
                       placeholder="Filtrar volume..."
                       value={volumeFilter}
@@ -324,12 +325,12 @@ export function OcrAssociationDialog({
                   onCheckedChange={(checked) => onSaveDeParaChange(!!checked)}
                   className="cursor-pointer"
                 />
-                <label
+                <Label
                   htmlFor="save-de-para"
                   className="text-xs text-muted-foreground font-medium leading-tight cursor-pointer select-none"
                 >
                   Salvar associação de descrição no histórico De-Para de automação
-                </label>
+                </Label>
               </div>
 
             </div>

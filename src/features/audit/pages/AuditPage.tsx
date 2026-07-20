@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/shared/components/ui/label';
 
 interface AuditLog {
   id: number;
@@ -375,7 +376,7 @@ export default function AuditPage() {
       <div className="bg-muted/40 border p-4 rounded-2xl flex flex-col md:flex-row gap-4 items-end">
         <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-muted-foreground uppercase">Período - De</label>
+            <Label className="text-xs font-bold text-muted-foreground uppercase">Período - De</Label>
             <DatePicker
               value={startDate}
               onChange={setStartDate}
@@ -383,7 +384,7 @@ export default function AuditPage() {
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-muted-foreground uppercase">Período - Até</label>
+            <Label className="text-xs font-bold text-muted-foreground uppercase">Período - Até</Label>
             <DatePicker
               value={endDate}
               onChange={setEndDate}
@@ -393,7 +394,7 @@ export default function AuditPage() {
         </div>
         
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-muted-foreground uppercase">Ação</label>
+          <Label className="text-xs font-bold text-muted-foreground uppercase">Ação</Label>
           <Select value={actionFilter} onValueChange={setActionFilter}>
             <SelectTrigger className="h-10 text-xs bg-background">
               <SelectValue placeholder="Filtrar por Ação" />
@@ -467,7 +468,7 @@ export default function AuditPage() {
       )}
       {/* Dialog Detalhado de Auditoria */}
       <Dialog open={selectedAuditLog !== null} onOpenChange={(open) => !open && setSelectedAuditLog(null)}>
-        <DialogContent className="sm:max-w-2xl max-w-2xl w-[92vw] max-h-[85vh] flex flex-col p-6 rounded-2xl gap-4 bg-background">
+        <DialogContent className="sm:max-w-2xl max-w-2xl w-[92vw] max-h-[85vh] flex flex-col rounded-2xl gap-4 bg-background">
           <DialogHeader className="border-b pb-3">
             <div className="flex items-center justify-between">
               <DialogTitle className="text-lg font-bold flex items-center gap-2">

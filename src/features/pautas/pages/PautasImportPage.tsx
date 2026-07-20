@@ -6,9 +6,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { DatePicker } from '@/components/ui/date-picker';
-import { UploadCloud, FileText, X, Search, Check } from 'lucide-react';
+import { UploadCloud, X, Search, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import pdfLogo from '@/assets/pdf.png';
+import { Label } from '@/shared/components/ui/label';
 
 export default function PautasImportPage() {
   const [contexto, setContexto] = useState<'proprio' | 'terceiros'>(() => {
@@ -199,7 +201,7 @@ export default function PautasImportPage() {
       return;
     }
 
-    const toastId = toast.loading('Processando OCR e tabelas da pauta...');
+    const toastId = toast.loading('Processando arquivos e tabelas da pauta...');
     try {
       const result = await uploadPauta({
         file: selectedFile,
@@ -278,7 +280,7 @@ export default function PautasImportPage() {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                 {/* Contexto */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-muted-foreground">Contexto</label>
+                  <Label className="text-xs font-semibold text-muted-foreground">Contexto</Label>
                   <Select
                     value={contexto}
                     onValueChange={(val: any) => {
@@ -298,7 +300,7 @@ export default function PautasImportPage() {
 
                 {/* Filtro Período */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-muted-foreground">Filtrar Período</label>
+                  <Label className="text-xs font-semibold text-muted-foreground">Filtrar Período</Label>
                   <div className="flex gap-2">
                     <Select value={filterMonth} onValueChange={setFilterMonth} disabled={ocrFiles.length === 0}>
                       <SelectTrigger className="w-full bg-background text-xs h-10">
@@ -327,7 +329,7 @@ export default function PautasImportPage() {
 
                 {/* Arquivo PDF */}
                 <div className="space-y-1.5 md:col-span-2">
-                  <label className="text-xs font-semibold text-muted-foreground">Arquivo de Pauta</label>
+                  <Label className="text-xs font-semibold text-muted-foreground">Arquivo de Pauta</Label>
                   <Select
                     value={auditFilename || undefined}
                     onValueChange={(val) => setAuditFilename(val)}
@@ -377,7 +379,7 @@ export default function PautasImportPage() {
               <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
                 {/* PDF Dropzone */}
                 <div className="md:col-span-5 space-y-1.5">
-                  <label className="text-xs font-semibold text-muted-foreground">Arquivo PDF *</label>
+                  <Label className="text-xs font-semibold text-muted-foreground">Arquivo PDF *</Label>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -392,16 +394,16 @@ export default function PautasImportPage() {
                     onDrop={handleDrop}
                     onClick={() => !isUploading && fileInputRef.current?.click()}
                     className={cn(
-                      "border border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors min-h-[90px] flex flex-col items-center justify-center gap-1 bg-muted/10 hover:bg-muted/30 border-muted-foreground/20 hover:border-primary/50",
+                      "border border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors min-h-[102px] flex flex-col items-center justify-center gap-1 bg-muted/10 hover:bg-muted/30 border-muted-foreground/20 hover:border-primary/50",
                       isDragging && "border-primary bg-primary/5",
-                      selectedFile && "border-emerald-500/30 bg-emerald-500/5",
+                      selectedFile && "border-primary/30 bg-primary/5",
                       isUploading && "pointer-events-none opacity-60"
                     )}
                   >
                     {selectedFile ? (
                       <div className="flex items-center justify-between w-full px-2">
                         <div className="flex items-center gap-2 truncate">
-                          <FileText className="size-5 text-emerald-600 shrink-0" />
+                          <img src={pdfLogo} alt="PDF" className="size-7 shrink-0 object-contain" />
                           <div className="text-left truncate">
                             <p className="text-xs font-semibold text-foreground truncate max-w-[140px] sm:max-w-[180px]">
                               {selectedFile.name}
@@ -439,7 +441,7 @@ export default function PautasImportPage() {
                 {/* Form Fields + Button */}
                 <div className="md:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-3.5 items-end">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-muted-foreground">Contexto *</label>
+                    <Label className="text-xs font-semibold text-muted-foreground">Contexto *</Label>
                     <Select value={contexto} onValueChange={(val: any) => setContexto(val)} disabled={isUploading}>
                       <SelectTrigger className="bg-background text-xs h-10">
                         <SelectValue placeholder="Selecione" />
@@ -452,7 +454,7 @@ export default function PautasImportPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-muted-foreground">Estado (UF) *</label>
+                    <Label className="text-xs font-semibold text-muted-foreground">Estado (UF) *</Label>
                     <Select value={uploadUf} onValueChange={setUploadUf} disabled={isUploading}>
                       <SelectTrigger className="bg-background text-xs h-10">
                         <SelectValue placeholder="Selecione" />
@@ -468,7 +470,7 @@ export default function PautasImportPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-muted-foreground">Vigência *</label>
+                    <Label className="text-xs font-semibold text-muted-foreground">Vigência *</Label>
                     <DatePicker
                       value={uploadVigenciaDate}
                       onChange={setUploadVigenciaDate}

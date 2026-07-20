@@ -1,5 +1,10 @@
 import { Logger } from '../utils/logger';
-import type { PautaItemExtraido } from './PautaAIService';
+export interface PautaItemExtraido {
+  descricao_estado: string;
+  valor_pauta: number;
+  gtin?: string;
+  data_pauta?: string | null;
+}
 
 const logger = new Logger('PautaValidator');
 
