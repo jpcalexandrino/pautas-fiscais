@@ -260,11 +260,31 @@ export async function updateTabelasOcr(req: AuthRequest, res: Response) {
     if (existingResult.rows.length > 0) {
       const oldOcr = existingResult.rows[0];
       const oldRaw = oldOcr.textract_json;
-      const oldTables = (oldRaw && typeof oldRaw === 'object' && 'tables' in oldRaw)
-        ? (oldRaw as any).tables
-        : [];
+      let oldTables: any[] = [];
+      try {
+        oldTables = TextractCompactor.extractTables(oldRaw, oldOcr.uf);
+      } catch (err) {
+        console.error('Erro ao extrair tabelas anteriores para comparação de audit:', err);
+      }
 
       if (Array.isArray(oldTables) && oldTables.length > 0) {
+        // Verificar tabelas que existiam antes e foram totalmente removidas
+        for (const oldTab of oldTables) {
+          const stillExists = tabelas.some((t: any) => t.tabelaIndex === oldTab.tabelaIndex);
+          if (!stillExists) {
+            const rowsSummary = (oldTab.rows || [])
+              .map((r: string[]) => r.filter(Boolean).join(' | '))
+              .filter(Boolean)
+              .slice(0, 50); // limita a 50 linhas para não estourar o log
+
+            if (rowsSummary.length > 0) {
+              diffs.push(`Removeu Tabela ${oldTab.tabelaIndex} (Linhas: ${rowsSummary.join(' ; ')})`);
+            } else {
+              diffs.push(`Removeu Tabela ${oldTab.tabelaIndex}`);
+            }
+          }
+        }
+
         for (const newTab of tabelas) {
           const oldTab = oldTables.find((t: any) => t.tabelaIndex === newTab.tabelaIndex);
           if (!oldTab) {

@@ -137,7 +137,12 @@ export function OcrTablesViewer({
   }, [produtos, contexto]);
 
   const { terms } = useTerms(contexto);
-  const activeSlugs = terms.length > 0 ? terms.map((t) => t.termo) : BRAND_SLUGS;
+  const activeSlugs = useMemo(() => {
+    if (terms && terms.length > 0) {
+      return terms.map((t) => t.termo);
+    }
+    return BRAND_SLUGS;
+  }, [terms]);
 
   const rowMatchesBrand = (row: string[]) => {
     return row.some((cell) => {
@@ -499,15 +504,13 @@ export function OcrTablesViewer({
         originalIndex,
       }));
 
-      if (!isEditingMode) {
-        if (filterBrandOnly) {
-          indexedRows = indexedRows.filter((rowObj) => rowMatchesBrand(rowObj.data));
-        }
-        if (normalizedSearch) {
-          indexedRows = indexedRows.filter((rowObj) =>
-            rowObj.data.some((cell) => normalizeForSearch(cell).includes(normalizedSearch))
-          );
-        }
+      if (filterBrandOnly) {
+        indexedRows = indexedRows.filter((rowObj) => rowMatchesBrand(rowObj.data));
+      }
+      if (normalizedSearch) {
+        indexedRows = indexedRows.filter((rowObj) =>
+          rowObj.data.some((cell) => normalizeForSearch(cell).includes(normalizedSearch))
+        );
       }
       return {
         tabelaIndex: tabela.tabelaIndex,

@@ -62,6 +62,25 @@ const parseOcrAlteration = (alt: string) => {
     };
   }
 
+  const removeTableRegex = /^Removeu Tabela\s+(\d+)(?:\s+\(Linhas:\s+(.*)\))?$/i;
+  const removeTableMatch = alt.match(removeTableRegex);
+  if (removeTableMatch) {
+    return {
+      type: 'remove_table',
+      tabela: removeTableMatch[1],
+      linhas: removeTableMatch[2] ? removeTableMatch[2].split(' ; ') : []
+    };
+  }
+
+  const addTableRegex = /^Adicionou tabela\s+(\d+)$/i;
+  const addTableMatch = alt.match(addTableRegex);
+  if (addTableMatch) {
+    return {
+      type: 'add_table',
+      tabela: addTableMatch[1]
+    };
+  }
+
   return {
     type: 'raw',
     text: alt
@@ -743,6 +762,40 @@ export default function AuditPage() {
                                         <div className="text-muted-foreground bg-muted/20 p-1.5 rounded-lg text-[10px] line-through opacity-70 break-all">
                                           {parsed.conteudo}
                                         </div>
+                                      </div>
+                                    );
+                                  } else if (parsed.type === 'remove_table') {
+                                    return (
+                                      <div key={i} className="p-2.5 flex flex-col gap-1.5 text-[11px] hover:bg-muted/10 transition-colors">
+                                        <div className="flex items-center justify-between">
+                                          <span className="bg-rose-500/15 text-rose-700 dark:text-rose-400 text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase">
+                                            Tabela {parsed.tabela} Removida
+                                          </span>
+                                          <span className="text-rose-600 dark:text-rose-400 text-[10px] font-bold">
+                                            Tabela inteira excluída {parsed.linhas?.length ? `(${parsed.linhas.length} linha${parsed.linhas.length > 1 ? 's' : ''})` : ''}
+                                          </span>
+                                        </div>
+                                        {parsed.linhas && parsed.linhas.length > 0 && (
+                                          <div className="space-y-1 bg-rose-500/5 p-2 rounded-lg border border-rose-500/10 max-h-36 overflow-y-auto">
+                                            {parsed.linhas.map((linhaStr: string, lIdx: number) => (
+                                              <div key={lIdx} className="text-[10px] text-rose-900/80 dark:text-rose-300/80 line-through opacity-80 break-all flex items-start gap-1">
+                                                <span className="text-rose-500 font-bold">•</span>
+                                                <span>{linhaStr}</span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  } else if (parsed.type === 'add_table') {
+                                    return (
+                                      <div key={i} className="p-2.5 flex items-center justify-between text-[11px] hover:bg-muted/10 transition-colors">
+                                        <span className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase">
+                                          Tabela {parsed.tabela} Adicionada
+                                        </span>
+                                        <span className="text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
+                                          Nova tabela criada
+                                        </span>
                                       </div>
                                     );
                                   }
