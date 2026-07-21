@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/api/client';
 import { Spinner } from '@/components/ui/spinner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, User, Calendar, Layers, ShieldCheck, Check } from 'lucide-react';
+import { Search, User, Calendar, Layers, ShieldCheck, Check, RefreshCw } from 'lucide-react';
 import TableComponent from '@/components/Table';
 import { type ColumnDef, type TableState } from '@tanstack/react-table';
 import { useAuth } from '@/contexts/AuthContext';
@@ -93,7 +93,7 @@ export default function AuditPage() {
     sessionStorage.setItem('audit_logs_action_filter', actionFilter);
   }, [actionFilter]);
 
-  const { data: logs = [], isLoading } = useQuery<AuditLog[]>({
+  const { data: logs = [], isLoading, isFetching, refetch } = useQuery<AuditLog[]>({
     queryKey: ['audit-logs'],
     queryFn: async () => {
       const response = await apiFetch('/audit');
@@ -101,6 +101,8 @@ export default function AuditPage() {
       return await response.json();
     },
     enabled: !!localStorage.getItem('token') && user?.role === 'admin',
+    refetchInterval: 10000,
+    refetchOnWindowFocus: true,
   });
 
   const isAdmin = user?.role === 'admin';
@@ -130,6 +132,10 @@ export default function AuditPage() {
         return <span className="inline-flex items-center rounded-md bg-violet-50 dark:bg-violet-950/40 px-2.5 py-1 text-xs font-bold text-violet-700 dark:text-violet-300 ring-1 ring-inset ring-violet-700/10">Carga De-Para Lote</span>;
       case 'ATUALIZACAO_TABELA_OCR':
         return <span className="inline-flex items-center rounded-md bg-slate-50 dark:bg-slate-950/40 px-2.5 py-1 text-xs font-bold text-slate-700 dark:text-slate-300 ring-1 ring-inset ring-slate-700/10">Editar Tabela OCR</span>;
+      case 'CRIAR_TERMO':
+        return <span className="inline-flex items-center rounded-md bg-teal-50 dark:bg-teal-950/40 px-2.5 py-1 text-xs font-bold text-teal-700 dark:text-teal-300 ring-1 ring-inset ring-teal-700/10">Novo Termo</span>;
+      case 'EXCLUIR_TERMO':
+        return <span className="inline-flex items-center rounded-md bg-pink-50 dark:bg-pink-950/40 px-2.5 py-1 text-xs font-bold text-pink-700 dark:text-pink-300 ring-1 ring-inset ring-pink-700/10">Excluir Termo</span>;
       default:
         return <span className="inline-flex items-center rounded-md bg-gray-50 dark:bg-gray-950/40 px-2.5 py-1 text-xs font-bold text-gray-600 dark:text-gray-400 ring-1 ring-inset ring-gray-600/10">{action}</span>;
     }
@@ -232,6 +238,24 @@ export default function AuditPage() {
             )}
           </div>
         );
+      case 'CRIAR_TERMO':
+        return (
+          <div className="space-y-0.5">
+            <div className="font-semibold text-foreground">Termo: &ldquo;{d.termo}&rdquo;</div>
+            <div className="text-[10px] text-muted-foreground">
+              Tipo: <strong className="text-foreground capitalize">{d.tipo || 'próprio'}</strong>
+            </div>
+          </div>
+        );
+      case 'EXCLUIR_TERMO':
+        return (
+          <div className="space-y-0.5">
+            <div className="font-semibold text-foreground text-pink-600 dark:text-pink-400">Termo Removido: &ldquo;{d.termo}&rdquo;</div>
+            <div className="text-[10px] text-muted-foreground">
+              Tipo: <strong className="text-foreground capitalize">{d.tipo || 'próprio'}</strong>
+            </div>
+          </div>
+        );
       default:
         return <div className="text-xs">{JSON.stringify(d)}</div>;
     }
@@ -307,6 +331,8 @@ export default function AuditPage() {
           case 'EXCLUIR_DE_PARA': return 'Excluir De-Para';
           case 'IMPORTACAO_LOTE_DE_PARA': return 'Carga De-Para Lote';
           case 'ATUALIZACAO_TABELA_OCR': return 'Editar Tabela OCR';
+          case 'CRIAR_TERMO': return 'Novo Termo';
+          case 'EXCLUIR_TERMO': return 'Excluir Termo';
           default: return row.acao;
         }
       },
@@ -396,7 +422,7 @@ export default function AuditPage() {
         <div className="space-y-1.5">
           <Label className="text-xs font-bold text-muted-foreground uppercase">Ação</Label>
           <Select value={actionFilter} onValueChange={setActionFilter}>
-            <SelectTrigger className="h-10 text-xs bg-background">
+            <SelectTrigger className="text-xs bg-background">
               <SelectValue placeholder="Filtrar por Ação" />
             </SelectTrigger>
             <SelectContent>
@@ -408,6 +434,8 @@ export default function AuditPage() {
               <SelectItem value="EXCLUIR_DE_PARA">Excluir De-Para</SelectItem>
               <SelectItem value="IMPORTACAO_LOTE_DE_PARA">Carga De-Para Lote</SelectItem>
               <SelectItem value="ATUALIZACAO_TABELA_OCR">Editar Tabela OCR</SelectItem>
+              <SelectItem value="CRIAR_TERMO">Novo Termo</SelectItem>
+              <SelectItem value="EXCLUIR_TERMO">Excluir Termo</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -729,6 +757,36 @@ export default function AuditPage() {
                               </div>
                             </div>
                           )}
+                        </div>
+                      );
+                    case 'CRIAR_TERMO':
+                      return (
+                        <div className="border rounded-xl p-4 space-y-3 bg-card shadow-xs">
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase">Termo Cadastrado</span>
+                            <div className="font-semibold text-sm text-foreground bg-muted/40 p-2 border rounded-lg">
+                              &ldquo;{d.termo}&rdquo;
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-xs border-t pt-2.5">
+                            <div>Tipo do Termo: <strong className="capitalize">{d.tipo || 'próprio'}</strong></div>
+                            <div>ID do Registro: <strong>{d.id}</strong></div>
+                          </div>
+                        </div>
+                      );
+                    case 'EXCLUIR_TERMO':
+                      return (
+                        <div className="border rounded-xl p-4 space-y-3 bg-card shadow-xs">
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase text-rose-600">Termo Excluído</span>
+                            <div className="font-semibold text-sm text-rose-700 bg-rose-500/5 border border-rose-500/10 p-2 rounded-lg">
+                              &ldquo;{d.termo}&rdquo;
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-xs border-t pt-2.5">
+                            <div>Tipo do Termo: <strong className="capitalize">{d.tipo || 'próprio'}</strong></div>
+                            <div>ID do Registro: <strong>{d.id}</strong></div>
+                          </div>
                         </div>
                       );
                     default:

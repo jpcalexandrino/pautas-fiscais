@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'audit-energy',
+      name: 'pricer',
       script: './server/dist/index.js',
       instances: 1,
       autorestart: true,

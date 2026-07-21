@@ -36,6 +36,7 @@ export function useTerms(tipo?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['config-termos'] });
+      queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
     },
   });
 
@@ -49,6 +50,7 @@ export function useTerms(tipo?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['config-termos'] });
+      queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
     },
   });
 

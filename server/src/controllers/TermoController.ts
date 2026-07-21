@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/authMiddleware';
 import TermoRepository from '../repositories/TermoRepository';
+import AuditRepository from '../repositories/AuditRepository';
 import { loadBrandSlugsFromDb } from '../services/brandSlugs';
 
 function mapFromDb(dbRow: any) {
@@ -38,7 +39,18 @@ export async function create(req: AuthRequest, res: Response) {
 
     const result = await TermoRepository.create(termo, tipo || 'proprio');
     await loadBrandSlugsFromDb(); // Reload the cache
-    res.status(201).json(mapFromDb(result.rows[0]));
+
+    const createdTerm = mapFromDb(result.rows[0]);
+
+    if (createdTerm) {
+      await AuditRepository.log(req.userId, 'CRIAR_TERMO', {
+        id: createdTerm.id,
+        termo: createdTerm.termo,
+        tipo: createdTerm.tipo,
+      });
+    }
+
+    res.status(201).json(createdTerm);
   } catch (error: any) {
     if (error.code === '23505') { // Unique constraint violation in postgres
       return res.status(400).json({ error: 'Este termo já está cadastrado' });
@@ -61,6 +73,16 @@ export async function remove(req: AuthRequest, res: Response) {
       return res.status(404).json({ error: 'Termo não encontrado' });
     }
 
+    const deletedTerm = mapFromDb(result.rows[0]);
+
+    if (deletedTerm) {
+      await AuditRepository.log(req.userId, 'EXCLUIR_TERMO', {
+        id: deletedTerm.id,
+        termo: deletedTerm.termo,
+        tipo: deletedTerm.tipo,
+      });
+    }
+
     await loadBrandSlugsFromDb(); // Reload the cache
     res.status(204).send();
   } catch (error: any) {
@@ -69,3 +91,4 @@ export async function remove(req: AuthRequest, res: Response) {
 }
 
 export { remove as delete };
+
