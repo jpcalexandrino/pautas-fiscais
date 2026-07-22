@@ -312,6 +312,31 @@ class PautaFiscalService {
     };
   }
 
+  async excluirArquivoOcr(params: { filename: string; contexto: string; userId: number }) {
+    const ctx = params.contexto || 'proprio';
+    const ocrRes = await PautaFiscalRepository.findOcrByFilename(params.filename, ctx);
+    if (ocrRes.rows.length === 0) {
+      throw new Error('Arquivo OCR não encontrado');
+    }
+    const ocrFile = ocrRes.rows[0];
+
+    const activeCount = await PautaFiscalRepository.countActivePautasBySource(params.filename, ctx);
+    if (activeCount > 0) {
+      throw new Error(`Não é possível excluir o arquivo '${params.filename}' pois ele possui ${activeCount} pauta(s) ativa(s) lançada(s) no sistema.`);
+    }
+
+    await PautaFiscalRepository.deleteOcrFileByFilename(params.filename, ctx);
+
+    await AuditRepository.log(params.userId, 'EXCLUSAO_ARQUIVO_OCR', {
+      filename: params.filename,
+      contexto: ctx,
+      uf: ocrFile.uf,
+      data_pauta: ocrFile.data_pauta
+    });
+
+    return { success: true, filename: params.filename };
+  }
+
   private async _getEstado(uf: string) {
     const estadoResult = await EstadoRepository.getByUf(uf);
     if (estadoResult.rows.length === 0) throw new Error(`Estado ${uf} não encontrado`);

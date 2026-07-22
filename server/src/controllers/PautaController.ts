@@ -385,3 +385,24 @@ export async function getRelatedPautas(req: AuthRequest, res: Response) {
     res.status(500).json({ error: (error as Error).message });
   }
 }
+
+export async function excluirArquivoOcr(req: AuthRequest, res: Response) {
+  try {
+    const filename = String(req.params.filename);
+    const contexto = req.query.contexto ? String(req.query.contexto) : 'proprio';
+    if (!filename) {
+      return res.status(400).json({ error: 'Nome do arquivo é obrigatório' });
+    }
+
+    const userId = req.userId || 1;
+    const result = await PautaFiscalService.excluirArquivoOcr({
+      filename,
+      contexto,
+      userId
+    });
+
+    res.json(result);
+  } catch (error: unknown) {
+    res.status(400).json({ error: (error as Error).message });
+  }
+}

@@ -2,11 +2,12 @@ import { useState, useRef, useEffect } from 'react';
 import { usePautas, useEstados, useOcrTables } from '../hooks/usePautas';
 import { useProdutos } from '@/features/produtos/hooks/useProdutos';
 import { OcrTablesViewer } from '../components/OcrTablesViewer';
+import { OcrFilesManagerDialog } from '../components/OcrFilesManagerDialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { DatePicker } from '@/components/ui/date-picker';
-import { UploadCloud, X, Search, Check } from 'lucide-react';
+import { UploadCloud, X, Search, Check, FolderCog } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import pdfLogo from '@/assets/pdf.png';
@@ -24,8 +25,12 @@ export default function PautasImportPage() {
     confirmManualPauta,
     updateOcrTables,
     isUpdatingOcrTables,
+    excluirArquivoOcr,
+    isExcluindoArquivoOcr,
     loading: isLoadingPautas,
   } = usePautas({ contexto });
+
+  const [isManagerOpen, setIsManagerOpen] = useState(false);
 
   const { produtos = [] } = useProdutos();
 
@@ -329,7 +334,19 @@ export default function PautasImportPage() {
 
                 {/* Arquivo PDF */}
                 <div className="space-y-1.5 md:col-span-2">
-                  <Label className="text-xs font-semibold text-muted-foreground">Arquivo de Pauta</Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold text-muted-foreground">Arquivo de Pauta</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="xs"
+                      onClick={() => setIsManagerOpen(true)}
+                      className="text-[11px] h-6 px-2 text-primary font-semibold hover:bg-primary/10 flex items-center gap-1 cursor-pointer"
+                    >
+                      <FolderCog className="w-3.5 h-3.5" />
+                      Gerenciar Arquivos
+                    </Button>
+                  </div>
                   <Select
                     value={auditFilename || undefined}
                     onValueChange={(val) => setAuditFilename(val)}
@@ -531,6 +548,19 @@ export default function PautasImportPage() {
           )}
         </div>
       )}
+
+      <OcrFilesManagerDialog
+        open={isManagerOpen}
+        onOpenChange={setIsManagerOpen}
+        ocrFiles={ocrFiles}
+        contexto={contexto}
+        onDeleteFile={async (filename, ctx) => {
+          await excluirArquivoOcr({ filename, contexto: ctx });
+        }}
+        isDeleting={isExcluindoArquivoOcr}
+        activeFilename={auditFilename}
+        onSelectFile={(fn) => setAuditFilename(fn)}
+      />
     </div>
   );
 }

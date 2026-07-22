@@ -22,6 +22,7 @@ router.get('/ocr-files/:filename', PautaController.getArquivoOcrByFilename);
 router.get('/ocr-files/:filename/tabelas', PautaController.getTabelasOcr);
 router.put('/ocr-files/:filename/tabelas', PautaController.updateTabelasOcr);
 router.post('/confirmar-manual', PautaController.confirmarManual);
+router.delete('/ocr-files/:filename', PautaController.excluirArquivoOcr);
 router.get('/:id/related', PautaController.getRelatedPautas);
 router.delete('/:id', PautaController.excluirPauta);
 

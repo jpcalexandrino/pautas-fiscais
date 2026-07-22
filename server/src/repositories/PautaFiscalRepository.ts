@@ -304,6 +304,22 @@ class PautaFiscalRepository {
       [filename, cellKey, contexto]
     );
   }
+
+  async countActivePautasBySource(filename: string, contexto: string = 'proprio'): Promise<number> {
+    const res = await db.query(
+      `SELECT COUNT(*)::int AS total FROM fato_pauta_fiscal 
+       WHERE arquivo_origem = $1 AND contexto = $2 AND d_e_l_e_t_ = ' '`,
+      [filename, contexto]
+    );
+    return res.rows[0]?.total || 0;
+  }
+
+  async deleteOcrFileByFilename(filename: string, contexto: string = 'proprio'): Promise<QueryResult> {
+    return db.query(
+      `DELETE FROM pauta_arquivo_ocr WHERE filename = $1 AND contexto = $2 RETURNING *`,
+      [filename, contexto]
+    );
+  }
 }
 
 export default new PautaFiscalRepository();

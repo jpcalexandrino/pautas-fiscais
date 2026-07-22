@@ -127,6 +127,24 @@ export function usePautas(filters?: { fk_estado?: number; fk_produto?: number; c
     },
   });
 
+  const excluirArquivoOcrMutation = useMutation({
+    mutationFn: async ({ filename, contexto }: { filename: string; contexto?: string }) => {
+      const qs = contexto ? `?contexto=${contexto}` : '';
+      const response = await apiFetch(`/pautas/ocr-files/${encodeURIComponent(filename)}${qs}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || 'Falha ao excluir arquivo OCR');
+      }
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pautas-ocr-files'] });
+      queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+    },
+  });
+
   return {
     loading: pautasQuery.isLoading || ocrFilesQuery.isLoading,
     pautas: pautasQuery.data || [],
@@ -135,9 +153,11 @@ export function usePautas(filters?: { fk_estado?: number; fk_produto?: number; c
     confirmManualPauta: confirmManualMutation.mutateAsync,
     updateOcrTables: updateOcrTablesMutation.mutateAsync,
     excluirPauta: excluirMutation.mutateAsync,
+    excluirArquivoOcr: excluirArquivoOcrMutation.mutateAsync,
     isUploading: uploadMutation.isPending,
     isUpdatingOcrTables: updateOcrTablesMutation.isPending,
     isExcluindoPauta: excluirMutation.isPending,
+    isExcluindoArquivoOcr: excluirArquivoOcrMutation.isPending,
     refetchPautas: pautasQuery.refetch,
     refetchOcrFiles: ocrFilesQuery.refetch,
   };
