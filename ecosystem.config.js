@@ -7,14 +7,11 @@ module.exports = {
       autorestart: true,
       watch: false,
       max_memory_restart: '1G',
-      env_development: {
-        NODE_ENV: 'development',
-        PORT: 3001,
-      },
+      env_file: './server/.env', 
       env: {
         NODE_ENV: 'production',
         PORT: 3001,
-      },
+      }
     },
   ],
 };
