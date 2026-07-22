@@ -520,31 +520,33 @@ export default function PautasImportPage() {
             </div>
           )}
 
-          {/* Tabelas de Auditoria */}
-          {auditFilename ? (
-            <div className="pt-2">
-              <OcrTablesViewer
-                tabelas={tabelas}
-                isLoading={isLoadingTabelas}
-                filename={auditFilename}
-                produtos={produtos}
-                uf={selectedAuditUf}
-                dataPauta={vigenciaDate}
-                dbConfirmedCells={dbConfirmedCells}
-                onConfirmManual={confirmManualPauta}
-                updateOcrTables={updateOcrTables}
-                isUpdatingOcrTables={isUpdatingOcrTables}
-                contexto={contexto}
-              />
-            </div>
-          ) : (
-            <div className="text-center py-20 text-muted-foreground border rounded-lg bg-card shadow-sm border-dashed space-y-2">
-              <Search className="size-8 mx-auto text-muted-foreground/60" />
-              <h3 className="font-semibold text-foreground text-sm">Nenhuma pauta selecionada</h3>
-              <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-                Selecione uma pauta existente acima ou carregue um novo arquivo PDF para visualizar e auditar as tabelas.
-              </p>
-            </div>
+          {/* Tabelas de Auditoria (exibidas apenas na aba Pautas Cadastradas) */}
+          {mode === 'select' && (
+            auditFilename ? (
+              <div className="pt-2">
+                <OcrTablesViewer
+                  tabelas={tabelas}
+                  isLoading={isLoadingTabelas}
+                  filename={auditFilename}
+                  produtos={produtos}
+                  uf={selectedAuditUf}
+                  dataPauta={vigenciaDate}
+                  dbConfirmedCells={dbConfirmedCells}
+                  onConfirmManual={confirmManualPauta}
+                  updateOcrTables={updateOcrTables}
+                  isUpdatingOcrTables={isUpdatingOcrTables}
+                  contexto={contexto}
+                />
+              </div>
+            ) : (
+              <div className="text-center py-20 text-muted-foreground border rounded-2xl bg-card shadow-xs border-dashed space-y-2">
+                <Search className="size-8 mx-auto text-muted-foreground/60" />
+                <h3 className="font-semibold text-foreground text-sm">Nenhuma pauta selecionada</h3>
+                <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                  Selecione uma pauta existente acima ou altere para &ldquo;Carregar Novo PDF&rdquo; para auditar um novo arquivo.
+                </p>
+              </div>
+            )
           )}
         </div>
       )}
