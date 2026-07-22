@@ -85,7 +85,7 @@ export default function DeParaPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">De-Para por Estado</h1>
-          <p className="text-sm text-muted-foreground">Mapeamento de descrições variantes por UF para a IA.</p>
+          <p className="text-sm text-muted-foreground">Mapeamento de descrições variantes por UF.</p>
         </div>
         <div className="flex items-end gap-3">
           <Button

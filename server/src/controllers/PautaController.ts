@@ -347,3 +347,41 @@ export async function updateTabelasOcr(req: AuthRequest, res: Response) {
     res.status(500).json({ error: (error as Error).message });
   }
 }
+
+export async function excluirPauta(req: AuthRequest, res: Response) {
+  try {
+    const id = Number(req.params.id);
+    if (!id || isNaN(id)) {
+      return res.status(400).json({ error: 'ID da pauta inválido' });
+    }
+    const { justificativa, apagarDePara } = req.body;
+    if (!justificativa || typeof justificativa !== 'string' || justificativa.trim().length < 5) {
+      return res.status(400).json({ error: 'A justificativa de exclusão é obrigatória e deve conter pelo menos 5 caracteres.' });
+    }
+
+    const userId = req.userId || 1;
+    const result = await PautaFiscalService.excluirPauta({
+      pautaId: id,
+      justificativa: justificativa.trim(),
+      apagarDePara: Boolean(apagarDePara),
+      userId
+    });
+
+    res.json(result);
+  } catch (error: unknown) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+}
+
+export async function getRelatedPautas(req: AuthRequest, res: Response) {
+  try {
+    const id = Number(req.params.id);
+    if (!id || isNaN(id)) {
+      return res.status(400).json({ error: 'ID da pauta inválido' });
+    }
+    const result = await PautaFiscalService.getRelatedPautas(id);
+    res.json(result);
+  } catch (error: unknown) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+}

@@ -113,6 +113,15 @@ class DeParaProdutoEstadoRepository {
   async delete(id: number): Promise<QueryResult> {
     return db.query('DELETE FROM aux_de_para_produto_estado WHERE id = $1', [id]);
   }
+
+  async deleteByProdutosEEstado(fk_estado_nk: string, fk_produto_sks: number[]): Promise<QueryResult> {
+    if (fk_produto_sks.length === 0) return { rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult;
+    return db.query(
+      `DELETE FROM aux_de_para_produto_estado 
+       WHERE fk_estado_nk = $1 AND fk_produto_sk = ANY($2::int[])`,
+      [fk_estado_nk.toUpperCase(), fk_produto_sks]
+    );
+  }
 }
 
 export default new DeParaProdutoEstadoRepository();

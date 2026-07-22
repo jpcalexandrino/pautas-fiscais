@@ -2,7 +2,9 @@ import TextractGatewayService from './TextractGatewayService';
 import EstadoRepository from '../repositories/EstadoRepository';
 import DeParaProdutoEstadoRepository from '../repositories/DeParaProdutoEstadoRepository';
 import PautaFiscalRepository from '../repositories/PautaFiscalRepository';
+import AuditRepository from '../repositories/AuditRepository';
 import CalendarioRepository from '../repositories/CalendarioRepository';
+import { TextractCompactor } from './TextractCompactor';
 import { parseDateToSkData, parseStringToDate } from '../utils/normalize';
 import { PDFSplitter } from './PDFSplitter';
 
@@ -169,6 +171,145 @@ class PautaFiscalService {
     }
 
     return { results };
+  }
+
+  async excluirPauta(params: {
+    pautaId: number;
+    justificativa: string;
+    apagarDePara?: boolean;
+    userId: number;
+  }) {
+    // 1. Buscar a pauta alvo
+    const pautaRes = await PautaFiscalRepository.getById(params.pautaId);
+    if (pautaRes.rows.length === 0) {
+      throw new Error('Pauta não encontrada ou já excluída');
+    }
+    const targetPauta = pautaRes.rows[0];
+
+    // 2. Buscar pautas relacionadas do mesmo arquivo, estado, vigência, contexto e valor_pauta
+    let pautasParaExcluir = [targetPauta];
+    if (targetPauta.arquivo_origem) {
+      const relRes = await PautaFiscalRepository.findRelatedPautasBySource(
+        targetPauta.arquivo_origem,
+        targetPauta.fk_estado,
+        targetPauta.fk_data,
+        targetPauta.contexto || 'proprio',
+        targetPauta.valor_pauta
+      );
+      if (relRes.rows.length > 0) {
+        pautasParaExcluir = relRes.rows;
+      }
+    }
+
+    const idsParaExcluir = pautasParaExcluir.map((p: any) => Number(p.sk_pauta));
+
+    // 3. Efetuar Soft Delete das pautas
+    await PautaFiscalRepository.softDeleteByIds(idsParaExcluir);
+
+    // 4. Liberar APENAS as células no OCR correspondentes às pautas excluídas
+    if (targetPauta.arquivo_origem) {
+      const ocrRes = await PautaFiscalRepository.findOcrByFilename(
+        targetPauta.arquivo_origem,
+        targetPauta.contexto || 'proprio'
+      );
+      if (ocrRes.rows.length > 0) {
+        const ocrData = ocrRes.rows[0];
+        const confirmedCells: string[] = Array.isArray(ocrData.confirmed_cells) ? ocrData.confirmed_cells : [];
+
+        if (confirmedCells.length > 0) {
+          const targetValue = Number(targetPauta.valor_pauta);
+          const cellKeysToRemove = new Set<string>();
+
+          try {
+            const tabelas = TextractCompactor.extractTables(ocrData.textract_json, ocrData.uf);
+            tabelas.forEach((tabela: any) => {
+              (tabela.rows || []).forEach((r: string[], rIdx: number) => {
+                r.forEach((cell: string, cIdx: number) => {
+                  if (cell) {
+                    const rawVal = cell.replace(/R\$\s*/gi, '').trim().replace(',', '.');
+                    const numVal = parseFloat(rawVal);
+                    if (!isNaN(numVal) && Math.abs(numVal - targetValue) < 0.001) {
+                      const key = `${tabela.tabelaIndex}-${rIdx}-${cIdx}`;
+                      cellKeysToRemove.add(key);
+                    }
+                  }
+                });
+              });
+            });
+          } catch (err) {
+            console.error('Erro ao mapear tabelas OCR para desvinculação:', err);
+          }
+
+          // Se identificou as celulas especificas, remove apenas elas. Caso contrario (fallback), mantem as confirmedCells
+          const newConfirmedCells = cellKeysToRemove.size > 0
+            ? confirmedCells.filter(cellKey => !cellKeysToRemove.has(cellKey))
+            : confirmedCells;
+
+          await PautaFiscalRepository.updateOcrTables(
+            targetPauta.arquivo_origem,
+            ocrData.textract_json,
+            newConfirmedCells,
+            targetPauta.contexto || 'proprio'
+          );
+        }
+      }
+    }
+
+    // 5. Apagar De-Para se solicitado pelo usuário
+    if (params.apagarDePara && targetPauta.nk_uf) {
+      const productIds = Array.from(new Set(pautasParaExcluir.map((p: any) => Number(p.fk_produto))));
+      await DeParaProdutoEstadoRepository.deleteByProdutosEEstado(targetPauta.nk_uf, productIds);
+    }
+
+    // 6. Log de Auditoria detalhado
+    await AuditRepository.log(params.userId, 'EXCLUSAO_PAUTA', {
+      pauta_alvo_id: params.pautaId,
+      justificativa: params.justificativa,
+      total_excluidos: idsParaExcluir.length,
+      apaga_de_para: Boolean(params.apagarDePara),
+      pautas_afetadas: pautasParaExcluir.map((p: any) => ({
+        id: p.sk_pauta,
+        produto: p.descricao_interna,
+        codigo_interno: p.nk_codigo_interno,
+        gtin_13: p.gtin_13,
+        uf: p.nk_uf,
+        data: p.data,
+        valor_pauta: p.valor_pauta,
+        arquivo_origem: p.arquivo_origem,
+        contexto: p.contexto
+      }))
+    });
+
+    return {
+      success: true,
+      pautasExcluidas: pautasParaExcluir,
+      totalExcluidas: idsParaExcluir.length
+    };
+  }
+
+  async getRelatedPautas(pautaId: number) {
+    const pautaRes = await PautaFiscalRepository.getById(pautaId);
+    if (pautaRes.rows.length === 0) {
+      throw new Error('Pauta não encontrada');
+    }
+    const targetPauta = pautaRes.rows[0];
+
+    if (!targetPauta.arquivo_origem) {
+      return { targetPauta, relatedPautas: [targetPauta] };
+    }
+
+    const relRes = await PautaFiscalRepository.findRelatedPautasBySource(
+      targetPauta.arquivo_origem,
+      targetPauta.fk_estado,
+      targetPauta.fk_data,
+      targetPauta.contexto || 'proprio',
+      targetPauta.valor_pauta
+    );
+
+    return {
+      targetPauta,
+      relatedPautas: relRes.rows.length > 0 ? relRes.rows : [targetPauta]
+    };
   }
 
   private async _getEstado(uf: string) {

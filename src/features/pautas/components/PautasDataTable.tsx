@@ -1,11 +1,17 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Spinner } from '@/components/ui/spinner';
 import TableComponent from '@/components/Table';
 import { type ColumnDef } from '@tanstack/react-table';
 import { calculateColumnSizes } from '@/shared/utils/table';
 import { formatCurrency } from '@/shared/utils/formatters';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Trash2, MoreHorizontal, FileText } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
 import { useClientTable } from '@/shared/hooks/useClientTable';
+import { usePautas } from '../hooks/usePautas';
+import { PautaDeleteDialog } from './PautaDeleteDialog';
 import type { Pauta } from '@/shared/types';
 
 interface PautasDataTableProps {
@@ -26,10 +32,11 @@ export const ALL_COLUMNS = [
   { key: 'conteudo_volume', label: 'Volume da embalagem' },
   { key: 'valor_pauta', label: 'PMPF' },
   { key: 'data', label: 'Data de vigência' },
-  { key: 'arquivo_origem', label: 'Arquivo' }
+  { key: 'arquivo_origem', label: 'Arquivo' },
+  { key: 'acoes', label: 'Ações' },
 ];
 
-export const DEFAULT_COLUMNS = ['contexto', 'uf', 'descricao_interna', 'gtin_13', 'valor_pauta', 'data'];
+export const DEFAULT_COLUMNS = ['contexto', 'uf', 'descricao_interna', 'gtin_13', 'valor_pauta', 'data', 'acoes'];
 
 export function formatDateToBR(dateStr: any): string {
   if (!dateStr) return '-';
@@ -42,6 +49,10 @@ export function formatDateToBR(dateStr: any): string {
 }
 
 export function PautasDataTable({ pautas, loading, getTableInstance }: PautasDataTableProps) {
+  const { excluirPauta, isExcluindoPauta } = usePautas();
+  const [pautaToDelete, setPautaToDelete] = useState<Pauta | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
   const customFilterHandlers = useMemo(() => ({
     uf: (item: Pauta, searchValue: string) => {
       const ufStr = `${item.uf || ''} - ${item.nome_estado || ''}`;
@@ -164,16 +175,72 @@ export function PautasDataTable({ pautas, loading, getTableInstance }: PautasDat
         accessorKey: 'arquivo_origem',
         id: 'arquivo_origem',
         header: 'Arquivo',
-        size: 250,
+        size: 260,
+        cell: ({ row }) => {
+          const filename = row.original.arquivo_origem;
+          if (!filename) {
+            return <span className="text-muted-foreground text-xs font-mono">-</span>;
+          }
+          return (
+            <div
+              className="inline-flex items-center gap-2 max-w-[250px] px-2.5 py-1 rounded-xl bg-red-500/[0.06] dark:bg-red-500/[0.1] border border-red-500/20 text-xs font-medium text-foreground hover:bg-red-500/[0.12] transition-all group cursor-default"
+              title={filename}
+            >
+              <div className="p-1 rounded-lg bg-red-500/15 text-red-600 dark:text-red-400 shrink-0 group-hover:scale-105 transition-transform">
+                <FileText className="w-3.5 h-3.5" />
+              </div>
+              <span className="truncate text-[11px] font-semibold text-foreground/90 group-hover:text-red-700 dark:group-hover:text-red-300 transition-colors">
+                {filename}
+              </span>
+            </div>
+          );
+        },
+      },
+      {
+        id: 'acoes',
+        header: 'Ações',
+        size: 70,
         cell: ({ row }) => (
-            <Badge variant="outline" className="gap-1 border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400 font-semibold px-2 py-0.5">
-              {String(row.original.arquivo_origem || '-')}
-            </Badge>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 opacity-70 hover:opacity-100 transition-opacity cursor-pointer">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                className="text-destructive font-medium cursor-pointer flex items-center gap-2"
+                onClick={() => {
+                  setPautaToDelete(row.original);
+                  setDeleteDialogOpen(true);
+                }}
+              >
+                <Trash2 className="w-4 h-4" />
+                Excluir Pauta
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         ),
       },
     ], pautas),
     [pautas]
   );
+
+  const handleConfirmDelete = async ({ id, justificativa, apagarDePara }: { id: string; justificativa: string; apagarDePara: boolean }) => {
+    try {
+      const res = await excluirPauta({ id, justificativa, apagarDePara });
+      toast.success('Pauta excluída com sucesso!', {
+        description: res?.totalExcluidas && res.totalExcluidas > 1
+          ? `${res.totalExcluidas} pautas vinculadas foram excluídas e a linha foi liberada no OCR.`
+          : 'A pauta foi excluída e a linha foi liberada para nova carga no OCR.',
+      });
+    } catch (err: any) {
+      toast.error('Erro ao excluir pauta', {
+        description: err.message || 'Falha ao processar a exclusão.',
+      });
+      throw err;
+    }
+  };
 
   if (loading && pautas.length === 0) {
     return (
@@ -210,6 +277,14 @@ export function PautasDataTable({ pautas, loading, getTableInstance }: PautasDat
           pagination={paginationProps}
         />
       </div>
+
+      <PautaDeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        pauta={pautaToDelete}
+        onConfirmDelete={handleConfirmDelete}
+        isDeleting={isExcluindoPauta}
+      />
     </div>
   );
 }

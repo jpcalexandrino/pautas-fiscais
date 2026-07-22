@@ -239,6 +239,71 @@ class PautaFiscalRepository {
     }
     return db.query('SELECT id, filename, uf, data_pauta, confirmed_cells, textract_json, contexto, created_at FROM pauta_arquivo_ocr ORDER BY created_at DESC');
   }
+
+  async getById(sk_pauta: number): Promise<QueryResult> {
+    return db.query(
+      `SELECT f.*, p.descricao_interna, p.gtin_13, p.nk_codigo_interno, e.nk_uf, e.nome_estado, c.data_completa AS data
+       FROM fato_pauta_fiscal f
+       JOIN dim_produto p ON p.sk_produto = f.fk_produto
+       JOIN dim_estado e ON e.sk_estado = f.fk_estado
+       LEFT JOIN dim_calendario c ON c.sk_data = f.fk_data
+       WHERE f.sk_pauta = $1 AND f.d_e_l_e_t_ = ' '`,
+      [sk_pauta]
+    );
+  }
+
+  async findRelatedPautasBySource(
+    arquivo_origem: string,
+    fk_estado: number,
+    fk_data: number | null,
+    contexto: string,
+    valor_pauta?: number | null
+  ): Promise<QueryResult> {
+    const conditions = [
+      "f.arquivo_origem = $1",
+      "f.fk_estado = $2",
+      "(f.fk_data = $3 OR (f.fk_data IS NULL AND $3 IS NULL))",
+      "f.contexto = $4",
+      "f.d_e_l_e_t_ = ' '"
+    ];
+    const values: unknown[] = [arquivo_origem, fk_estado, fk_data, contexto];
+
+    if (valor_pauta !== undefined && valor_pauta !== null) {
+      values.push(valor_pauta);
+      conditions.push(`f.valor_pauta = $${values.length}`);
+    }
+
+    return db.query(
+      `SELECT f.*, p.descricao_interna, p.gtin_13, p.nk_codigo_interno, e.nk_uf, e.nome_estado
+       FROM fato_pauta_fiscal f
+       JOIN dim_produto p ON p.sk_produto = f.fk_produto
+       JOIN dim_estado e ON e.sk_estado = f.fk_estado
+       WHERE ${conditions.join(' AND ')}`,
+      values
+    );
+  }
+
+  async softDeleteByIds(ids: number[]): Promise<QueryResult> {
+    if (ids.length === 0) return { rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult;
+    return db.query(
+      `UPDATE fato_pauta_fiscal SET d_e_l_e_t_ = '*' WHERE sk_pauta = ANY($1::bigint[])`,
+      [ids]
+    );
+  }
+
+  async removeConfirmedCell(filename: string, cellKey: string, contexto: string = 'proprio'): Promise<QueryResult> {
+    return db.query(
+      `UPDATE pauta_arquivo_ocr
+       SET confirmed_cells = COALESCE((
+             SELECT jsonb_agg(elem)
+             FROM jsonb_array_elements_text(COALESCE(confirmed_cells, '[]'::jsonb)) AS elem
+             WHERE elem <> $2
+           ), '[]'::jsonb),
+           updated_at = CURRENT_TIMESTAMP
+       WHERE filename = $1 AND contexto = $3`,
+      [filename, cellKey, contexto]
+    );
+  }
 }
 
 export default new PautaFiscalRepository();

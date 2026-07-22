@@ -105,6 +105,28 @@ export function usePautas(filters?: { fk_estado?: number; fk_produto?: number; c
     },
   });
 
+  const excluirMutation = useMutation({
+    mutationFn: async ({ id, justificativa, apagarDePara }: { id: string | number; justificativa: string; apagarDePara?: boolean }) => {
+      const response = await apiFetch(`/pautas/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ justificativa, apagarDePara }),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || 'Falha ao excluir pauta');
+      }
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pautas'] });
+      queryClient.invalidateQueries({ queryKey: ['pautas-ocr-files'] });
+      queryClient.invalidateQueries({ queryKey: ['pautas-ocr-tables'] });
+      queryClient.invalidateQueries({ queryKey: ['de-para'] });
+      queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+    },
+  });
+
   return {
     loading: pautasQuery.isLoading || ocrFilesQuery.isLoading,
     pautas: pautasQuery.data || [],
@@ -112,8 +134,10 @@ export function usePautas(filters?: { fk_estado?: number; fk_produto?: number; c
     uploadPauta: uploadMutation.mutateAsync,
     confirmManualPauta: confirmManualMutation.mutateAsync,
     updateOcrTables: updateOcrTablesMutation.mutateAsync,
+    excluirPauta: excluirMutation.mutateAsync,
     isUploading: uploadMutation.isPending,
     isUpdatingOcrTables: updateOcrTablesMutation.isPending,
+    isExcluindoPauta: excluirMutation.isPending,
     refetchPautas: pautasQuery.refetch,
     refetchOcrFiles: ocrFilesQuery.refetch,
   };
@@ -142,5 +166,18 @@ export function useOcrTables(filename?: string, contexto?: string) {
       return await response.json();
     },
     enabled: !!filename && !!localStorage.getItem('token'),
+  });
+}
+
+export function usePautasRelacionadas(pautaId?: string | number | null) {
+  return useQuery<{ targetPauta: any; relatedPautas: any[] }>({
+    queryKey: ['pautas-relacionadas', pautaId],
+    queryFn: async () => {
+      if (!pautaId) return { targetPauta: null, relatedPautas: [] };
+      const response = await apiFetch(`/pautas/${pautaId}/related`);
+      if (!response.ok) throw new Error('Falha ao carregar pautas vinculadas');
+      return await response.json();
+    },
+    enabled: !!pautaId && !!localStorage.getItem('token'),
   });
 }
