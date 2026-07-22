@@ -558,8 +558,24 @@ export class TextractCompactor {
             const normCol0 = normalize(col0);
             const normActiveSub = normalize(activeSubheader);
 
+            let mlVal = 0;
             const mlMatch = normCol0.match(/(\d+)\s*ml/);
-            const mlVal = mlMatch ? parseInt(mlMatch[1]) : 0;
+            if (mlMatch) {
+              mlVal = parseInt(mlMatch[1]);
+            } else {
+              // Tenta identificar faixas de volume no padrão "NUM NUM" ou "NUM-NUM" onde o OCR omitiu "a" ou "ml"
+              const rangeMatch = normCol0.match(/\b(\d{2,4})\s*(?:a|à|-|\s)\s*(\d{2,4})\b/i);
+              if (rangeMatch) {
+                const n1 = parseInt(rangeMatch[1]);
+                const n2 = parseInt(rangeMatch[2]);
+                if (n1 === 269 || n2 === 269) mlVal = 269;
+                else if (n1 === 350 || n2 === 350) mlVal = 350;
+                else if (n1 === 473 || n2 === 473) mlVal = 473;
+                else if (n1 === 500 || n2 === 500) mlVal = 500;
+                else if (n1 === 210 || n2 === 210) mlVal = 210;
+                else mlVal = n1;
+              }
+            }
 
             if (mlVal > 0) {
               const isDescartavel = normCol0.includes('descartavel') || normCol0.includes('long neck') || normCol0.includes('ln');
@@ -579,7 +595,7 @@ export class TextractCompactor {
                     activeSubheader = 'Cerveja em garrafa descartável de 200 ml a 249 ml';
                   }
                 } else if (mlVal === 269 && isLata) {
-                  if (!normActiveSub.includes('250') || !normActiveSub.includes('299')) {
+                  if (!normActiveSub.includes('250') || !normActiveSub.includes('299') || !normActiveSub.includes('330')) {
                     activeSubheader = 'Cerveja em lata de 250 ml a 299 ml';
                   }
                 } else if (mlVal === 350 && isLata) {

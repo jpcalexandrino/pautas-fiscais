@@ -9,6 +9,27 @@ export function normalizeText(value?: string | null): string {
     .replace(/[^0-9a-z ]/g, ''); // mantém apenas letras, números e espaço
 }
 
+/**
+ * Normalização inteligente para matching de textos que tolera a omissão da letra "a"
+ * ou conectores em faixas numéricas de volume (ex: "269 330" -> "269 a 330").
+ */
+export function normalizeTextForMatching(value?: string | null): string {
+  if (!value) return '';
+  let norm = String(value)
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^0-9a-z\s]/g, ' ')
+    .replace(/\s+/g, ' ');
+
+  // Se houver dois blocos numéricos de volumetria de 2-4 dígitos separados apenas por espaço, padroniza inserindo " a "
+  // Ex: "269 330" -> "269 a 330", "250 299" -> "250 a 299", "900 1000" -> "900 a 1000"
+  norm = norm.replace(/\b(\d{2,4})\s+(\d{2,4})\b/g, '$1 a $2');
+
+  return norm.trim();
+}
+
 export function normalizeGtin(value?: string | null): string {
   if (!value) return '';
   return String(value).replace(/\D/g, '');

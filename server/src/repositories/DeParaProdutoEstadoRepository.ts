@@ -1,6 +1,6 @@
 import db from '../config/db';
 import { QueryResult } from 'pg';
-import { normalizeGtin, normalizeText } from '../utils/normalize';
+import { normalizeGtin, normalizeText, normalizeTextForMatching } from '../utils/normalize';
 
 export interface DeParaRow {
   id?: number;
@@ -59,11 +59,13 @@ class DeParaProdutoEstadoRepository {
   }
 
   async findByTermo(fk_estado_nk: string, termo: string): Promise<QueryResult> {
-    const normalized = normalizeText(termo);
+    const normalized = normalizeTextForMatching(termo);
+    const normalizedBasic = normalizeText(termo);
     const all = await this.getAll(fk_estado_nk);
     const match = all.rows.find(
       (row: { termo_descricao_estado: string }) =>
-        normalizeText(row.termo_descricao_estado) === normalized
+        normalizeTextForMatching(row.termo_descricao_estado) === normalized ||
+        normalizeText(row.termo_descricao_estado) === normalizedBasic
     );
     return { rows: match ? [match] : [], rowCount: match ? 1 : 0 } as QueryResult;
   }
