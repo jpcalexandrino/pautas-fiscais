@@ -359,7 +359,7 @@ export async function excluirPauta(req: AuthRequest, res: Response) {
       return res.status(400).json({ error: 'A justificativa de exclusão é obrigatória e deve conter pelo menos 5 caracteres.' });
     }
 
-    const userId = req.userId || 1;
+    const userId = Number(req.userId) || 1;
     const result = await PautaFiscalService.excluirPauta({
       pautaId: id,
       justificativa: justificativa.trim(),
@@ -394,7 +394,7 @@ export async function excluirArquivoOcr(req: AuthRequest, res: Response) {
       return res.status(400).json({ error: 'Nome do arquivo é obrigatório' });
     }
 
-    const userId = req.userId || 1;
+    const userId = Number(req.userId) || 1;
     const result = await PautaFiscalService.excluirArquivoOcr({
       filename,
       contexto,
