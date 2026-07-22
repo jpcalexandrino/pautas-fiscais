@@ -138,25 +138,29 @@ export default function AuditPage() {
   const getActionBadge = (action: string) => {
     switch (action) {
       case 'IMPORT_ARQUIVO':
-        return <span className="inline-flex items-center rounded-md bg-indigo-50 dark:bg-indigo-950/40 px-2.5 py-1 text-xs font-bold text-indigo-700 dark:text-indigo-300 ring-1 ring-inset ring-indigo-700/10">Upload de Pauta</span>;
+        return <span className="inline-flex items-center rounded-lg bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 px-2.5 py-0.5 text-[11px] font-semibold">Upload de Pauta</span>;
       case 'ASSOCIACAO_PRODUTO':
-        return <span className="inline-flex items-center rounded-md bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-700/10">Associação Manual</span>;
+        return <span className="inline-flex items-center rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 px-2.5 py-0.5 text-[11px] font-semibold">Associação Manual</span>;
       case 'CRIAR_DE_PARA':
-        return <span className="inline-flex items-center rounded-md bg-blue-50 dark:bg-blue-950/40 px-2.5 py-1 text-xs font-bold text-blue-700 dark:text-blue-300 ring-1 ring-inset ring-blue-700/10">Novo De-Para</span>;
+        return <span className="inline-flex items-center rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20 px-2.5 py-0.5 text-[11px] font-semibold">Novo De-Para</span>;
       case 'ATUALIZAR_DE_PARA':
-        return <span className="inline-flex items-center rounded-md bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 text-xs font-bold text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-700/10">Editar De-Para</span>;
+        return <span className="inline-flex items-center rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 px-2.5 py-0.5 text-[11px] font-semibold">Editar De-Para</span>;
       case 'EXCLUIR_DE_PARA':
-        return <span className="inline-flex items-center rounded-md bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 text-xs font-bold text-rose-700 dark:text-rose-300 ring-1 ring-inset ring-rose-700/10">Excluir De-Para</span>;
+        return <span className="inline-flex items-center rounded-lg bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20 px-2.5 py-0.5 text-[11px] font-semibold">Excluir De-Para</span>;
       case 'IMPORTACAO_LOTE_DE_PARA':
-        return <span className="inline-flex items-center rounded-md bg-violet-50 dark:bg-violet-950/40 px-2.5 py-1 text-xs font-bold text-violet-700 dark:text-violet-300 ring-1 ring-inset ring-violet-700/10">Carga De-Para Lote</span>;
+        return <span className="inline-flex items-center rounded-lg bg-violet-500/10 text-violet-700 dark:text-violet-300 border border-violet-500/20 px-2.5 py-0.5 text-[11px] font-semibold">Carga De-Para Lote</span>;
       case 'ATUALIZACAO_TABELA_OCR':
-        return <span className="inline-flex items-center rounded-md bg-slate-50 dark:bg-slate-950/40 px-2.5 py-1 text-xs font-bold text-slate-700 dark:text-slate-300 ring-1 ring-inset ring-slate-700/10">Editar Tabela OCR</span>;
+        return <span className="inline-flex items-center rounded-lg bg-slate-500/10 text-slate-700 dark:text-slate-300 border border-slate-500/20 px-2.5 py-0.5 text-[11px] font-semibold">Editar Tabela OCR</span>;
+      case 'EXCLUSAO_PAUTA':
+        return <span className="inline-flex items-center rounded-lg bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20 px-2.5 py-0.5 text-[11px] font-semibold">Exclusão de Pauta</span>;
+      case 'EXCLUSAO_ARQUIVO_OCR':
+        return <span className="inline-flex items-center rounded-lg bg-red-500/10 text-red-700 dark:text-red-300 border border-red-500/20 px-2.5 py-0.5 text-[11px] font-semibold">Exclusão de Arquivo</span>;
       case 'CRIAR_TERMO':
-        return <span className="inline-flex items-center rounded-md bg-teal-50 dark:bg-teal-950/40 px-2.5 py-1 text-xs font-bold text-teal-700 dark:text-teal-300 ring-1 ring-inset ring-teal-700/10">Novo Termo</span>;
+        return <span className="inline-flex items-center rounded-lg bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20 px-2.5 py-0.5 text-[11px] font-semibold">Novo Termo</span>;
       case 'EXCLUIR_TERMO':
-        return <span className="inline-flex items-center rounded-md bg-pink-50 dark:bg-pink-950/40 px-2.5 py-1 text-xs font-bold text-pink-700 dark:text-pink-300 ring-1 ring-inset ring-pink-700/10">Excluir Termo</span>;
+        return <span className="inline-flex items-center rounded-lg bg-pink-500/10 text-pink-700 dark:text-pink-300 border border-pink-500/20 px-2.5 py-0.5 text-[11px] font-semibold">Excluir Termo</span>;
       default:
-        return <span className="inline-flex items-center rounded-md bg-gray-50 dark:bg-gray-950/40 px-2.5 py-1 text-xs font-bold text-gray-600 dark:text-gray-400 ring-1 ring-inset ring-gray-600/10">{action}</span>;
+        return <span className="inline-flex items-center rounded-lg bg-muted text-muted-foreground border border-border px-2.5 py-0.5 text-[11px] font-semibold">{action}</span>;
     }
   };
 
@@ -166,10 +170,32 @@ export default function AuditPage() {
       case 'IMPORT_ARQUIVO':
         return (
           <div className="space-y-0.5">
-            <div className="font-semibold text-foreground">{d.filename}</div>
+            <div className="font-medium text-foreground">{d.filename}</div>
             <div className="text-[10px] text-muted-foreground flex gap-3">
-              <span>Estado: <strong className="text-foreground">{d.uf}</strong></span>
+              <span>UF: <strong className="text-foreground">{d.uf}</strong></span>
               <span>Vigência: <strong className="text-foreground">{d.dataPauta}</strong></span>
+              <span>Contexto: <strong className="text-foreground capitalize">{d.contexto}</strong></span>
+            </div>
+          </div>
+        );
+      case 'EXCLUSAO_PAUTA':
+        return (
+          <div className="space-y-0.5">
+            <div className="font-medium text-rose-600 dark:text-rose-400">Pauta Removida ({d.uf})</div>
+            <div className="text-[10px] text-muted-foreground flex flex-wrap gap-x-3">
+              <span>Vigência: <strong className="text-foreground">{d.data_pauta}</strong></span>
+              <span>Preço: <strong className="text-foreground">R$ {d.valor_pauta}</strong></span>
+              <span>Justificativa: <strong className="text-foreground">{d.justificativa}</strong></span>
+            </div>
+          </div>
+        );
+      case 'EXCLUSAO_ARQUIVO_OCR':
+        return (
+          <div className="space-y-0.5">
+            <div className="font-medium text-rose-600 dark:text-rose-400">Arquivo OCR Excluído</div>
+            <div className="text-[10px] text-muted-foreground flex flex-wrap gap-x-3">
+              <span>Arquivo: <strong className="text-foreground">{d.filename}</strong></span>
+              <span>UF: <strong className="text-foreground">{d.uf}</strong></span>
               <span>Contexto: <strong className="text-foreground capitalize">{d.contexto}</strong></span>
             </div>
           </div>
@@ -177,16 +203,16 @@ export default function AuditPage() {
       case 'ASSOCIACAO_PRODUTO':
         return (
           <div className="space-y-0.5">
-            <div className="font-semibold text-foreground">Termo: &ldquo;{d.descricao_estado}&rdquo;</div>
-            <div className="text-[10px] text-muted-foreground flex flex-wrap gap-x-3 mb-1">
+            <div className="font-medium text-foreground">&ldquo;{d.descricao_estado}&rdquo;</div>
+            <div className="text-[10px] text-muted-foreground flex flex-wrap gap-x-3 mb-0.5">
               <span>Valor: <strong className="text-foreground">R$ {d.valor_pauta}</strong></span>
               <span>Origem: <strong className="text-foreground">{d.arquivo_origem}</strong></span>
               <span>Contexto: <strong className="text-foreground capitalize">{d.contexto}</strong></span>
-              {d.salvouDePara && <span className="text-emerald-600 font-bold">✓ Salvo De-Para</span>}
+              {d.salvouDePara && <span className="text-emerald-600 font-semibold">✓ Salvo De-Para</span>}
             </div>
             {d.produtos_descritores && d.produtos_descritores.length > 0 && (
-              <div className="text-[10px] text-muted-foreground">
-                Produtos associados: <strong className="text-foreground">{d.produtos_descritores.join(', ')}</strong>
+              <div className="text-[10px] text-muted-foreground truncate">
+                Produto(s): <strong className="text-foreground">{d.produtos_descritores.join(', ')}</strong>
               </div>
             )}
           </div>
@@ -194,9 +220,9 @@ export default function AuditPage() {
       case 'CRIAR_DE_PARA':
         return (
           <div className="space-y-0.5">
-            <div className="font-semibold text-foreground">Termo: &ldquo;{d.termo}&rdquo; ({d.uf})</div>
+            <div className="font-medium text-foreground">&ldquo;{d.termo}&rdquo; ({d.uf})</div>
             <div className="text-[10px] text-muted-foreground flex flex-wrap gap-x-3">
-              <span>Associado a: <strong className="text-foreground">{d.produto_descricao || `ID: ${d.produto_id}`}</strong></span>
+              <span>Associado: <strong className="text-foreground">{d.produto_descricao || `ID: ${d.produto_id}`}</strong></span>
               {d.produto_gtin && <span>GTIN: <strong className="text-foreground">{d.produto_gtin}</strong></span>}
             </div>
           </div>
@@ -204,63 +230,49 @@ export default function AuditPage() {
       case 'ATUALIZAR_DE_PARA':
         return (
           <div className="space-y-0.5">
-            <div className="font-semibold text-foreground">Termo: &ldquo;{d.termo}&rdquo; ({d.uf})</div>
-            <div className="text-[10px] text-muted-foreground flex flex-col gap-0.5">
-              <div>
-                De: <strong className="text-muted-foreground line-through">{d.produto_anterior_descricao || `ID: ${d.produto_anterior_id}`}</strong>
-              </div>
-              <div>
-                Para: <strong className="text-foreground">{d.produto_novo_descricao || `ID: ${d.produto_novo_id}`}</strong>
-              </div>
+            <div className="font-medium text-foreground">&ldquo;{d.termo}&rdquo; ({d.uf})</div>
+            <div className="text-[10px] text-muted-foreground flex items-center gap-1.5">
+              <span className="line-through opacity-70">{d.produto_anterior_descricao || `ID: ${d.produto_anterior_id}`}</span>
+              <span>➔</span>
+              <strong className="text-foreground">{d.produto_novo_descricao || `ID: ${d.produto_novo_id}`}</strong>
             </div>
           </div>
         );
       case 'EXCLUIR_DE_PARA':
         return (
           <div className="space-y-0.5">
-            <div className="font-semibold text-foreground text-rose-600 dark:text-rose-400">Termo Removido: &ldquo;{d.termo}&rdquo; ({d.uf})</div>
+            <div className="font-medium text-rose-600 dark:text-rose-400">Termo Removido: &ldquo;{d.termo}&rdquo; ({d.uf})</div>
             <div className="text-[10px] text-muted-foreground flex flex-wrap gap-x-3">
-              <span>Mapeado para: <strong className="text-foreground">{d.produto_descricao || `ID: ${d.produto_id}`}</strong></span>
-              {d.produto_gtin && <span>GTIN: <strong className="text-foreground">{d.produto_gtin}</strong></span>}
+              <span>Mapeado: <strong className="text-foreground">{d.produto_descricao || `ID: ${d.produto_id}`}</strong></span>
             </div>
           </div>
         );
       case 'IMPORTACAO_LOTE_DE_PARA':
         return (
           <div className="space-y-0.5">
-            <div className="font-semibold text-foreground">Importação em Lote De-Para</div>
+            <div className="font-medium text-foreground">Importação Lote De-Para</div>
             <div className="text-[10px] text-muted-foreground flex gap-3">
               <span>Lidos: <strong className="text-foreground">{d.processedCount}</strong></span>
               <span>Novos: <strong className="text-foreground">{d.insertedCount}</strong></span>
               <span>Editados: <strong className="text-foreground">{d.updatedCount}</strong></span>
-              {d.errorCount > 0 && <span className="text-rose-500 font-bold">Erros: {d.errorCount}</span>}
+              {d.errorCount > 0 && <span className="text-rose-500 font-semibold">Erros: {d.errorCount}</span>}
             </div>
           </div>
         );
       case 'ATUALIZACAO_TABELA_OCR':
         return (
           <div className="space-y-0.5">
-            <div className="font-semibold text-foreground">Tabela OCR editada manualmente</div>
-            <div className="text-[10px] text-muted-foreground flex flex-wrap gap-x-3 mb-1">
+            <div className="font-medium text-foreground">Tabela OCR editada</div>
+            <div className="text-[10px] text-muted-foreground flex flex-wrap gap-x-3">
               <span>Arquivo: <strong className="text-foreground">{d.filename}</strong></span>
-              <span>Contexto: <strong className="text-foreground capitalize">{d.contexto}</strong></span>
+              <span>Alterações: <strong className="text-foreground">{d.total_alteracoes || (d.alteracoes ? d.alteracoes.length : 0)}</strong></span>
             </div>
-            {d.alteracoes && d.alteracoes.length > 0 && (
-              <div className="mt-1 pl-2 border-l-2 border-primary/20 text-[9px] text-muted-foreground/90 space-y-0.5 max-h-24 overflow-y-auto bg-muted/20 p-1.5 rounded-md">
-                {d.alteracoes.map((alt: string, i: number) => (
-                  <div key={i}>• {alt}</div>
-                ))}
-                {d.total_alteracoes > d.alteracoes.length && (
-                  <div className="italic">• e mais {d.total_alteracoes - d.alteracoes.length} alterações...</div>
-                )}
-              </div>
-            )}
           </div>
         );
       case 'CRIAR_TERMO':
         return (
           <div className="space-y-0.5">
-            <div className="font-semibold text-foreground">Termo: &ldquo;{d.termo}&rdquo;</div>
+            <div className="font-medium text-foreground">&ldquo;{d.termo}&rdquo;</div>
             <div className="text-[10px] text-muted-foreground">
               Tipo: <strong className="text-foreground capitalize">{d.tipo || 'próprio'}</strong>
             </div>
@@ -269,7 +281,7 @@ export default function AuditPage() {
       case 'EXCLUIR_TERMO':
         return (
           <div className="space-y-0.5">
-            <div className="font-semibold text-foreground text-pink-600 dark:text-pink-400">Termo Removido: &ldquo;{d.termo}&rdquo;</div>
+            <div className="font-medium text-pink-600 dark:text-pink-400">Termo Removido: &ldquo;{d.termo}&rdquo;</div>
             <div className="text-[10px] text-muted-foreground">
               Tipo: <strong className="text-foreground capitalize">{d.tipo || 'próprio'}</strong>
             </div>
@@ -441,10 +453,10 @@ export default function AuditPage() {
         <div className="space-y-1.5">
           <Label className="text-xs font-bold text-muted-foreground uppercase">Ação</Label>
           <Select value={actionFilter} onValueChange={setActionFilter}>
-            <SelectTrigger className="text-xs bg-background">
+            <SelectTrigger className="text-xs bg-background h-9 rounded-xl border-border/40 min-w-[170px]">
               <SelectValue placeholder="Filtrar por Ação" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="rounded-xl">
               <SelectItem value="all">Todas as ações</SelectItem>
               <SelectItem value="IMPORT_ARQUIVO">Upload de Pauta</SelectItem>
               <SelectItem value="ASSOCIACAO_PRODUTO">Associação Manual</SelectItem>
@@ -453,6 +465,8 @@ export default function AuditPage() {
               <SelectItem value="EXCLUIR_DE_PARA">Excluir De-Para</SelectItem>
               <SelectItem value="IMPORTACAO_LOTE_DE_PARA">Carga De-Para Lote</SelectItem>
               <SelectItem value="ATUALIZACAO_TABELA_OCR">Editar Tabela OCR</SelectItem>
+              <SelectItem value="EXCLUSAO_PAUTA">Exclusão de Pauta</SelectItem>
+              <SelectItem value="EXCLUSAO_ARQUIVO_OCR">Exclusão de Arquivo OCR</SelectItem>
               <SelectItem value="CRIAR_TERMO">Novo Termo</SelectItem>
               <SelectItem value="EXCLUIR_TERMO">Excluir Termo</SelectItem>
             </SelectContent>
@@ -468,7 +482,7 @@ export default function AuditPage() {
               setEndDate('');
               setActionFilter('all');
             }}
-            className="text-xs font-semibold hover:text-destructive h-10 px-4 cursor-pointer text-muted-foreground"
+            className="text-xs font-semibold hover:text-destructive h-9 px-3 cursor-pointer text-muted-foreground rounded-xl"
           >
             Limpar Filtros
           </Button>
@@ -481,7 +495,7 @@ export default function AuditPage() {
           <span className="text-sm text-muted-foreground">Carregando logs de auditoria...</span>
         </div>
       ) : filteredLogs.length === 0 ? (
-        <div className="text-center py-16 border rounded-lg bg-card shadow-sm border-dashed text-muted-foreground space-y-2">
+        <div className="text-center py-16 border rounded-2xl bg-card shadow-xs border-dashed text-muted-foreground space-y-2">
           <Search className="size-8 mx-auto text-muted-foreground/50" />
           <h3 className="font-semibold text-foreground text-sm">Nenhum log encontrado</h3>
           <p className="text-xs text-muted-foreground max-w-xs mx-auto">
@@ -489,7 +503,7 @@ export default function AuditPage() {
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border bg-card shadow-xs">
+        <div className="overflow-hidden rounded-2xl border border-border/40 bg-card shadow-xs">
           <TableComponent
             className="max-h-[750px]"
             columns={columns}
@@ -515,16 +529,16 @@ export default function AuditPage() {
       )}
       {/* Dialog Detalhado de Auditoria */}
       <Dialog open={selectedAuditLog !== null} onOpenChange={(open) => !open && setSelectedAuditLog(null)}>
-        <DialogContent className="sm:max-w-2xl max-w-2xl w-[92vw] max-h-[85vh] flex flex-col rounded-2xl gap-4 bg-background">
-          <DialogHeader className="border-b pb-3">
+        <DialogContent className="sm:max-w-2xl max-w-2xl w-[92vw] max-h-[85vh] flex flex-col rounded-2xl gap-4 bg-background border border-border/40">
+          <DialogHeader className="border-b border-border/30 pb-3">
             <div className="flex items-center justify-between">
-              <DialogTitle className="text-lg font-bold flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-primary" />
+              <DialogTitle className="text-base font-bold flex items-center gap-2">
+                <ShieldCheck className="w-4.5 h-4.5 text-primary" />
                 Detalhamento do Log
               </DialogTitle>
               {selectedAuditLog && getActionBadge(selectedAuditLog.acao)}
             </div>
-            <DialogDescription className="text-xs mt-1 text-muted-foreground">
+            <DialogDescription className="text-xs mt-0.5 text-muted-foreground">
               Histórico detalhado do evento registrado pelo sistema.
             </DialogDescription>
           </DialogHeader>
@@ -532,9 +546,9 @@ export default function AuditPage() {
           {selectedAuditLog && (
             <div className="flex-1 overflow-y-auto space-y-4 py-2 min-h-0 scrollbar-thin text-xs">
               {/* Metadata Box */}
-              <div className="grid grid-cols-2 gap-4 p-3 bg-muted/40 border rounded-xl">
+              <div className="grid grid-cols-2 gap-4 p-3.5 bg-muted/30 border border-border/30 rounded-xl">
                 <div>
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Usuário Executor</span>
+                  <span className="text-[10px] font-semibold text-muted-foreground/80 uppercase tracking-wider">Usuário Executor</span>
                   <div className="font-semibold text-foreground mt-0.5">
                     {selectedAuditLog.user_name || selectedAuditLog.nome_usuario || 'Sistema'}
                   </div>
@@ -543,7 +557,7 @@ export default function AuditPage() {
                   )}
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Data / Hora do Evento</span>
+                  <span className="text-[10px] font-semibold text-muted-foreground/80 uppercase tracking-wider">Data / Hora do Evento</span>
                   <div className="font-semibold text-foreground mt-0.5">
                     {new Date(selectedAuditLog.created_at).toLocaleString('pt-BR')}
                   </div>
@@ -552,21 +566,88 @@ export default function AuditPage() {
 
               {/* Action Content Panel */}
               <div className="space-y-3">
-                <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Dados Registrados</h4>
+                <h4 className="text-[10px] font-semibold text-muted-foreground/80 uppercase tracking-wider">Dados Registrados</h4>
                 
                 {(() => {
                   const d = selectedAuditLog.detalhes || {};
                   switch (selectedAuditLog.acao) {
                     case 'IMPORT_ARQUIVO':
                       return (
-                        <div className="border rounded-xl p-4 space-y-3 bg-card shadow-xs">
-                          <div className="font-semibold text-foreground text-sm border-b pb-2 flex items-center justify-between">
+                        <div className="border border-border/30 rounded-xl p-4 space-y-3 bg-card shadow-2xs">
+                          <div className="font-semibold text-foreground text-sm border-b border-border/20 pb-2 flex items-center justify-between">
                             <span className="truncate">{d.filename}</span>
                             <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded font-bold uppercase">{d.contexto}</span>
                           </div>
                           <div className="grid grid-cols-2 gap-2 text-xs">
                             <div>Estado (UF): <strong>{d.uf}</strong></div>
                             <div>Vigência da Pauta: <strong>{d.dataPauta}</strong></div>
+                          </div>
+                        </div>
+                      );
+                    case 'EXCLUSAO_PAUTA':
+                      const pautasAfetadas: any[] = d.pautas_afetadas || [];
+                      return (
+                        <div className="border border-rose-500/20 bg-rose-500/[0.02] rounded-xl p-4 space-y-3 shadow-2xs">
+                          <div className="font-semibold text-rose-600 dark:text-rose-400 text-sm border-b border-rose-500/15 pb-2 flex items-center justify-between">
+                            <span>Exclusão de Pauta Fiscal</span>
+                            <span className="text-[10px] bg-rose-500/10 text-rose-600 px-2.5 py-0.5 rounded-full font-bold uppercase">{d.uf || (pautasAfetadas[0]?.uf)}</span>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div>Data da Pauta: <strong>{d.data_pauta || (pautasAfetadas[0]?.data)}</strong></div>
+                            <div>Total de Produtos Afetados: <strong className="text-rose-600 font-bold">{d.total_excluidos || pautasAfetadas.length}</strong></div>
+                            {d.apaga_de_para && (
+                              <div className="col-span-2 text-[10px] text-rose-600 dark:text-rose-400 font-semibold bg-rose-500/10 p-1.5 rounded-md border border-rose-500/15">
+                                ✕ As associações no histórico De-Para também foram apagadas.
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="bg-background/80 border border-rose-500/15 p-2.5 rounded-lg space-y-0.5">
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase">Justificativa da Exclusão:</span>
+                            <p className="text-xs italic text-foreground font-medium">{d.justificativa}</p>
+                          </div>
+
+                          {/* Lista detalhada dos produtos excluídos e seus valores */}
+                          {pautasAfetadas.length > 0 && (
+                            <div className="space-y-2 pt-1">
+                              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                Produtos Excluídos ({pautasAfetadas.length})
+                              </span>
+                              <div className="border border-border/40 rounded-xl overflow-hidden bg-background divide-y divide-border/20 max-h-56 overflow-y-auto scrollbar-thin">
+                                {pautasAfetadas.map((prod: any, idx: number) => (
+                                  <div key={idx} className="p-2.5 flex items-center justify-between gap-3 text-xs hover:bg-muted/10 transition-colors">
+                                    <div className="space-y-0.5 min-w-0 flex-1">
+                                      <div className="font-semibold text-foreground truncate" title={prod.produto}>
+                                        {prod.produto || 'Produto sem descrição'}
+                                      </div>
+                                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                                        {prod.codigo_interno && <span>Cód: <strong className="text-foreground">{prod.codigo_interno}</strong></span>}
+                                        {prod.gtin_13 && <span>GTIN: <strong className="text-foreground">{prod.gtin_13}</strong></span>}
+                                      </div>
+                                    </div>
+                                    <div className="text-right shrink-0">
+                                      <span className="text-xs font-bold text-rose-600 bg-rose-500/10 px-2 py-0.5 rounded-lg border border-rose-500/15 inline-block">
+                                        R$ {Number(prod.valor_pauta || d.valor_pauta).toFixed(2).replace('.', ',')}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    case 'EXCLUSAO_ARQUIVO_OCR':
+                      return (
+                        <div className="border border-rose-500/20 bg-rose-500/[0.02] rounded-xl p-4 space-y-3 shadow-2xs">
+                          <div className="font-semibold text-rose-600 dark:text-rose-400 text-sm border-b border-rose-500/15 pb-2 flex items-center justify-between">
+                            <span className="truncate">{d.filename}</span>
+                            <span className="text-[10px] bg-rose-500/10 text-rose-600 px-2 py-0.5 rounded font-bold uppercase">{d.contexto}</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div>Estado (UF): <strong>{d.uf}</strong></div>
+                            <div>Arquivo Removido: <strong>{d.filename}</strong></div>
                           </div>
                         </div>
                       );
@@ -709,7 +790,6 @@ export default function AuditPage() {
                               <strong className="text-foreground capitalize block">{d.contexto}</strong>
                             </div>
                           </div>
-                          
                           {d.alteracoes && d.alteracoes.length > 0 && (
                             <div className="space-y-2 pt-1">
                               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Histórico de Células Editadas ({d.total_alteracoes})</span>
@@ -718,21 +798,21 @@ export default function AuditPage() {
                                   const parsed = parseOcrAlteration(alt);
                                   if (parsed.type === 'change') {
                                     return (
-                                      <div key={i} className="p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] hover:bg-muted/10 transition-colors">
+                                      <div key={i} className="p-3 flex flex-col gap-2 text-[11px] hover:bg-muted/10 transition-colors">
                                         <div className="flex flex-wrap items-center gap-1.5 shrink-0">
                                           <span className="bg-primary/10 text-primary text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase">
                                             Tab {parsed.tabela} • Linha {parsed.linha}
                                           </span>
                                           <span className="bg-muted text-muted-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-md">
-                                            Col: {parsed.coluna}
+                                            Coluna: {parsed.coluna}
                                           </span>
                                         </div>
-                                        <div className="flex items-center gap-2 flex-1 justify-end">
-                                          <span className="text-rose-600 dark:text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded line-through decoration-rose-500 max-w-[120px] truncate" title={parsed.de}>
+                                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 pt-0.5">
+                                          <span className="text-rose-600 dark:text-rose-400 bg-rose-500/10 px-2 py-1 rounded-md line-through decoration-rose-500 break-words leading-relaxed flex-1" title={parsed.de}>
                                             {parsed.de || 'vazio'}
                                           </span>
-                                          <span className="text-muted-foreground text-[10px]">➔</span>
-                                          <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded font-bold max-w-[120px] truncate" title={parsed.para}>
+                                          <span className="text-muted-foreground text-xs self-center shrink-0">➔</span>
+                                          <span className="text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-md font-semibold break-words leading-relaxed flex-1" title={parsed.para}>
                                             {parsed.para || 'vazio'}
                                           </span>
                                         </div>
