@@ -248,11 +248,7 @@ export function OcrTableCard({
                 return (
                   <TableRow
                     key={rIdx}
-                    className={`hover:bg-muted/30 transition-colors border-b border-border/20 relative ${
-                      isBrandRow && !isEditingMode 
-                        ? 'bg-primary/[0.02]' 
-                        : ''
-                    }`}
+                    className="hover:bg-muted/30 transition-colors border-b border-border/20 relative"
                   >
                     {row.map((cell, cIdx) => {
                       const isPrice = isPriceCell(cell, tabela.headers[cIdx]);
@@ -279,11 +275,6 @@ export function OcrTableCard({
                           }}
                           title={!isEditingMode ? "Dois cliques para editar esta célula" : undefined}
                         >
-                          {/* INDICADOR LATERAL DE MARCA REGISTRADA (ESTILO STRIPE) */}
-                          {cIdx === 0 && isBrandRow && !isEditingMode && (
-                            <span className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary/70 rounded-r" title="Linha de marca monitorada" />
-                          )}
-
                           {cIdx === 0 && showWarning && !isEditingMode && (
                             <span 
                               className="inline-flex items-center gap-1 text-amber-500 mr-1.5 align-middle cursor-help"
