@@ -124,7 +124,7 @@ export function OcrBulkLoadDialog({
       const { data: row, originalIndex: rIdx } = rowObj;
       row.forEach((cell, cIdx) => {
         const header = tabela.headers[cIdx] || '';
-        if (isPriceCell(cell, header)) {
+        if (isPriceCell(cell, header, cIdx)) {
           const cellKey = `${tabela.tabelaIndex}-${rIdx}-${cIdx}`;
           const inferredDesc = inferItemDescription(row, tabela.headers, cIdx, uf);
           const isConfirmed = confirmedCells.has(cellKey);

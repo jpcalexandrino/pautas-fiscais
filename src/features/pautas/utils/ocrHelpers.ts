@@ -18,82 +18,102 @@ export function normalizeText(value?: string | null): string {
     .replace(/[^0-9a-z ]/g, '');
 }
 
+export function isCodeOrPrice(val: string, colIdx?: number): boolean {
+  if (!val) return true;
+
+  // Preço explícito (R$ 3,99 ou 3,99)
+  if (priceRegex.test(val)) return true;
+
+  // Código NCM (ex: 03.011.00, 03.010.01 ou 8 dígitos numéricos)
+  if (/^\d{2}\.\d{3}\.\d{2}$/.test(val) || /^\d{8}$/.test(val)) return true;
+
+  // Código de barras / GTIN / EAN (12 a 14 dígitos numéricos)
+  if (/^\d{12,14}$/.test(val)) return true;
+
+  // Número de item/chave na primeira coluna (ex: 2.3, 3.47, 4.24, 1.158 ou números inteiros simples na col 0)
+  if (colIdx === 0 && (/^\d+(?:\.\d+)?$/.test(val) || /^\d+$/.test(val))) return true;
+
+  return false;
+}
+
 export function inferItemDescription(row: string[], headers: string[], colIdx: number, uf: string): string {
-  const ufUpper = uf.toUpperCase();
+  const ufUpper = (uf || '').toUpperCase();
+  const safeHeaders = headers || [];
   
+  // 1. Paraná (PR) - Estrutura de matriz onde o cabeçalho da coluna de preço contém a embalagem/volume
   if (ufUpper === 'PR') {
-    const marcaIdx = headers.findIndex(h => h.includes('MARCA_PRODUTO') || h.includes('MARCAS'));
-    const marcaText = marcaIdx !== -1 ? row[marcaIdx] : row[1] || '';
-    const embalagemText = headers[colIdx] || '';
-    return `${marcaText} - ${embalagemText}`.trim().replace(/\s+/g, ' ');
-  }
-  
-  const marcaIdx = headers.findIndex(h => h.includes('MARCA_PRODUTO') || h.includes('MARCA') || h.includes('DESCRICAO') || h.includes('PRODUTO'));
-  const embalagemIdx = headers.findIndex(h => h.includes('EMBALAGEM') || h.includes('VOLUME'));
-  
-  let parts: string[] = [];
-  if (marcaIdx !== -1 && row[marcaIdx]) parts.push(row[marcaIdx]);
-  if (embalagemIdx !== -1 && row[embalagemIdx] && embalagemIdx !== colIdx) parts.push(row[embalagemIdx]);
-  
-  // Ignora cabeçalhos genéricos de preço (ex: PRECO_SUGERIDO, VALOR_PMPF) ou cabeçalhos genéricos como 'COLUNA 1'
-  const isGenericPriceHeader = headers[colIdx] && /preco|valor|pmpf|pauta|custo|sugerido/i.test(headers[colIdx]);
-  const isGenericColumnName = headers[colIdx] && /coluna|column|\bcol\b/i.test(headers[colIdx]);
-  
-  if (headers[colIdx] && !isGenericPriceHeader && !isGenericColumnName && headers[colIdx] !== headers[marcaIdx] && headers[colIdx] !== headers[embalagemIdx]) {
-    parts.push(headers[colIdx]);
+    const marcaIdx = safeHeaders.findIndex(h => h.includes('MARCA_PRODUTO') || h.includes('MARCA') || h.includes('PRODUTO'));
+    const marcaText = (marcaIdx !== -1 && row[marcaIdx]) ? row[marcaIdx] : (row[1] || row[0] || '');
+    const embalagemText = (safeHeaders[colIdx] || '').replace(/_/g, ' ').trim();
+    const isGenericPrice = /preco|valor|pmpf|pauta|custo|sugerido/i.test(embalagemText);
+    if (marcaText && embalagemText && !isGenericPrice) {
+      return `${marcaText} - ${embalagemText}`.trim().replace(/\s+/g, ' ');
+    }
   }
 
-  // Se não encontrou cabeçalho de marca específico, busca a célula de texto mais longa (que representa a descrição do produto)
-  if (marcaIdx === -1) {
-    let longestVal = '';
-    for (let i = 0; i < row.length; i++) {
-      if (i === colIdx) continue;
-      const val = (row[i] || '').trim();
-      // Ignora células vazias, preços ou predominantemente numéricas
-      if (!val || priceRegex.test(val) || /^\d+$/.test(val.replace(/[\.\-\s]/g, ''))) continue;
-      if (val.length > longestVal.length) {
-        longestVal = val;
-      }
-    }
-    if (longestVal) {
-      parts.push(longestVal);
-    }
+  // 2. Se a linha já tem subcabeçalho pré-formatado (ex: Sergipe "PRODUTO (Subcabeçalho)")
+  const firstCol = row[0] ? row[0].trim() : '';
+  if (ufUpper === 'SE' && firstCol.includes('(') && firstCol.includes(')')) {
+    return firstCol;
   }
-  
-  // Busca por qualquer célula na linha que contenha padrão de volume (ex: 330ml, 330 ml, 500ml)
-  const volumeRegex = /\b\d+(?:[\.,]\d+)?\s*(?:ml|l|g|kg)\b/i;
-  const numberOnlyVolumeRegex = /\b(210|250|269|275|300|310|330|350|355|400|450|473|500|550|600|750|960|1000|1500|2000)\b/;
-  
-  let volumeFound = '';
+
+  // 3. Se temos cabeçalhos explícitos conhecidos (ex: DESCRICAO_PRODUTO, EMBALAGEM, VOLUME)
+  const marcaIdx = safeHeaders.findIndex(h => /PRODUTO|MARCA|DESCRICAO|DESCRIÇÃO/i.test(h) && !/NCM|COD|ID|ITEM|CHAVE/i.test(h));
+  const embalagemIdx = safeHeaders.findIndex(h => /EMBALAGEM|RECIPIENTE|TIPO/i.test(h) && !/PRODUTO|MARCA|PRECO|VALOR/i.test(h));
+  const volumeIdx = safeHeaders.findIndex(h => /VOLUME|CAPACIDADE|CONTEUDO|CONTEÚDO/i.test(h));
+
+  const explicitParts: string[] = [];
+  if (marcaIdx !== -1 && row[marcaIdx] && marcaIdx !== colIdx) {
+    const val = row[marcaIdx].trim();
+    if (val && !isCodeOrPrice(val, marcaIdx)) explicitParts.push(val);
+  }
+  if (embalagemIdx !== -1 && row[embalagemIdx] && embalagemIdx !== colIdx && embalagemIdx !== marcaIdx) {
+    const val = row[embalagemIdx].trim();
+    if (val && !isCodeOrPrice(val, embalagemIdx)) explicitParts.push(val);
+  }
+  if (volumeIdx !== -1 && row[volumeIdx] && volumeIdx !== colIdx && volumeIdx !== marcaIdx && volumeIdx !== embalagemIdx) {
+    const val = row[volumeIdx].trim();
+    if (val && !isCodeOrPrice(val, volumeIdx)) explicitParts.push(val);
+  }
+
+  // Se extraímos com sucesso pelo menos a descrição do produto e embalagem/volume por cabeçalhos explícitos
+  if (explicitParts.length >= 2 || (explicitParts.length === 1 && marcaIdx !== -1)) {
+    return explicitParts.join(' - ').trim().replace(/\s+/g, ' ');
+  }
+
+  // 4. Varredura sequencial inteligente (coleta todas as colunas de texto descritivo na ordem em que aparecem)
+  const textParts: string[] = [];
+
   for (let i = 0; i < row.length; i++) {
-    if (i === colIdx || i === marcaIdx || i === embalagemIdx) continue;
-    const cellValue = (row[i] || '').trim();
-    
-    if (volumeRegex.test(cellValue)) {
-      const match = cellValue.match(volumeRegex);
-      if (match) {
-        volumeFound = match[0];
-        break;
-      }
-    } else if (numberOnlyVolumeRegex.test(cellValue)) {
-      const match = cellValue.match(numberOnlyVolumeRegex);
-      if (match) {
-        volumeFound = match[0] + 'ml';
-        break;
-      }
+    if (i === colIdx) continue; // Ignora a coluna de preço clicada
+
+    const header = (safeHeaders[i] || '').toUpperCase();
+    if (/NCM|CEST|CNPJ|GTIN|EAN|CHAVE|CODIGO|CÓDIGO|\bCOD\b|ITEM|VALOR|PRECO|PREÇO|PMPF|PAUTA/i.test(header)) {
+      continue;
+    }
+
+    const val = (row[i] || '').trim();
+    if (!val) continue;
+
+    if (isCodeOrPrice(val, i)) continue;
+
+    // Evita duplicidade e sobreposição
+    const normVal = val.toLowerCase();
+    if (!textParts.some(p => p.toLowerCase().includes(normVal) || normVal.includes(p.toLowerCase()))) {
+      textParts.push(val);
     }
   }
 
-  // Se encontramos um volume na linha e ele ainda não faz parte de nenhuma das strings incluídas
-  if (volumeFound && !parts.some(p => p.toLowerCase().includes(volumeFound.toLowerCase()))) {
-    parts.push(volumeFound);
+  if (textParts.length > 0) {
+    return textParts.join(' - ').trim().replace(/\s+/g, ' ');
   }
-  
-  if (parts.length === 0) {
-    parts = row.filter((_, idx) => idx !== colIdx && idx !== 0);
-  }
-  
-  return parts.join(' - ').trim().replace(/\s+/g, ' ');
+
+  // Fallback extremo caso nenhuma célula tenha passado pelos filtros
+  return row
+    .filter((cell, idx) => idx !== colIdx && cell.trim() && !priceRegex.test(cell))
+    .join(' - ')
+    .trim()
+    .replace(/\s+/g, ' ');
 }
 
 /**

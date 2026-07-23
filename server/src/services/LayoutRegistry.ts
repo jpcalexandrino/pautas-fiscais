@@ -24,6 +24,7 @@ export const LayoutRegistry: Record<string, UFLayout> = {
     getTableHeaders: (numCols: number) => {
       if (numCols === 4) return ['NCM', 'DESCRICAO_PRODUTO', 'VOLUME', 'VALOR_PAUTA'];
       if (numCols === 5) return ['NCM', 'DESCRICAO_PRODUTO', 'VOLUME', 'VALOR_PAUTA', 'GTIN'];
+      if (numCols === 6) return ['CHAVE', 'NCM', 'DESCRICAO_PRODUTO', 'EMBALAGEM', 'VOLUME', 'VALOR_PAUTA'];
       return Array.from({ length: numCols }).map((_, i) => `COLUNA_${i + 1}`);
     }
   },

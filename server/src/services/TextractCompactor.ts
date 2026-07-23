@@ -214,10 +214,19 @@ export class TextractCompactor {
           const stateSE = { currentSubheaderSE: '', isBeerSection: true };
           const compactedTable = this._compactTable(rows, ufUpper, stateSE);
 
+          let finalHeaders = headers;
+          if (ufUpper) {
+            const layout = getLayoutForUF(ufUpper);
+            const customHeaders = layout.getTableHeaders(headers.length);
+            if (customHeaders && customHeaders.length > 0 && !customHeaders[0].startsWith('COLUNA_')) {
+              finalHeaders = headers.map((h, i) => (h && !h.toUpperCase().startsWith('COLUNA') && h.toUpperCase() !== 'VALOR' ? h : (customHeaders[i] || h)));
+            }
+          }
+
           return [{
             tabelaIndex: 1,
             pagina: 1,
-            headers,
+            headers: finalHeaders,
             rows: compactedTable
           }];
         }
@@ -799,8 +808,8 @@ export class TextractCompactor {
 
     const matches = BRAND_SLUGS.some(slug => {
       const normSlug = normalize(slug);
-      if (normSlug === '3.0') {
-        return /\b3\.0\b/.test(normText);
+      if (normSlug === '3.0' || slug === '3.0') {
+        return /(?:^|[^0-9])3\.0(?:[^0-9]|$)/.test(normText);
       }
       return normText.includes(normSlug);
     });

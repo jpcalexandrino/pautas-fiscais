@@ -147,7 +147,13 @@ export function OcrTablesViewer({
   const rowMatchesBrand = (row: string[]) => {
     return row.some((cell) => {
       const cellNorm = normalizeForSearch(cell);
-      return activeSlugs.some((slug) => cellNorm.includes(normalizeForSearch(slug)));
+      return activeSlugs.some((slug) => {
+        const normSlug = normalizeForSearch(slug);
+        if (normSlug === '3.0' || slug === '3.0') {
+          return /(?:^|[^0-9])3\.0(?:[^0-9]|$)/.test(cellNorm);
+        }
+        return cellNorm.includes(normSlug);
+      });
     });
   };
 
@@ -179,11 +185,24 @@ export function OcrTablesViewer({
     );
   };
 
-  const isPriceCell = (value: string, header: string) => {
-    const normHeader = header.toUpperCase();
-    if (normHeader === 'ITEM' || normHeader === 'CNPJ_FABRICANTE' || normHeader === 'COD_FABRICANTE' || normHeader === 'NCM') {
+  const isPriceCell = (value: string, header: string, colIdx?: number) => {
+    if (!value || typeof value !== 'string') return false;
+
+    const normHeader = (header || '').toUpperCase();
+    const nonPriceHeaders = [
+      'ITEM', 'CHAVE', 'CODIGO', 'CÓDIGO', 'COD', 'NCM', 'CEST', 
+      'CNPJ', 'GTIN', 'EAN', 'Nº', 'NO', 'NUMERO', 'NÚMERO',
+      'DESCRICAO', 'DESCRIÇÃO', 'PRODUTO', 'MARCA', 'EMBALAGEM', 'VOLUME', 'TIPO'
+    ];
+
+    if (nonPriceHeaders.some(h => normHeader.includes(h))) {
       return false;
     }
+
+    if (colIdx === 0 && !/R\$/i.test(value) && !/VALOR_PAUTA|VALOR_PMPF|PRECO|PREÇO|PAUTA/i.test(normHeader)) {
+      return false;
+    }
+
     return priceRegex.test(value);
   };
 

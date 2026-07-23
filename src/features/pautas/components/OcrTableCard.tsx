@@ -20,7 +20,7 @@ interface OcrTableCardProps {
   onCellClick: (tabelaIdx: number, rIdx: number, cIdx: number, value: string, row: string[], headers: string[]) => void;
   highlightText: (text: string, search: string) => ReactNode;
   rowMatchesBrand: (row: string[]) => boolean;
-  isPriceCell: (value: string, header: string) => boolean;
+  isPriceCell: (value: string, header: string, colIdx?: number) => boolean;
   onBulkLoadClick: (tabela: Omit<EstruturaTabela, 'rows'> & { indexedRows: IndexedRow[] }) => void;
   isEditingMode?: boolean;
   onCellEdit?: (tabelaIdx: number, rIdx: number, cIdx: number, value: string) => void;
@@ -87,7 +87,7 @@ export function OcrTableCard({
 
     tabela.indexedRows.forEach(({ data: row, originalIndex: rIdx }) => {
       row.forEach((cell, cIdx) => {
-        if (isPriceCell(cell, tabela.headers[cIdx])) {
+        if (isPriceCell(cell, tabela.headers[cIdx], cIdx)) {
           totalPrices++;
           if (confirmedCells.has(`${tabela.tabelaIndex}-${rIdx}-${cIdx}`)) {
             confirmedPrices++;
@@ -242,7 +242,7 @@ export function OcrTableCard({
               {tabela.indexedRows.map((rowObj) => {
                 const { data: row, originalIndex: rIdx } = rowObj;
                 const isBrandRow = rowMatchesBrand(row);
-                const hasPrices = row.some((cell, cIdx) => isPriceCell(cell, tabela.headers[cIdx]));
+                const hasPrices = row.some((cell, cIdx) => isPriceCell(cell, tabela.headers[cIdx], cIdx));
                 const showWarning = isBrandRow && !hasPrices;
 
                 return (
@@ -251,7 +251,7 @@ export function OcrTableCard({
                     className="hover:bg-muted/30 transition-colors border-b border-border/20 relative"
                   >
                     {row.map((cell, cIdx) => {
-                      const isPrice = isPriceCell(cell, tabela.headers[cIdx]);
+                      const isPrice = isPriceCell(cell, tabela.headers[cIdx], cIdx);
                       const cellKey = `${tabela.tabelaIndex}-${rIdx}-${cIdx}`;
                       const isConfirmed = confirmedCells.has(cellKey);
                       const isEditingCellThis = inlineEditingCell?.tabelaIdx === tabela.tabelaIndex && inlineEditingCell?.rIdx === rIdx && inlineEditingCell?.cIdx === cIdx;

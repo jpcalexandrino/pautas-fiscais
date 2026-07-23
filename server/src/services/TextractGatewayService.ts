@@ -36,7 +36,7 @@ class TextractGatewayService {
       );
     }
 
-    const format = (uf && uf.toUpperCase() === 'SE') ? 'csv' : 'json';
+    const format = (uf && ['SE', 'SP'].includes(uf.toUpperCase())) ? 'csv' : 'json';
     const fullUrl = `${SYNAPSE_API_URL}/${SYNAPSE_TEXTRACT_SLUG}/direct?format=${format}`;
 
     // O endpoint /direct espera multipart/form-data com o PDF na chave "file"
