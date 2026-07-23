@@ -179,7 +179,7 @@ export function PautasDataTable({ pautas, loading, getTableInstance }: PautasDat
         cell: ({ row }) => {
           const filename = row.original.arquivo_origem;
           if (!filename) {
-            return <span className="text-muted-foreground text-xs font-mono">-</span>;
+            return <span className="text-muted-foreground text-xs">-</span>;
           }
           return (
             <div

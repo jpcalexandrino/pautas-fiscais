@@ -5,6 +5,8 @@ import { OcrTablesViewer } from '../components/OcrTablesViewer';
 import { OcrFilesManagerDialog } from '../components/OcrFilesManagerDialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Spinner } from '@/components/ui/spinner';
 import { DatePicker } from '@/components/ui/date-picker';
 import { UploadCloud, X, Search, Check, FolderCog } from 'lucide-react';
@@ -246,44 +248,29 @@ export default function PautasImportPage() {
           Selecione um PDF de pauta no banco de dados ou envie um novo arquivo para estruturar e auditar preços de pauta.
         </p>
       </div>
-
       {estados.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground border rounded-lg bg-sidebar/20">
           Nenhum estado disponível para importação.
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Seletor de Modo Shadcn UI Tabs */}
-          <div className="inline-flex h-10 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground">
-            <button
-              onClick={() => setMode('select')}
-              className={cn(
-                "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3.5 py-1.5 text-xs font-semibold ring-offset-background transition-all focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer gap-2",
-                mode === 'select'
-                  ? "bg-background text-foreground shadow-xs"
-                  : "hover:text-foreground"
-              )}
-            >
-              <Search className="size-3.5" />
-              Pautas Cadastradas
-            </button>
-            <button
-              onClick={() => setMode('upload')}
-              className={cn(
-                "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3.5 py-1.5 text-xs font-semibold ring-offset-background transition-all focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer gap-2",
-                mode === 'upload'
-                  ? "bg-background text-foreground shadow-xs"
-                  : "hover:text-foreground"
-              )}
-            >
-              <UploadCloud className="size-3.5" />
-              Carregar Novo PDF
-            </button>
-          </div>
+          {/* Seletor de Modo Shadcn UI Tabs Oficial */}
+          <Tabs value={mode} onValueChange={(val) => setMode(val as 'select' | 'upload')}>
+            <TabsList>
+              <TabsTrigger value="select" className="cursor-pointer gap-2 text-xs">
+                <Search className="size-3.5" />
+                Pautas Cadastradas
+              </TabsTrigger>
+              <TabsTrigger value="upload" className="cursor-pointer gap-2 text-xs">
+                <UploadCloud className="size-3.5" />
+                Carregar Novo PDF
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
 
           {/* Painel do Modo Selecionado */}
           {mode === 'select' ? (
-            <div className="bg-card border border-muted/50 rounded-xl p-5 shadow-sm space-y-5 animate-fade-in">
+            <Card className="border-border/50 shadow-xs rounded-xl p-5 space-y-5 animate-fade-in">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                 {/* Contexto */}
                 <div className="space-y-1.5">
@@ -341,11 +328,10 @@ export default function PautasImportPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      size="xs"
+                      size="sm"
                       onClick={() => setIsManagerOpen(true)}
-                      className="text-[11px] h-7 px-2.5 font-semibold flex items-center gap-1.5 cursor-pointer shadow-2xs hover:bg-accent hover:text-accent-foreground"
                     >
-                      <FolderCog className="w-3.5 h-3.5 text-primary" />
+                      <FolderCog />
                       Gerenciar Arquivos
                     </Button>
                   </div>
@@ -370,7 +356,7 @@ export default function PautasImportPage() {
 
               {/* Informações detalhadas inline (Vigência e Estado) */}
               {auditFilename && (
-                <div className="flex flex-wrap items-center gap-4 pt-3 border-t border-muted/30 text-xs">
+                <div className="flex flex-wrap items-center gap-4 pt-3 border-t border-border/40 text-xs">
                   <span className="text-muted-foreground">UF do Estado:</span>
                   {selectedAuditUf ? (
                     <span className="inline-flex items-center bg-primary/10 text-primary px-2.5 py-1 rounded-md font-semibold">
@@ -392,9 +378,9 @@ export default function PautasImportPage() {
                   )}
                 </div>
               )}
-            </div>
+            </Card>
           ) : (
-            <div className="bg-card border border-muted/50 rounded-xl p-5 shadow-xs space-y-5 animate-fade-in">
+            <Card className="border-border/50 shadow-xs rounded-xl p-5 space-y-5 animate-fade-in">
               <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
                 {/* PDF Dropzone */}
                 <div className="md:col-span-5 space-y-1.5">
@@ -413,7 +399,7 @@ export default function PautasImportPage() {
                     onDrop={handleDrop}
                     onClick={() => !isUploading && fileInputRef.current?.click()}
                     className={cn(
-                      "border border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors min-h-[102px] flex flex-col items-center justify-center gap-1 bg-muted/10 hover:bg-muted/30 border-muted-foreground/20 hover:border-primary/50",
+                      "border border-dashed rounded-xl p-4 text-center cursor-pointer transition-colors min-h-[102px] flex flex-col items-center justify-center gap-1 bg-muted/10 hover:bg-muted/30 border-muted-foreground/20 hover:border-primary/50",
                       isDragging && "border-primary bg-primary/5",
                       selectedFile && "border-primary/30 bg-primary/5",
                       isUploading && "pointer-events-none opacity-60"
@@ -501,18 +487,19 @@ export default function PautasImportPage() {
                   <div className="sm:col-span-3 pt-2">
                     <Button
                       variant="default"
-                      className="w-full text-xs h-10 font-semibold cursor-pointer shadow-xs transition-all active:scale-[0.99]"
+                      size="lg"
+                      className="w-full"
                       onClick={handleUploadAndAudit}
                       disabled={!selectedFile || !uploadUf || !uploadVigenciaDate || isUploading}
                     >
                       {isUploading ? (
                         <>
-                          <Spinner className="w-4 h-4 animate-spin mr-2" />
+                          <Spinner className="size-4 animate-spin" />
                           Processando...
                         </>
                       ) : (
                         <>
-                          <Check className="size-4 mr-2" />
+                          <Check className="size-4" />
                           Processar e Auditar
                         </>
                       )}
@@ -520,7 +507,7 @@ export default function PautasImportPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </Card>
           )}
 
           {/* Tabelas de Auditoria (exibidas apenas na aba Pautas Cadastradas) */}

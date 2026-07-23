@@ -1,7 +1,16 @@
 import { type ReactNode, useMemo } from 'react';
 import { Check, AlertTriangle, Trash2, Plus, X, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import type { EstruturaTabela, IndexedRow } from './OcrTablesViewer';
 
 interface OcrTableCardProps {
@@ -91,28 +100,31 @@ export function OcrTableCard({
   }, [tabela, confirmedCells, isPriceCell]);
 
   return (
-    <Card className={`overflow-hidden border border-border/40 bg-card shadow-xs rounded-2xl transition-all duration-300 ${isEditingMode ? 'ring-2 ring-primary/40 border-primary/50 shadow-md' : 'hover:shadow-sm'}`}>
-      {/* CABEÇALHO DO CARD COM HIERARQUIA VISUAL CLARA */}
-      <div className="px-4 py-3 border-b border-border/30 flex justify-between items-center bg-muted/15">
+    <Card className={`overflow-hidden border-border/50 bg-card shadow-xs rounded-xl transition-all duration-300 ${isEditingMode ? 'ring-2 ring-primary/40 border-primary/50 shadow-md' : 'hover:shadow-sm'}`}>
+      {/* CABEÇALHO DO CARD COM COMPONENTES OFICIAIS SHADCN */}
+      <CardHeader className="px-4 py-3 border-b border-border/40 flex flex-row items-center justify-between bg-muted/15 space-y-0">
         <div className="flex items-center gap-3">
-          <span className="flex h-6.5 w-6.5 items-center justify-center rounded-lg bg-primary/10 text-primary text-xs font-bold shrink-0">
+          <Badge variant="secondary" className="h-6.5 w-6.5 rounded-lg p-0 font-bold justify-center shrink-0">
             {tabela.tabelaIndex}
-          </span>
+          </Badge>
           <div className="flex items-center gap-2.5">
-            <h3 className="font-semibold text-xs text-foreground tracking-tight">
+            <CardTitle className="font-semibold text-xs tracking-tight">
               Tabela {tabela.tabelaIndex}
-            </h3>
-            <span className="text-[11px] text-muted-foreground/70 font-normal">
+            </CardTitle>
+            <span className="text-[11px] text-muted-foreground font-normal">
               • {tabela.indexedRows.length} {tabela.indexedRows.length === 1 ? 'linha' : 'linhas'}
             </span>
             {priceStats.totalPrices > 0 && (
-              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border transition-colors ${
-                priceStats.confirmedPrices === priceStats.totalPrices
-                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-                  : 'bg-muted/40 text-muted-foreground border-border/40'
-              }`}>
+              <Badge 
+                variant={priceStats.confirmedPrices === priceStats.totalPrices ? "secondary" : "outline"} 
+                className={`text-[10px] font-medium h-5 ${
+                  priceStats.confirmedPrices === priceStats.totalPrices
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                    : ''
+                }`}
+              >
                 {priceStats.confirmedPrices}/{priceStats.totalPrices} mapeados
-              </span>
+              </Badge>
             )}
           </div>
         </div>
@@ -124,39 +136,37 @@ export function OcrTableCard({
                 variant="destructive"
                 size="sm"
                 onClick={() => onDeleteTable(tabela.tabelaIndex)}
-                className="text-xs h-7 font-semibold rounded-lg gap-1.5 cursor-pointer shadow-xs active:scale-[0.98]"
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="size-3.5" />
                 Excluir Tabela
               </Button>
             )
           ) : (
             <Button
-              variant="outline"
+              variant="default"
               size="sm"
               onClick={() => onBulkLoadClick(tabela)}
-              className="text-xs h-7.5 font-medium border-border/60 hover:text-primary hover:bg-primary/5 hover:border-primary/40 rounded-lg gap-1.5 cursor-pointer transition-all shadow-2xs"
             >
-              <Menu className="w-3.5 h-3.5 text-primary" />
+              <Menu />
               Carga em Lote
             </Button>
           )}
         </div>
-      </div>
+      </CardHeader>
 
       <CardContent className="p-0">
         <div className="overflow-x-auto max-w-full scrollbar-thin">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-muted/20 border-b border-border/30">
+          <Table className="w-full text-xs">
+            <TableHeader>
+              <TableRow className="bg-muted/20 hover:bg-muted/20 border-b border-border/30">
                 {tabela.headers.map((header, idx) => {
                   const isEditingHeaderThis = inlineEditingHeader?.tabelaIdx === tabela.tabelaIndex && inlineEditingHeader?.cIdx === idx;
                   const isLastCol = idx === tabela.headers.length - 1 && !isEditingMode;
 
                   return (
-                    <th
+                    <TableHead
                       key={idx}
-                      className={`px-3.5 py-2 font-medium text-muted-foreground/75 uppercase tracking-wider text-[10px] min-w-[120px] cursor-default select-none group border-b border-border/30 ${
+                      className={`px-3.5 py-2 font-semibold text-muted-foreground uppercase tracking-wider text-[10px] min-w-[120px] cursor-default select-none group ${
                         !isLastCol ? 'border-r border-border/20' : ''
                       }`}
                       onDoubleClick={() => {
@@ -174,7 +184,7 @@ export function OcrTableCard({
                         <input
                           value={header}
                           onChange={(e) => onHeaderEdit?.(tabela.tabelaIndex, idx, e.target.value)}
-                          className="bg-background/80 hover:bg-background text-foreground text-xs font-semibold px-2 py-0.5 rounded-md border border-border/50 focus:border-primary focus:ring-1 focus:ring-primary w-full transition-all"
+                          className="bg-background hover:bg-background text-foreground text-xs font-semibold px-2 py-0.5 rounded-md border border-border focus:border-primary focus:ring-1 focus:ring-primary w-full transition-all"
                           placeholder={`Coluna ${idx + 1}`}
                         />
                       ) : isEditingHeaderThis ? (
@@ -218,17 +228,17 @@ export function OcrTableCard({
                           {header || `Coluna ${idx + 1}`}
                         </span>
                       )}
-                    </th>
+                    </TableHead>
                   );
                 })}
                 {isEditingMode && (
-                  <th className="px-3 py-2 font-medium text-muted-foreground uppercase tracking-wide text-[10px] w-[60px] text-center border-b border-border/30">
+                  <TableHead className="px-3 py-2 font-semibold text-muted-foreground uppercase tracking-wide text-[10px] w-[60px] text-center">
                     Ações
-                  </th>
+                  </TableHead>
                 )}
-              </tr>
-            </thead>
-            <tbody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {tabela.indexedRows.map((rowObj) => {
                 const { data: row, originalIndex: rIdx } = rowObj;
                 const isBrandRow = rowMatchesBrand(row);
@@ -236,9 +246,9 @@ export function OcrTableCard({
                 const showWarning = isBrandRow && !hasPrices;
 
                 return (
-                  <tr
+                  <TableRow
                     key={rIdx}
-                    className={`hover:bg-muted/20 transition-colors border-b border-border/15 relative ${
+                    className={`hover:bg-muted/30 transition-colors border-b border-border/20 relative ${
                       isBrandRow && !isEditingMode 
                         ? 'bg-primary/[0.02]' 
                         : ''
@@ -252,7 +262,7 @@ export function OcrTableCard({
                       const isLastCell = cIdx === row.length - 1 && !isEditingMode;
 
                       return (
-                        <td
+                        <TableCell
                           key={cIdx}
                           className={`px-3.5 py-2 text-foreground/90 whitespace-nowrap cursor-default select-none align-middle relative ${
                             !isLastCell ? 'border-r border-border/15' : ''
@@ -287,7 +297,7 @@ export function OcrTableCard({
                             <input
                               value={cell}
                               onChange={(e) => onCellEdit?.(tabela.tabelaIndex, rIdx, cIdx, e.target.value)}
-                              className="bg-background/80 hover:bg-background text-foreground text-xs px-2 py-0.5 rounded-md border border-border/40 focus:border-primary focus:ring-1 focus:ring-primary w-full transition-all"
+                              className="bg-background hover:bg-background text-foreground text-xs px-2 py-0.5 rounded-md border border-border focus:border-primary focus:ring-1 focus:ring-primary w-full transition-all"
                               placeholder="-"
                             />
                           ) : isEditingCellThis ? (
@@ -348,11 +358,11 @@ export function OcrTableCard({
                           ) : (
                             searchTerm ? highlightText(cell, searchTerm) : cell
                           )}
-                        </td>
+                        </TableCell>
                       );
                     })}
                     {isEditingMode && (
-                      <td className="px-3 py-2 text-center whitespace-nowrap align-middle">
+                      <TableCell className="px-3 py-2 text-center whitespace-nowrap align-middle">
                         <Button
                           type="button"
                           variant="ghost"
@@ -363,13 +373,13 @@ export function OcrTableCard({
                         >
                           <Trash2 className="w-3 h-3" />
                         </Button>
-                      </td>
+                      </TableCell>
                     )}
-                  </tr>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
         {isEditingMode && onAddRow && (
           <div className="p-3 bg-muted/10 border-t border-border/30 flex justify-center">
@@ -378,9 +388,8 @@ export function OcrTableCard({
               variant="outline"
               size="sm"
               onClick={() => onAddRow(tabela.tabelaIndex)}
-              className="text-xs font-semibold text-primary hover:text-primary-foreground bg-primary/5 hover:bg-primary px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer border-primary/30 shadow-2xs"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="size-3.5" />
               Adicionar Linha
             </Button>
           </div>

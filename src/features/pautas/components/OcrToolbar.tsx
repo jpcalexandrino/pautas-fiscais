@@ -62,10 +62,9 @@ export function OcrToolbar({
             <Button
               variant="outline"
               size="sm"
-              className="text-xs text-muted-foreground hover:text-foreground cursor-pointer h-8.5 rounded-xl border-border/40 px-2.5 gap-1.5"
               title="Como associar preços"
             >
-              <HelpCircle className="w-3.5 h-3.5 text-primary" />
+              <HelpCircle />
               <span className="hidden sm:inline">Ajuda</span>
             </Button>
           </PopoverTrigger>
@@ -93,9 +92,8 @@ export function OcrToolbar({
                   size="sm"
                   onClick={onSaveEdits}
                   disabled={isSavingEdits}
-                  className="text-xs font-semibold px-3.5 h-8.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
                 >
-                  <Save className="w-3.5 h-3.5" />
+                  <Save />
                   {isSavingEdits ? 'Salvando...' : 'Salvar Alterações'}
                 </Button>
                 <Button
@@ -104,9 +102,8 @@ export function OcrToolbar({
                   size="sm"
                   onClick={onToggleEditingMode}
                   disabled={isSavingEdits}
-                  className="text-xs font-semibold h-8.5 px-3 rounded-lg flex items-center gap-1.5 cursor-pointer shadow-2xs"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X />
                   Cancelar
                 </Button>
               </>
@@ -116,9 +113,8 @@ export function OcrToolbar({
                 variant="outline"
                 size="sm"
                 onClick={onToggleEditingMode}
-                className="text-xs font-semibold h-8.5 px-3 rounded-lg flex items-center gap-1.5 cursor-pointer border-border/60 hover:text-primary hover:bg-accent hover:border-primary/40 transition-all shadow-2xs"
               >
-                <Edit3 className="w-3.5 h-3.5 text-primary" />
+                <Edit3 />
                 Editar Tabelas
               </Button>
             )}
