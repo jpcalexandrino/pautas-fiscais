@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   apps: [
     {
       name: 'pricer',
@@ -15,3 +15,4 @@ module.exports = {
     },
   ],
 };
+
