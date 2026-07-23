@@ -124,7 +124,7 @@ export function OcrTableCard({
                 variant="destructive"
                 size="sm"
                 onClick={() => onDeleteTable(tabela.tabelaIndex)}
-                className="text-[11px] h-7 font-medium rounded-lg gap-1.5 cursor-pointer shadow-2xs"
+                className="text-xs h-7 font-semibold rounded-lg gap-1.5 cursor-pointer shadow-xs active:scale-[0.98]"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 Excluir Tabela
@@ -135,7 +135,7 @@ export function OcrTableCard({
               variant="outline"
               size="sm"
               onClick={() => onBulkLoadClick(tabela)}
-              className="text-xs h-7.5 font-medium border-border/50 text-foreground/90 hover:text-primary hover:bg-primary/5 hover:border-primary/30 rounded-lg gap-1.5 cursor-pointer transition-all shadow-2xs"
+              className="text-xs h-7.5 font-medium border-border/60 hover:text-primary hover:bg-primary/5 hover:border-primary/40 rounded-lg gap-1.5 cursor-pointer transition-all shadow-2xs"
             >
               <Menu className="w-3.5 h-3.5 text-primary" />
               Carga em Lote
@@ -174,7 +174,7 @@ export function OcrTableCard({
                         <input
                           value={header}
                           onChange={(e) => onHeaderEdit?.(tabela.tabelaIndex, idx, e.target.value)}
-                          className="bg-background/80 hover:bg-background text-foreground text-xs font-semibold px-2 py-0.5 rounded border border-border/50 focus:border-primary focus:ring-1 focus:ring-primary w-full transition-all"
+                          className="bg-background/80 hover:bg-background text-foreground text-xs font-semibold px-2 py-0.5 rounded-md border border-border/50 focus:border-primary focus:ring-1 focus:ring-primary w-full transition-all"
                           placeholder={`Coluna ${idx + 1}`}
                         />
                       ) : isEditingHeaderThis ? (
@@ -190,14 +190,14 @@ export function OcrTableCard({
                                 setInlineEditingHeader?.(null);
                               }
                             }}
-                            className="bg-background text-foreground text-xs font-semibold px-2 py-0.5 rounded border border-primary focus:outline-none focus:ring-1 focus:ring-primary flex-1 shadow-2xs"
+                            className="bg-background text-foreground text-xs font-semibold px-2 py-0.5 rounded-md border border-primary focus:outline-none focus:ring-1 focus:ring-primary flex-1 shadow-2xs"
                           />
                           <Button
                             type="button"
                             variant="default"
                             size="icon-xs"
                             onClick={() => onSaveInlineHeader?.(tabela.tabelaIndex, idx, inlineEditingHeader.value)}
-                            className="bg-emerald-600 text-white hover:bg-emerald-700 rounded cursor-pointer h-6 w-6"
+                            className="rounded-md cursor-pointer h-6 w-6 shadow-2xs"
                             title="Salvar"
                           >
                             <Check className="w-3 h-3" />
@@ -207,7 +207,7 @@ export function OcrTableCard({
                             variant="outline"
                             size="icon-xs"
                             onClick={() => setInlineEditingHeader?.(null)}
-                            className="text-foreground hover:bg-muted/80 rounded cursor-pointer h-6 w-6"
+                            className="text-foreground hover:bg-muted/80 rounded-md cursor-pointer h-6 w-6 shadow-2xs"
                             title="Cancelar"  
                           >
                             <X className="w-3 h-3" />
@@ -287,7 +287,7 @@ export function OcrTableCard({
                             <input
                               value={cell}
                               onChange={(e) => onCellEdit?.(tabela.tabelaIndex, rIdx, cIdx, e.target.value)}
-                              className="bg-background/80 hover:bg-background text-foreground text-xs px-2 py-0.5 rounded border border-border/40 focus:border-primary focus:ring-1 focus:ring-primary w-full transition-all"
+                              className="bg-background/80 hover:bg-background text-foreground text-xs px-2 py-0.5 rounded-md border border-border/40 focus:border-primary focus:ring-1 focus:ring-primary w-full transition-all"
                               placeholder="-"
                             />
                           ) : isEditingCellThis ? (
@@ -303,7 +303,7 @@ export function OcrTableCard({
                                     setInlineEditingCell?.(null);
                                   }
                                 }}
-                                className="bg-background text-foreground text-xs px-2 py-0.5 rounded border border-primary focus:outline-none focus:ring-1 focus:ring-primary flex-1 shadow-2xs"
+                                className="bg-background text-foreground text-xs px-2 py-0.5 rounded-md border border-primary focus:outline-none focus:ring-1 focus:ring-primary flex-1 shadow-2xs"
                                 placeholder="-"
                               />
                               <Button
@@ -311,7 +311,7 @@ export function OcrTableCard({
                                 variant="default"
                                 size="icon-xs"
                                 onClick={() => onSaveInlineCell?.(tabela.tabelaIndex, rIdx, cIdx, inlineEditingCell.value)}
-                                className="bg-emerald-600 text-white hover:bg-emerald-700 rounded cursor-pointer h-6 w-6"
+                                className="rounded-md cursor-pointer h-6 w-6 shadow-2xs"
                                 title="Salvar"
                               >
                                 <Check className="w-3 h-3" />
@@ -321,7 +321,7 @@ export function OcrTableCard({
                                 variant="outline"
                                 size="icon-xs"
                                 onClick={() => setInlineEditingCell?.(null)}
-                                className="text-foreground hover:bg-muted/80 rounded cursor-pointer h-6 w-6"
+                                className="text-foreground hover:bg-muted/80 rounded-md cursor-pointer h-6 w-6 shadow-2xs"
                                 title="Cancelar"
                               >
                                 <X className="w-3 h-3" />
@@ -332,7 +332,7 @@ export function OcrTableCard({
                               variant="ghost"
                               size="xs"
                               onClick={() => onCellClick(tabela.tabelaIndex, rIdx, cIdx, cell, row, tabela.headers)}
-                              className={`font-semibold px-2 py-0.5 rounded text-xs transition-all inline-flex items-center gap-1 cursor-pointer h-auto border ${
+                              className={`font-semibold px-2 py-0.5 rounded-md text-xs transition-all inline-flex items-center gap-1 cursor-pointer h-auto border shadow-2xs ${
                                 isConfirmed
                                   ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/25 hover:bg-emerald-500/20'
                                   : 'bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/40'
@@ -358,7 +358,7 @@ export function OcrTableCard({
                           variant="ghost"
                           size="icon-xs"
                           onClick={() => onDeleteRow?.(tabela.tabelaIndex, rIdx)}
-                          className="text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer rounded h-6 w-6"
+                          className="text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer rounded-md h-6 w-6"
                           title="Excluir Linha"
                         >
                           <Trash2 className="w-3 h-3" />
@@ -378,7 +378,7 @@ export function OcrTableCard({
               variant="outline"
               size="sm"
               onClick={() => onAddRow(tabela.tabelaIndex)}
-              className="text-xs font-semibold text-primary hover:text-primary-foreground bg-primary/5 hover:bg-primary px-4 py-1.5 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer border-primary/30 shadow-2xs"
+              className="text-xs font-semibold text-primary hover:text-primary-foreground bg-primary/5 hover:bg-primary px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer border-primary/30 shadow-2xs"
             >
               <Plus className="w-3.5 h-3.5" />
               Adicionar Linha

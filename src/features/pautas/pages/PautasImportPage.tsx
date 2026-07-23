@@ -253,28 +253,30 @@ export default function PautasImportPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Seletor de Modo Limpo & Minimalista */}
-          <div className="flex border-b border-muted pb-px justify-start gap-6">
+          {/* Seletor de Modo Shadcn UI Tabs */}
+          <div className="inline-flex h-10 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground">
             <button
               onClick={() => setMode('select')}
               className={cn(
-                "pb-3 text-sm font-medium border-b-2 transition-all cursor-pointer",
+                "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3.5 py-1.5 text-xs font-semibold ring-offset-background transition-all focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer gap-2",
                 mode === 'select'
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  ? "bg-background text-foreground shadow-xs"
+                  : "hover:text-foreground"
               )}
             >
+              <Search className="size-3.5" />
               Pautas Cadastradas
             </button>
             <button
               onClick={() => setMode('upload')}
               className={cn(
-                "pb-3 text-sm font-medium border-b-2 transition-all cursor-pointer",
+                "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3.5 py-1.5 text-xs font-semibold ring-offset-background transition-all focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer gap-2",
                 mode === 'upload'
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  ? "bg-background text-foreground shadow-xs"
+                  : "hover:text-foreground"
               )}
             >
+              <UploadCloud className="size-3.5" />
               Carregar Novo PDF
             </button>
           </div>
@@ -338,12 +340,12 @@ export default function PautasImportPage() {
                     <Label className="text-xs font-semibold text-muted-foreground">Arquivo de Pauta</Label>
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="outline"
                       size="xs"
                       onClick={() => setIsManagerOpen(true)}
-                      className="text-[11px] h-6 px-2 text-primary font-semibold hover:bg-primary/10 flex items-center gap-1 cursor-pointer"
+                      className="text-[11px] h-7 px-2.5 font-semibold flex items-center gap-1.5 cursor-pointer shadow-2xs hover:bg-accent hover:text-accent-foreground"
                     >
-                      <FolderCog className="w-3.5 h-3.5" />
+                      <FolderCog className="w-3.5 h-3.5 text-primary" />
                       Gerenciar Arquivos
                     </Button>
                   </div>
@@ -392,7 +394,7 @@ export default function PautasImportPage() {
               )}
             </div>
           ) : (
-            <div className="bg-card border border-muted/50 rounded-xl p-5 shadow-sm space-y-5 animate-fade-in">
+            <div className="bg-card border border-muted/50 rounded-xl p-5 shadow-xs space-y-5 animate-fade-in">
               <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
                 {/* PDF Dropzone */}
                 <div className="md:col-span-5 space-y-1.5">
@@ -439,7 +441,7 @@ export default function PautasImportPage() {
                             setSelectedFile(null);
                             if (fileInputRef.current) fileInputRef.current.value = '';
                           }}
-                          className="text-muted-foreground hover:text-destructive p-1 rounded transition-colors shrink-0 cursor-pointer h-6 w-6"
+                          className="text-muted-foreground hover:text-destructive p-1 rounded-md transition-colors shrink-0 cursor-pointer h-6 w-6"
                         >
                           <X className="size-4" />
                         </Button>
@@ -498,7 +500,8 @@ export default function PautasImportPage() {
 
                   <div className="sm:col-span-3 pt-2">
                     <Button
-                      className="w-full text-xs h-10 font-semibold transition-all duration-150"
+                      variant="default"
+                      className="w-full text-xs h-10 font-semibold cursor-pointer shadow-xs transition-all active:scale-[0.99]"
                       onClick={handleUploadAndAudit}
                       disabled={!selectedFile || !uploadUf || !uploadVigenciaDate || isUploading}
                     >

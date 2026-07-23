@@ -618,8 +618,8 @@ export function OcrTablesViewer({
       />
 
       {isEditingMode && (
-        <div className="fixed bottom-6 right-6 z-50 bg-card/95 backdrop-blur-md border border-primary/20 rounded-2xl p-4 shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-300 ring-1 ring-black/5">
-          <div className="flex items-center gap-2 pr-2 border-r border-border/40">
+        <div className="fixed bottom-6 right-6 z-50 bg-card/95 backdrop-blur-md border border-border/80 rounded-2xl p-3.5 shadow-xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-300 ring-1 ring-black/5">
+          <div className="flex items-center gap-2 pr-3 border-r border-border/50">
             <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
@@ -628,11 +628,13 @@ export function OcrTablesViewer({
           </div>
           <Button
             type="button"
+            variant="default"
+            size="sm"
             onClick={handleSaveEdits}
             disabled={isUpdatingOcrTables}
-            className="text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shadow-md disabled:opacity-50 h-9 border-none"
+            className="text-xs font-semibold px-3.5 h-8 rounded-lg flex items-center gap-1.5 cursor-pointer shadow-xs transition-all active:scale-[0.98]"
           >
-            <Save className="w-4 h-4" />
+            <Save className="w-3.5 h-3.5" />
             {isUpdatingOcrTables ? 'Salvando...' : 'Salvar Alterações'}
           </Button>
           <Button
@@ -641,9 +643,9 @@ export function OcrTablesViewer({
             size="sm"
             onClick={handleToggleEditingMode}
             disabled={isUpdatingOcrTables}
-            className="text-xs font-semibold hover:bg-muted/80 text-foreground flex items-center gap-1.5 cursor-pointer h-9 rounded-xl"
+            className="text-xs font-semibold h-8 px-3 rounded-lg flex items-center gap-1.5 cursor-pointer shadow-2xs"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
             Cancelar
           </Button>
         </div>

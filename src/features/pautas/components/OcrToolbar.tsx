@@ -89,12 +89,14 @@ export function OcrToolbar({
               <>
                 <Button
                   type="button"
+                  variant="default"
+                  size="sm"
                   onClick={onSaveEdits}
                   disabled={isSavingEdits}
-                  className="text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-md disabled:opacity-50 h-8.5"
+                  className="text-xs font-semibold px-3.5 h-8.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-[0.98]"
                 >
                   <Save className="w-3.5 h-3.5" />
-                  {isSavingEdits ? 'Salvando...' : 'Salvar'}
+                  {isSavingEdits ? 'Salvando...' : 'Salvar Alterações'}
                 </Button>
                 <Button
                   type="button"
@@ -102,7 +104,7 @@ export function OcrToolbar({
                   size="sm"
                   onClick={onToggleEditingMode}
                   disabled={isSavingEdits}
-                  className="text-xs font-semibold hover:bg-muted/80 text-foreground flex items-center gap-1.5 cursor-pointer h-8.5 rounded-xl"
+                  className="text-xs font-semibold h-8.5 px-3 rounded-lg flex items-center gap-1.5 cursor-pointer shadow-2xs"
                 >
                   <X className="w-3.5 h-3.5" />
                   Cancelar
@@ -114,9 +116,9 @@ export function OcrToolbar({
                 variant="outline"
                 size="sm"
                 onClick={onToggleEditingMode}
-                className="text-xs font-semibold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/25 flex items-center gap-1.5 cursor-pointer h-8.5 rounded-xl transition-all shadow-2xs"
+                className="text-xs font-semibold h-8.5 px-3 rounded-lg flex items-center gap-1.5 cursor-pointer border-border/60 hover:text-primary hover:bg-accent hover:border-primary/40 transition-all shadow-2xs"
               >
-                <Edit3 className="w-3.5 h-3.5" />
+                <Edit3 className="w-3.5 h-3.5 text-primary" />
                 Editar Tabelas
               </Button>
             )}
