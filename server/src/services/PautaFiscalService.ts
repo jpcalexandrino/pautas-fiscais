@@ -7,6 +7,7 @@ import CalendarioRepository from '../repositories/CalendarioRepository';
 import { TextractCompactor } from './TextractCompactor';
 import { parseDateToSkData, parseStringToDate } from '../utils/normalize';
 import { PDFSplitter } from './PDFSplitter';
+import { PdfPreprocessorService } from './PdfPreprocessorService';
 
 export interface ProcessPautaResult {
   autoInserted: number;
@@ -46,6 +47,14 @@ class PautaFiscalService {
           console.error('Failed to split PDF vertically:', err);
         }
       }
+
+      // Aplica otimização e pré-processamento de imagem/PDF antes de enviar para o Textract
+      try {
+        finalBuffer = await PdfPreprocessorService.preprocess(finalBuffer, filename);
+      } catch (err) {
+        console.error('Failed to preprocess PDF/Image:', err);
+      }
+
       const textractResult = await TextractGatewayService.extractFromPdf(finalBuffer, filename, uf);
       textractJson = textractResult.data;
       await PautaFiscalRepository.upsertOcr(filename, uf, textractJson, null, dataPauta, contexto);

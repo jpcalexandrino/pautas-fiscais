@@ -35,10 +35,7 @@ const TableCell = <T,>({ cell, ...props }: CellProps<T>) => {
 
     if (!table) return null
 
-    const columnOrder = useMemo(
-        () => table.getState().columnOrder,
-        [table.getState()]
-    )
+    const columnOrder = table.getState().columnOrder
 
     return (
         <SortableContext
@@ -337,7 +334,6 @@ const TableCellRenderer = <T,>({ cell, className }: CellProps<T>) => {
             data-selected={isSelected}
             data-pinned={isPinned}
             onFocus={handleFocus}
-            autoFocus
             style={{
                 ...style,
                 ...getCommonPinningStyles(cell.column, cell.column.getSize()),

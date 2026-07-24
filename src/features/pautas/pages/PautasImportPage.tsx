@@ -178,16 +178,6 @@ export default function PautasImportPage() {
     }
   }, [auditFilename, ocrFiles]);
 
-  // Preenche a data de vigência automaticamente com a primeira sugestão encontrada no OCR
-  useEffect(() => {
-    if (sugestoesDatas.length > 0 && !vigenciaDate) {
-      setVigenciaDate(sugestoesDatas[0]);
-      const dataFormatada = sugestoesDatas[0].split('-').reverse().join('/');
-      toast.success('Data de vigência autodetectada!', {
-        description: `Preenchemos o campo com a data ${dataFormatada} encontrada no PDF.`,
-      });
-    }
-  }, [sugestoesDatas, vigenciaDate]);
 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
