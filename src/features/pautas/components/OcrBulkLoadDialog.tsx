@@ -1,78 +1,14 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Check, Search, Loader2, Info, SlidersHorizontal, AlertCircle, X } from 'lucide-react';
+import { Check, Loader2, Info } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/shared/components/ui/label';
+import type { OcrBulkLoadDialogProps } from './OcrBulkLoadDialog/types';
+import { useBulkLoadItems } from './OcrBulkLoadDialog/hooks/useBulkLoadItems';
+import { useBulkProductFilter } from './OcrBulkLoadDialog/hooks/useBulkProductFilter';
+import { BulkLoadItemProductDialog } from './OcrBulkLoadDialog/components/BulkLoadItemProductDialog';
 
-interface Produto {
-  id: number;
-  descricao_interna: string;
-  gtin_13?: string;
-  embalagem?: string;
-  conteudo_volume?: number;
-}
-
-interface DeParaItem {
-  id: number;
-  termo_descricao_estado: string;
-  fk_produto: number;
-}
-
-interface BulkItem {
-  cellKey: string;
-  rowIdx: number;
-  colIdx: number;
-  inferredDesc: string;
-  value: string;
-  valorNum: number;
-  matchedProductIds: number[];
-  matchType: 'de-para' | 'fuzzy' | 'none';
-  selected: boolean;
-  confirmed: boolean;
-}
-
-interface OcrBulkLoadDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  tabela: {
-    tabelaIndex: number;
-    pagina: number;
-    headers: string[];
-    indexedRows: { data: string[]; originalIndex: number }[];
-  } | null;
-  produtos: Produto[];
-  deParas: DeParaItem[];
-  uf: string;
-  dataPauta: string;
-  filename: string;
-  confirmedCells: Set<string>;
-  onConfirmBulk: (params: {
-    fk_produtos: number[];
-    uf: string;
-    descricao_estado: string;
-    valor_pauta: number;
-    data_pauta: string;
-    arquivo_origem: string;
-    salvar_de_para: boolean;
-    cell_key: string;
-  }[]) => Promise<void>;
-  isPriceCell: (value: string, header: string) => boolean;
-  inferItemDescription: (row: string[], headers: string[], colIdx: number, uf: string) => string;
-}
-
-function normalizeText(value?: string | null): string {
-  if (!value) return '';
-  return String(value)
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, ' ')
-    .replace(/[^0-9a-z ]/g, '');
-}
+export type { OcrBulkLoadDialogProps };
 
 export function OcrBulkLoadDialog({
   open,
@@ -88,220 +24,26 @@ export function OcrBulkLoadDialog({
   isPriceCell,
   inferItemDescription,
 }: OcrBulkLoadDialogProps) {
-  const [items, setItems] = useState<BulkItem[]>([]);
-  const [saveDePara, setSaveDePara] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [activeItemIdx, setActiveItemIdx] = useState<number | null>(null);
-  const [productSearch, setProductSearch] = useState('');
-  const [embalagemFilter, setEmbalagemFilter] = useState('all');
-  const [volumeFilter, setVolumeFilter] = useState('');
+  const bulkItems = useBulkLoadItems({
+    open,
+    tabela,
+    produtos,
+    deParas,
+    uf,
+    dataPauta,
+    filename,
+    confirmedCells,
+    onConfirmBulk,
+    onOpenChange,
+    isPriceCell,
+    inferItemDescription,
+  });
 
-  const uniqueEmbalagens = useMemo(() => {
-    const set = new Set<string>();
-    produtos.forEach((p) => {
-      if (p.embalagem) set.add(p.embalagem.toUpperCase().trim());
-    });
-    return Array.from(set).sort();
-  }, [produtos]);
-
-  useEffect(() => {
-    setProductSearch('');
-    setEmbalagemFilter('all');
-    setVolumeFilter('');
-  }, [activeItemIdx]);
-
-  // Processa as linhas da tabela ao abrir o modal ou mudar a tabela
-  useEffect(() => {
-    if (!open || !tabela) {
-      setItems([]);
-      setActiveItemIdx(null);
-      return;
-    }
-
-    const processedItems: BulkItem[] = [];
-
-    tabela.indexedRows.forEach((rowObj) => {
-      const { data: row, originalIndex: rIdx } = rowObj;
-      row.forEach((cell, cIdx) => {
-        const header = tabela.headers[cIdx] || '';
-        if (isPriceCell(cell, header, cIdx)) {
-          const cellKey = `${tabela.tabelaIndex}-${rIdx}-${cIdx}`;
-          const inferredDesc = inferItemDescription(row, tabela.headers, cIdx, uf);
-          const isConfirmed = confirmedCells.has(cellKey);
-          const cleanCell = cell.replace(/R\$\s*/i, '').trim();
-          const valorNum = parseFloat(cleanCell.replace(',', '.'));
-
-          // Procura primeiro no De-Para
-          const normInferred = normalizeText(inferredDesc);
-          const exactDeParaMatches = deParas.filter(
-            (dp) => normalizeText(dp.termo_descricao_estado) === normInferred
-          );
-
-          let matchedProductIds: number[] = [];
-          let matchType: 'de-para' | 'fuzzy' | 'none' = 'none';
-
-          if (exactDeParaMatches.length > 0) {
-            matchedProductIds = exactDeParaMatches.map((dp) => dp.fk_produto);
-            matchType = 'de-para';
-          } else {
-            // Fuzzy search contra catálogo de produtos
-            const bestMatch = produtos
-              .map((p) => {
-                const normInternal = normalizeText(p.descricao_interna);
-                const score = normInferred.split(/\s+/).reduce((acc, word) => {
-                  if (word.length >= 3 && normInternal.includes(word)) {
-                    return acc + 1;
-                  }
-                  return acc;
-                }, 0);
-                return { p, score };
-              })
-              .filter((m) => m.score > 0)
-              .sort((a, b) => b.score - a.score)[0];
-
-            if (bestMatch) {
-              matchedProductIds = [bestMatch.p.id];
-              matchType = 'fuzzy';
-            }
-          }
-
-          processedItems.push({
-            cellKey,
-            rowIdx: rIdx,
-            colIdx: cIdx,
-            inferredDesc,
-            value: cell,
-            valorNum,
-            matchedProductIds,
-            matchType,
-            confirmed: isConfirmed,
-            selected: !isConfirmed && matchedProductIds.length > 0,
-          });
-        }
-      });
-    });
-
-    setItems(processedItems);
-  }, [open, tabela, deParas, produtos, uf]);
-
-  const handleToggleSelectAll = (checked: boolean) => {
-    setItems((prev) =>
-      prev.map((item) => (item.confirmed ? item : { ...item, selected: checked }))
-    );
-  };
-
-  const handleToggleItem = (idx: number) => {
-    setItems((prev) =>
-      prev.map((item, i) => (i === idx ? { ...item, selected: !item.selected } : item))
-    );
-  };
-
-  const handleProductSelect = (productId: number) => {
-    if (activeItemIdx === null) return;
-    setItems((prev) =>
-      prev.map((item, i) => {
-        if (i !== activeItemIdx) return item;
-        const exists = item.matchedProductIds.includes(productId);
-        const newIds = exists
-          ? item.matchedProductIds.filter((id) => id !== productId)
-          : [...item.matchedProductIds, productId];
-        return {
-          ...item,
-          matchedProductIds: newIds,
-          matchType: item.matchType === 'de-para' ? 'de-para' : 'fuzzy',
-          selected: newIds.length > 0,
-        };
-      })
-    );
-  };
-
-  const handleSaveBulk = async () => {
-    const selectedItems = items.filter((item) => item.selected && item.matchedProductIds.length > 0);
-    if (selectedItems.length === 0) return;
-
-    setIsSaving(true);
-    try {
-      const payloads = selectedItems.map((item) => ({
-        fk_produtos: item.matchedProductIds,
-        uf,
-        descricao_estado: item.inferredDesc,
-        valor_pauta: item.valorNum,
-        data_pauta: dataPauta,
-        arquivo_origem: filename,
-        salvar_de_para: saveDePara && item.matchType !== 'de-para',
-        cell_key: item.cellKey,
-      }));
-
-      await onConfirmBulk(payloads);
-      onOpenChange(false);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const activeItem = activeItemIdx !== null ? items[activeItemIdx] : null;
-
-  const filteredProducts = useMemo(() => {
-    return produtos.filter((p) => {
-      const normSearch = normalizeText(productSearch);
-      const matchesSearch =
-        normalizeText(p.descricao_interna).includes(normSearch) ||
-        (p.gtin_13 && p.gtin_13.includes(normSearch));
-
-      const matchesEmbalagem =
-        embalagemFilter === 'all' ||
-        (p.embalagem && p.embalagem.toUpperCase().trim() === embalagemFilter);
-
-      const matchesVolume =
-        !volumeFilter.trim() ||
-        (() => {
-          const normFilter = volumeFilter.toLowerCase().replace(/\s*(?:ml|g|l|kg)\b/gi, '').trim();
-          const prodVolume = p.conteudo_volume ? String(p.conteudo_volume) : '';
-          return (
-            prodVolume.includes(normFilter) ||
-            p.descricao_interna.toLowerCase().includes(volumeFilter.toLowerCase().trim())
-          );
-        })();
-
-      return matchesSearch && matchesEmbalagem && matchesVolume;
-    });
-  }, [produtos, productSearch, embalagemFilter, volumeFilter]);
-
-  const selectedProductsForActiveItem = useMemo(() => {
-    if (!activeItem) return [];
-    return produtos.filter((p) => activeItem.matchedProductIds.includes(p.id));
-  }, [produtos, activeItem?.matchedProductIds]);
-
-  const handleRemoveProductFromActiveItem = (id: number) => {
-    if (activeItemIdx === null) return;
-    setItems((prev) =>
-      prev.map((item, i) => {
-        if (i !== activeItemIdx) return item;
-        const newIds = item.matchedProductIds.filter((val) => val !== id);
-        return {
-          ...item,
-          matchedProductIds: newIds,
-          selected: newIds.length > 0,
-        };
-      })
-    );
-  };
-
-  const handleClearAllForActiveItem = () => {
-    if (activeItemIdx === null) return;
-    setItems((prev) =>
-      prev.map((item, i) => {
-        if (i !== activeItemIdx) return item;
-        return {
-          ...item,
-          matchedProductIds: [],
-          selected: false,
-        };
-      })
-    );
-  };
+  const productFilter = useBulkProductFilter({
+    produtos,
+    activeItemIdx: bulkItems.activeItemIdx,
+    activeItem: bulkItems.activeItem,
+  });
 
   return (
     <>
@@ -332,28 +74,36 @@ export function OcrBulkLoadDialog({
                   <th className="p-3 w-10 text-center">
                     <Checkbox
                       checked={
-                        items.length > 0 &&
-                        items.filter((item) => !item.confirmed).every((item) => item.selected)
+                        bulkItems.items.length > 0 &&
+                        bulkItems.items.filter((item) => !item.confirmed).every((item) => item.selected)
                       }
-                      onCheckedChange={(checked) => handleToggleSelectAll(!!checked)}
-                      disabled={items.filter((item) => !item.confirmed).length === 0}
+                      onCheckedChange={(checked) => bulkItems.handleToggleSelectAll(!!checked)}
+                      disabled={bulkItems.items.filter((item) => !item.confirmed).length === 0}
                     />
                   </th>
-                  <th className="p-3 font-bold text-muted-foreground uppercase tracking-wide text-xs">Descrição Inferida (Estado)</th>
-                  <th className="p-3 w-28 font-bold text-muted-foreground uppercase tracking-wide text-xs">Preço</th>
-                  <th className="p-3 font-bold text-muted-foreground uppercase tracking-wide text-xs">Produto Associado</th>
-                  <th className="p-3 w-28 text-center font-bold text-muted-foreground uppercase tracking-wide text-xs">Status</th>
+                  <th className="p-3 font-bold text-muted-foreground uppercase tracking-wide text-xs">
+                    Descrição Inferida (Estado)
+                  </th>
+                  <th className="p-3 w-28 font-bold text-muted-foreground uppercase tracking-wide text-xs">
+                    Preço
+                  </th>
+                  <th className="p-3 font-bold text-muted-foreground uppercase tracking-wide text-xs">
+                    Produto Associado
+                  </th>
+                  <th className="p-3 w-28 text-center font-bold text-muted-foreground uppercase tracking-wide text-xs">
+                    Status
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-muted/30">
-                {items.length === 0 ? (
+                {bulkItems.items.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="p-8 text-center text-muted-foreground">
                       Nenhum preço encontrado nesta tabela.
                     </td>
                   </tr>
                 ) : (
-                  items.map((item, idx) => {
+                  bulkItems.items.map((item, idx) => {
                     const matchedProds = produtos.filter((p) => item.matchedProductIds.includes(p.id));
                     return (
                       <tr
@@ -365,19 +115,21 @@ export function OcrBulkLoadDialog({
                         <td className="p-3 text-center">
                           <Checkbox
                             checked={item.selected}
-                            onCheckedChange={() => handleToggleItem(idx)}
+                            onCheckedChange={() => bulkItems.handleToggleItem(idx)}
                             disabled={item.confirmed}
                           />
                         </td>
                         <td className="p-3 font-medium max-w-xs truncate" title={item.inferredDesc}>
                           {item.inferredDesc}
                         </td>
-                        <td className="p-3 font-semibold text-primary">R$ {item.value.replace(/R\$\s*/i, '')}</td>
+                        <td className="p-3 font-semibold text-primary">
+                          R$ {item.value.replace(/R\$\s*/i, '')}
+                        </td>
                         <td className="p-3">
                           <Button
                             type="button"
                             variant="outline"
-                            onClick={() => !item.confirmed && setActiveItemIdx(idx)}
+                            onClick={() => !item.confirmed && bulkItems.setActiveItemIdx(idx)}
                             className={`w-full text-left justify-start p-1.5 h-auto border border-muted/50 rounded hover:border-primary/40 hover:bg-muted/40 transition-colors font-medium truncate block max-w-md ${
                               item.confirmed ? 'cursor-not-allowed bg-muted/10' : 'cursor-pointer'
                             }`}
@@ -417,8 +169,8 @@ export function OcrBulkLoadDialog({
           <div className="flex items-center space-x-2 pt-1 my-2">
             <Checkbox
               id="bulk-save-de-para"
-              checked={saveDePara}
-              onCheckedChange={(checked) => setSaveDePara(!!checked)}
+              checked={bulkItems.saveDePara}
+              onCheckedChange={(checked) => bulkItems.setSaveDePara(!!checked)}
             />
             <Label
               htmlFor="bulk-save-de-para"
@@ -429,221 +181,55 @@ export function OcrBulkLoadDialog({
           </div>
 
           <DialogFooter className="gap-2 mt-2 border-t border-muted/30 pt-3">
-            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={isSaving}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onOpenChange(false)}
+              disabled={bulkItems.isSaving}
+            >
               Cancelar
             </Button>
             <Button
               size="sm"
-              onClick={handleSaveBulk}
+              onClick={bulkItems.handleSaveBulk}
               disabled={
-                isSaving ||
-                items.filter((item) => item.selected && item.matchedProductIds.length > 0).length === 0
+                bulkItems.isSaving ||
+                bulkItems.items.filter((item) => item.selected && item.matchedProductIds.length > 0).length === 0
               }
             >
-              {isSaving ? (
+              {bulkItems.isSaving ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
-                  Gravando {items.filter((item) => item.selected).length} Itens...
+                  Gravando {bulkItems.items.filter((item) => item.selected).length} Itens...
                 </>
               ) : (
-                `Gravar na Pauta (${items.filter((item) => item.selected && item.matchedProductIds.length > 0).length} itens)`
+                `Gravar na Pauta (${
+                  bulkItems.items.filter((item) => item.selected && item.matchedProductIds.length > 0).length
+                } itens)`
               )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Dialog secundário para seleção de produto de uma linha */}
-      <Dialog open={activeItemIdx !== null} onOpenChange={(open) => !open && setActiveItemIdx(null)}>
-        <DialogContent className="sm:max-w-6xl max-w-6xl w-[92vw] h-[85vh] flex flex-col p-6 rounded-2xl gap-4 bg-background border border-muted/40">
-          <DialogHeader className="border-b border-muted/30 pb-3 flex flex-row items-center justify-between">
-            <div>
-              <DialogTitle className="text-lg font-bold flex items-center gap-2.5 text-foreground">
-                <span className="p-1.5 rounded-lg bg-primary/10 text-primary">
-                  <Search className="w-5 h-5" />
-                </span>
-                Associar Produto do Lote
-              </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                Escolha o produto correspondente do catálogo para associar a esta linha.
-              </DialogDescription>
-            </div>
-          </DialogHeader>
-
-          {activeItem && (
-            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6 py-2">
-              {/* COLUNA ESQUERDA - DESTAQUE DO ITEM DO LOTE */}
-              <div className="lg:col-span-5 flex flex-col gap-4">
-                <div className="bg-primary/[0.02] dark:bg-primary/[0.03] border border-primary/10 p-5 rounded-xl space-y-4 flex-1 flex flex-col justify-between">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <span className="bg-primary/15 text-primary text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full">
-                        Item do Lote
-                      </span>
-                    </div>
-
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Descrição na Pauta:</span>
-                      <h3 className="text-base font-extrabold text-foreground leading-snug tracking-tight">
-                        {activeItem.inferredDesc}
-                      </h3>
-                    </div>
-
-                    <div className="pt-3 border-t border-primary/10 flex justify-between items-baseline">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Preço Detectado:</span>
-                      <span className="text-xl font-black text-primary">
-                        R$ {activeItem.value.replace(/R\$\s*/i, '')}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3 bg-background/50 dark:bg-background/20 p-3 rounded-lg border border-primary/10 text-xs">
-                    <div className="flex items-start gap-2 text-muted-foreground leading-relaxed">
-                      <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                      <div>
-                        Selecione um produto à direita. Você pode associar múltiplos produtos se necessário.
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* COLUNA DIREITA - SELEÇÃO DE PRODUTOS */}
-              <div className="lg:col-span-7 flex flex-col gap-3 min-h-0">
-                {/* FILTROS */}
-                <div className="bg-muted/20 border border-muted/30 p-4 rounded-xl space-y-3">
-                  <div className="flex items-center justify-between text-xs font-bold text-foreground">
-                    <span className="flex items-center gap-1.5">
-                      <SlidersHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
-                      Filtros de Busca
-                    </span>
-                    {activeItem.matchedProductIds.length > 0 && (
-                      <span className="text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-md font-semibold text-[10px]">
-                        Selecionados: {activeItem.matchedProductIds.length}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/55" />
-                    <Input
-                      placeholder="Buscar por descrição interna ou GTIN..."
-                      value={productSearch}
-                      onChange={(e) => setProductSearch(e.target.value)}
-                      className="pl-9 text-xs h-9 bg-background/50 border-muted-foreground/20 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
-                      autoFocus
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-[10px] font-bold text-muted-foreground uppercase">Embalagem</Label>
-                      <Select value={embalagemFilter} onValueChange={setEmbalagemFilter}>
-                        <SelectTrigger className="h-8.5 text-xs bg-background">
-                          <SelectValue placeholder="Todas" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Todas as embalagens</SelectItem>
-                          {uniqueEmbalagens.map((emb) => (
-                            <SelectItem key={emb} value={emb} className="text-xs">
-                              {emb}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label className="text-[10px] font-bold text-muted-foreground uppercase">Volumetria (ex: 473 ml)</Label>
-                      <Input
-                        placeholder="Filtrar volume..."
-                        value={volumeFilter}
-                        onChange={(e) => setVolumeFilter(e.target.value)}
-                        className="text-xs h-8.5 bg-background border-muted-foreground/20 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* PRODUTOS SELECIONADOS (BADGES) */}
-                {selectedProductsForActiveItem.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 p-2 bg-muted/20 border border-muted/20 rounded-xl animate-fade-in max-h-24 overflow-y-auto scrollbar-thin">
-                    {selectedProductsForActiveItem.map((p) => (
-                      <span
-                        key={p.id}
-                        className="inline-flex items-center gap-1 bg-primary/10 text-primary text-[10px] font-semibold px-2.5 py-1 rounded-xl"
-                      >
-                        <span className="truncate max-w-[150px]">{p.descricao_interna}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon-xs"
-                          onClick={() => handleRemoveProductFromActiveItem(p.id)}
-                          className="hover:bg-primary/20 p-0.5 rounded cursor-pointer shrink-0 transition-colors h-4 w-4"
-                        >
-                          <X className="w-3 h-3 text-primary" />
-                        </Button>
-                      </span>
-                    ))}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="xs"
-                      onClick={handleClearAllForActiveItem}
-                      className="text-[10px] font-bold text-destructive hover:text-destructive/80 hover:bg-transparent transition-colors px-2 py-1 cursor-pointer ml-auto h-auto"
-                    >
-                      Desmarcar Todos
-                    </Button>
-                  </div>
-                )}
-
-                {/* LISTA DE PRODUTOS */}
-                <div className="flex-1 overflow-y-auto border border-muted/50 rounded-xl p-1 bg-background/50 divide-y divide-muted/30 min-h-[180px]">
-                  {filteredProducts.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-10 text-muted-foreground gap-1.5">
-                      <AlertCircle className="w-6 h-6 text-muted-foreground/60" />
-                      <span className="text-xs font-semibold">Nenhum produto correspondente no catálogo</span>
-                      <span className="text-[10px]">Tente alterar os termos de busca ou remover os filtros.</span>
-                    </div>
-                  ) : (
-                    filteredProducts.map((p) => {
-                      const isSelected = activeItem.matchedProductIds.includes(p.id);
-                      return (
-                        <Button
-                          key={p.id}
-                          variant="ghost"
-                          onClick={() => handleProductSelect(p.id)}
-                          className={`w-full text-left justify-between px-4 py-2.5 text-xs h-auto transition-all flex items-center leading-snug cursor-pointer rounded-none border-b border-muted/20 ${
-                            isSelected
-                              ? 'bg-primary/[0.04] text-primary font-semibold hover:bg-primary/[0.08] hover:text-primary'
-                              : 'hover:bg-muted/40 text-foreground/90'
-                          }`}
-                        >
-                          <div className="pr-2 space-y-0.5">
-                            <span className="font-semibold text-foreground block">{p.descricao_interna}</span>
-                            <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-                              {p.gtin_13 && <span>GTIN: <strong className="text-foreground">{p.gtin_13}</strong></span>}
-                              {p.embalagem && <span>Embalagem: <strong className="text-foreground">{p.embalagem}</strong></span>}
-                              {p.conteudo_volume && <span>Volume: <strong className="text-foreground">{p.conteudo_volume} ml</strong></span>}
-                            </div>
-                          </div>
-                          {isSelected && <Check className="w-4 h-4 text-primary shrink-0" />}
-                        </Button>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          <DialogFooter className="pt-2 border-t border-muted/30">
-            <Button variant="outline" size="sm" onClick={() => setActiveItemIdx(null)}>
-              Fechar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Diálogo secundário para seleção de produto de um item do lote */}
+      <BulkLoadItemProductDialog
+        activeItemIdx={bulkItems.activeItemIdx}
+        onClose={() => bulkItems.setActiveItemIdx(null)}
+        activeItem={bulkItems.activeItem}
+        productSearch={productFilter.productSearch}
+        onProductSearchChange={productFilter.setProductSearch}
+        embalagemFilter={productFilter.embalagemFilter}
+        onEmbalagemFilterChange={productFilter.setEmbalagemFilter}
+        volumeFilter={productFilter.volumeFilter}
+        onVolumeFilterChange={productFilter.setVolumeFilter}
+        uniqueEmbalagens={productFilter.uniqueEmbalagens}
+        filteredProducts={productFilter.filteredProducts}
+        selectedProductsForActiveItem={productFilter.selectedProductsForActiveItem}
+        onProductSelect={bulkItems.handleProductSelect}
+        onRemoveProduct={bulkItems.handleRemoveProductFromActiveItem}
+        onClearAll={bulkItems.handleClearAllForActiveItem}
+      />
     </>
   );
 }

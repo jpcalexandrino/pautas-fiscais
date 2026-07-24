@@ -1,4 +1,21 @@
-export const priceRegex = /^\s*(?:R\$\s*)?\d+[\.,]\d{2}\s*$/i;
+export const priceRegex = /^\s*(?:R\$\s*)?\d+(?:[\.,\s]\d+)*[\.,]\s*\d{1,2}\s*$/i;
+
+/**
+ * Normaliza e higieniza strings de preços vindas do OCR (ex: "1004,0 0" -> "1004,00", "R$ 1.004 , 00" -> "1004,00").
+ * Remove espaços em branco espúrios entre os dígitos e separadores decimais.
+ */
+export function cleanPriceString(val?: string | null): string {
+  if (!val) return '';
+  const cleaned = String(val)
+    .replace(/R\$\s*/gi, '')
+    .trim();
+  
+  // Se for uma string no formato numérico com espaços entre dígitos (ex: "1004,0 0" ou "1 004,00")
+  if (/^\d[\d\s\.,]*\d$/.test(cleaned) || /^\d+[\.,]\s*\d/.test(cleaned)) {
+    return cleaned.replace(/\s+/g, '');
+  }
+  return cleaned;
+}
 
 export function normalizeForSearch(str: string): string {
   return str

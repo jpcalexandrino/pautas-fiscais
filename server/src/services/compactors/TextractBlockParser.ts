@@ -136,6 +136,9 @@ export class TextractBlockParser {
 
         let cellText = words.filter(Boolean).join(' ');
 
+        // Auto-corrige espaços espúrios inseridos pelo OCR no meio dos decimais (ex: "3,1 4" -> "3,14", "1004,0 0" -> "1004,00")
+        cellText = cellText.replace(/(\d+[\.,])\s+(\d+)/g, '$1$2');
+
         // Marca células com confiança baixa
         if (flagLowConfidence && minConfidence < lowConfidenceThreshold && cellText) {
           cellText = `${cellText} [?]`;

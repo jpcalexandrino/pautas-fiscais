@@ -12,6 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import type { EstruturaTabela, IndexedRow } from './OcrTablesViewer';
+import { cleanPriceString } from '../utils/ocrHelpers';
 
 interface OcrTableCardProps {
   tabela: Omit<EstruturaTabela, 'rows'> & { indexedRows: IndexedRow[] };
@@ -339,7 +340,7 @@ export function OcrTableCard({
                                   : 'bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/40'
                               }`}
                             >
-                              <span>R$ {cell.replace(/R\$\s*/i, '')}</span>
+                              <span>R$ {cleanPriceString(cell)}</span>
                               {isConfirmed ? (
                                 <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
                               ) : (
