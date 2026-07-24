@@ -148,7 +148,9 @@ export class TextractBlockParser {
         for (let dr = 0; dr < rowSpan && (r + dr) < maxRow; dr++) {
           for (let dc = 0; dc < colSpan && (c + dc) < maxCol; dc++) {
             if (!filled[r + dr][c + dc]) {
-              grid[r + dr][c + dc] = (dr === 0 && dc === 0) ? cellText : cellText;
+              // Apenas atribui o texto da célula para a célula principal (dr === 0)
+              // Células de RowSpan (dr > 0) devem permanecer vazias para não duplicar texto nas linhas subsequentes
+              grid[r + dr][c + dc] = (dr === 0) ? cellText : '';
               filled[r + dr][c + dc] = true;
             }
           }

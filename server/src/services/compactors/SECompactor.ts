@@ -83,29 +83,69 @@ export class SECompactor implements UFCompactorStrategy {
         continue;
       }
 
+      // Linha de continuação de texto (sem preço próprio no OCR raw): anexa a descrição ao produto anterior
+      if (col0 && !hasPrice && !isSub && !isNonBeerSub && newTable.length > startIdx) {
+        const lastRow = newTable[newTable.length - 1];
+        if (lastRow && lastRow[0]) {
+          let activeSubheader = currentSubheader || state.currentSubheader || '';
+          let prevBaseDesc = lastRow[0];
+          if (activeSubheader && prevBaseDesc.endsWith(` (${activeSubheader})`)) {
+            prevBaseDesc = prevBaseDesc.slice(0, -(` (${activeSubheader})`.length));
+          }
+          const updatedDesc = `${prevBaseDesc} ${col0}`.trim();
+          activeSubheader = this._correctSubheader(updatedDesc, activeSubheader);
+          if (activeSubheader) {
+            lastRow[0] = `${updatedDesc} (${activeSubheader})`;
+          } else {
+            lastRow[0] = updatedDesc;
+          }
+          continue;
+        }
+      }
+
       // Produto relevante em seção de cerveja
       if (isProductRelevant) {
         const isBeerSection = state.isBeerSection !== false;
         if (isBeerSection) {
-          const newRow = [...row];
-          let activeSubheader = currentSubheader || state.currentSubheader || '';
+          // Se col0 contiver múltiplos produtos concatenados (ex: "Cidade Imperio Dunkel Cidade Imperio Hessel")
+          // Apenas divide se houver repetição de prefixos principais de marca (ex: "Cidade Imperio", "Império")
+          const brandMatches = Array.from(col0.matchAll(/(?:cidade\s+imperia?l?|império|imperio)(?=\s|$)/gi));
+          const prodsToProcess: string[] = [];
 
-          // Auto-correção heurística baseada em conflitos de volume
-          activeSubheader = this._correctSubheader(col0, activeSubheader);
-
-          if (activeSubheader) {
-            currentSubheader = activeSubheader;
-            state.currentSubheader = activeSubheader;
-            newRow[0] = `${col0} (${activeSubheader})`;
+          if (brandMatches.length > 1) {
+            for (let i = 0; i < brandMatches.length; i++) {
+              const start = brandMatches[i].index!;
+              const end = (i + 1 < brandMatches.length) ? brandMatches[i + 1].index! : col0.length;
+              const prod = col0.slice(start, end).trim();
+              if (prod) prodsToProcess.push(prod);
+            }
+          } else {
+            prodsToProcess.push(col0);
           }
 
-          // Normaliza o valor do preço
-          if (col1) {
-            const productType = this._detectProductType(col0);
-            newRow[1] = this._normalizePrice(col1, productType);
-          }
+          for (const itemDesc of prodsToProcess) {
+            const newRow = [...row];
+            let activeSubheader = currentSubheader || state.currentSubheader || '';
 
-          newTable.push(newRow);
+            // Auto-correção heurística baseada em conflitos de volume
+            activeSubheader = this._correctSubheader(itemDesc, activeSubheader);
+
+            if (activeSubheader) {
+              currentSubheader = activeSubheader;
+              state.currentSubheader = activeSubheader;
+              newRow[0] = `${itemDesc} (${activeSubheader})`;
+            } else {
+              newRow[0] = itemDesc;
+            }
+
+            // Normaliza o valor do preço
+            if (col1) {
+              const productType = this._detectProductType(itemDesc);
+              newRow[1] = this._normalizePrice(col1, productType);
+            }
+
+            newTable.push(newRow);
+          }
         }
       }
     }
