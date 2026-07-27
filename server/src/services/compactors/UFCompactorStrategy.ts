@@ -58,12 +58,32 @@ export interface UFCompactorStrategy {
 import { MGCompactor } from './MGCompactor';
 import { PRCompactor } from './PRCompactor';
 import { SECompactor } from './SECompactor';
+import { ALCompactor } from './ALCompactor';
+import { APCompactor } from './APCompactor';
+import { DFCompactor } from './DFCompactor';
+import { MACompactor } from './MACompactor';
+import { MTCompactor } from './MTCompactor';
+import { PACompactor } from './PACompactor';
+import { PECompactor } from './PECompactor';
+import { PICompactor } from './PICompactor';
+import { RNCompactor } from './RNCompactor';
+import { ROCompactor } from './ROCompactor';
 import { GenericCompactor } from './GenericCompactor';
 
 const compactorRegistry: Record<string, UFCompactorStrategy> = {
   MG: new MGCompactor(),
   PR: new PRCompactor(),
   SE: new SECompactor(),
+  AL: new ALCompactor(),
+  AP: new APCompactor(),
+  DF: new DFCompactor(),
+  MA: new MACompactor(),
+  MT: new MTCompactor(),
+  PA: new PACompactor(),
+  PE: new PECompactor(),
+  PI: new PICompactor(),
+  RN: new RNCompactor(),
+  RO: new ROCompactor(),
 };
 
 /**

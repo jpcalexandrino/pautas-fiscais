@@ -4,6 +4,7 @@ import { ptBR } from "date-fns/locale"
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "./popover"
 import { Button } from "./button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select"
 import { cn } from "@/lib/utils"
 
 interface DatePickerProps {
@@ -45,6 +46,18 @@ export function DatePicker({
     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
   ]
 
+  // Lista de anos (1950 a 2050)
+  const yearsArray = React.useMemo(() => {
+    const current = new Date().getFullYear()
+    const startYear = Math.min(2019, current)
+    const endYear = Math.max(2030, current + 10)
+    const years: number[] = []
+    for (let y = startYear; y <= endYear; y++) {
+      years.push(y)
+    }
+    return years
+  }, [])
+
   // Dias da semana
   const weekDays = ["D", "S", "T", "Q", "Q", "S", "S"]
 
@@ -62,6 +75,16 @@ export function DatePicker({
   const handleNextMonth = (e: React.MouseEvent) => {
     e.stopPropagation()
     setViewDate(new Date(year, month + 1, 1))
+  }
+
+  const handleMonthChange = (newMonthStr: string) => {
+    const newMonth = parseInt(newMonthStr, 10)
+    setViewDate(new Date(year, newMonth, 1))
+  }
+
+  const handleYearChange = (newYearStr: string) => {
+    const newYear = parseInt(newYearStr, 10)
+    setViewDate(new Date(newYear, month, 1))
   }
 
   const handleSelectDay = (day: number) => {
@@ -105,24 +128,54 @@ export function DatePicker({
           <span className="truncate">{formattedLabel}</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-3 bg-popover border rounded-lg shadow-md" align="start">
-        {/* Header do calendário */}
-        <div className="flex items-center justify-between pb-2 mb-2 border-b">
+      <PopoverContent className="w-72 p-3 bg-popover border rounded-lg shadow-md" align="start">
+        {/* Header do calendário com componentes shadcn Select */}
+        <div className="flex items-center justify-between pb-2 mb-2 border-b gap-1">
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 p-0"
+            type="button"
+            className="h-7 w-7 p-0 shrink-0"
             onClick={handlePrevMonth}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="text-xs font-semibold text-foreground">
-            {monthNames[month]} de {year}
-          </span>
+
+          <div className="flex items-center gap-1.5 flex-1 justify-center">
+            {/* Select Shadcn para Mês */}
+            <Select value={String(month)} onValueChange={handleMonthChange}>
+              <SelectTrigger size="sm" className="h-7 text-xs font-semibold px-2 py-0">
+                <SelectValue>{monthNames[month]}</SelectValue>
+              </SelectTrigger>
+              <SelectContent className="max-h-56">
+                {monthNames.map((name, index) => (
+                  <SelectItem key={index} value={String(index)} className="text-xs">
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Select Shadcn para Ano */}
+            <Select value={String(year)} onValueChange={handleYearChange}>
+              <SelectTrigger size="sm" className="h-7 text-xs font-semibold px-2 py-0">
+                <SelectValue>{year}</SelectValue>
+              </SelectTrigger>
+              <SelectContent className="max-h-56">
+                {yearsArray.map((y) => (
+                  <SelectItem key={y} value={String(y)} className="text-xs">
+                    {y}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 p-0"
+            type="button"
+            className="h-7 w-7 p-0 shrink-0"
             onClick={handleNextMonth}
           >
             <ChevronRight className="h-4 w-4" />
@@ -160,7 +213,7 @@ export function DatePicker({
                 type="button"
                 onClick={() => handleSelectDay(day)}
                 className={cn(
-                  "h-7 w-7 rounded-md text-xs font-normal transition-colors cursor-pointer hover:bg-accent hover:text-accent-foreground flex items-center justify-center",
+                  "h-7 w-7 rounded-md text-xs font-normal transition-colors cursor-pointer hover:bg-accent hover:text-accent-foreground flex items-center justify-center mx-auto",
                   isSelected && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground font-semibold",
                   isToday && !isSelected && "border border-primary/45 text-primary font-medium"
                 )}

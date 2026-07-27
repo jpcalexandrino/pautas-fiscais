@@ -40,9 +40,9 @@ class PautaFiscalService {
       }
     } else {
       let finalBuffer = buffer;
-      if (uf.toUpperCase() === 'SE') {
+      if (['SE', 'RN'].includes(uf.toUpperCase())) {
         try {
-          finalBuffer = await PDFSplitter.splitVertically(buffer);
+          finalBuffer = await PDFSplitter.splitVertically(buffer, { splitRatio: 0.49, gutterMargin: 4 });
         } catch (err) {
           console.error('Failed to split PDF vertically:', err);
         }

@@ -123,6 +123,136 @@ ATENÇÃO — COLUNAS PARALELAS: A tabela pode ter duas colunas lado a lado no P
       if (numCols === 2) return ['PRODUTO_MARCA_TIPO', 'VALOR_RS'];
       return Array.from({ length: numCols }).map((_, i) => `COLUNA_${i + 1}`);
     }
+  },
+  AL: {
+    guideline: 'Tabelas do estado de Alagoas (AL) possuem colunas: CÓDIGO, PRODUTO / MARCA / TIPO, VOLUME, GTIN, EMBALAGEM e PMPF.',
+    getTableHeaders: (numCols: number) => {
+      const standard = ['CODIGO', 'PRODUTO_MARCA_TIPO', 'VOLUME', 'GTIN', 'EMBALAGEM', 'PMPF'];
+      if (numCols <= 6) return standard.slice(0, numCols);
+      return [...standard, ...Array.from({ length: numCols - 6 }).map((_, i) => `COLUNA_${i + 7}`)];
+    }
+  },
+  AP: {
+    guideline: 'O Amapá (AP) utiliza tabelas em matriz onde cada linha representa o fabricante e marca/produto e as colunas representam tipos de embalagens/volumes com o preço de pauta correspondente: GARRAFA_RETORNAVEL_600ML, GARRAFA_RETORNAVEL_1000ML, GARRAFA_DESC_RETORNAVEL_ATE_390ML, GARRAFA_DESCARTAVEL_391_660ML, GARRAFA_DESCARTAVEL_1000ML, LATA_ATE_270ML, LATA_271_360ML, LATA_361_660ML.',
+    getTableHeaders: (numCols: number) => {
+      if (numCols === 10) {
+        return [
+          'FABRICANTE',
+          'MARCA_PRODUTO',
+          'GARRAFA_RETORNAVEL_600ML',
+          'GARRAFA_RETORNAVEL_1000ML',
+          'GARRAFA_DESC_RETORNAVEL_ATE_390ML',
+          'GARRAFA_DESCARTAVEL_391_660ML',
+          'GARRAFA_DESCARTAVEL_1000ML',
+          'LATA_ATE_270ML',
+          'LATA_271_360ML',
+          'LATA_361_660ML'
+        ];
+      }
+      if (numCols === 9) {
+        return [
+          'MARCA_PRODUTO',
+          'GARRAFA_RETORNAVEL_600ML',
+          'GARRAFA_RETORNAVEL_1000ML',
+          'GARRAFA_DESC_RETORNAVEL_ATE_390ML',
+          'GARRAFA_DESCARTAVEL_391_660ML',
+          'GARRAFA_DESCARTAVEL_1000ML',
+          'LATA_ATE_270ML',
+          'LATA_271_360ML',
+          'LATA_361_660ML'
+        ];
+      }
+      return Array.from({ length: numCols }).map((_, i) => `COLUNA_${i + 1}`);
+    }
+  },
+  DF: {
+    guideline: 'Tabelas do Distrito Federal (DF) possuem 6 colunas estruturadas: Marca, Nome, Embalagem, Tipo, Volume e Valor (R$).',
+    getTableHeaders: (numCols: number) => {
+      const standard = ['MARCA', 'NOME', 'EMBALAGEM', 'TIPO', 'VOLUME', 'VALOR'];
+      if (numCols <= 6) return standard.slice(0, numCols);
+      return [...standard, ...Array.from({ length: numCols - 6 }).map((_, i) => `COLUNA_${i + 7}`)];
+    }
+  },
+  MA: {
+    guideline: 'Tabelas do estado do Maranhão (MA) possuem subcabeçalhos de Grupo/Subgrupo/Embalagem (ex: "Subgrupo 15 = Cerveja - Lata | Emb 15 - 710 ml"). As colunas são: Códigos, und, Discriminação e Valor R$. Propague a descrição da embalagem/faixa de volume do subgrupo ativo para a discriminação do produto.',
+    getTableHeaders: (numCols: number) => {
+      const standard = ['CODIGO', 'UNIDADE', 'DISCRIMINACAO', 'VALOR_RS'];
+      if (numCols <= 4) return standard.slice(0, numCols);
+      return [...standard, ...Array.from({ length: numCols - 4 }).map((_, i) => `COLUNA_${i + 5}`)];
+    }
+  },
+  MT: {
+    guideline: 'Tabelas do estado de Mato Grosso (MT) possuem 5 colunas estruturadas: ORDEM, CÓDIGO GTIN/EAN, DESCRIÇÃO, UNIDADE DE MEDIDA e VALOR (R$).',
+    getTableHeaders: (numCols: number) => {
+      const standard = ['ORDEM', 'CODIGO_GTIN_EAN', 'DESCRICAO', 'UNIDADE_DE_MEDIDA', 'VALOR_RS'];
+      if (numCols <= 5) return standard.slice(0, numCols);
+      return [...standard, ...Array.from({ length: numCols - 5 }).map((_, i) => `COLUNA_${i + 6}`)];
+    }
+  },
+  PA: {
+    guideline: 'Tabelas do estado do Pará (PA) possuem 9 colunas estruturadas: FABRICANTE, MARCA / DESCRIÇÃO, EMBALAGEM, MATERIAL, RETORNÁVEL / DESCARTÁVEL, VOLUME (ML), GTIN / EAN, PREÇO (R$) e EFEITOS A PARTIR DE.',
+    getTableHeaders: (numCols: number) => {
+      const standard = [
+        'FABRICANTE',
+        'MARCA_DESCRICAO',
+        'EMBALAGEM',
+        'MATERIAL',
+        'RETORNAVEL_DESCARTAVEL',
+        'VOLUME_ML',
+        'GTIN_EAN',
+        'PRECO_RS',
+        'EFEITOS_A_PARTIR_DE'
+      ];
+      if (numCols <= 9) return standard.slice(0, numCols);
+      return [...standard, ...Array.from({ length: numCols - 9 }).map((_, i) => `COLUNA_${i + 10}`)];
+    }
+  },
+  PE: {
+    guideline: 'Tabelas do estado de Pernambuco (PE) possuem 2 colunas: MERCADORIA/MARCA/TIPO e BASE DE CÁLCULO ICMS (R$). Possuem subcabeçalhos de embalagem/volume (ex: "Cerveja em garrafa retornável até 360 ml"). Propague a descrição do subcabeçalho ativo para o nome do produto.',
+    getTableHeaders: (numCols: number) => {
+      const standard = ['MERCADORIA_MARCA_TIPO', 'VALOR_RS'];
+      if (numCols <= 2) return standard.slice(0, numCols);
+      return [...standard, ...Array.from({ length: numCols - 2 }).map((_, i) => `COLUNA_${i + 3}`)];
+    }
+  },
+  PI: {
+    guideline: 'Tabelas do estado do Piauí (PI) possuem 4 colunas estruturadas: ITEM, PRODUTO, UNIDADE e PMPF (R$).',
+    getTableHeaders: (numCols: number) => {
+      const standard = ['ITEM', 'PRODUTO', 'UNIDADE', 'PMPF_RS'];
+      if (numCols <= 4) return standard.slice(0, numCols);
+      return [...standard, ...Array.from({ length: numCols - 4 }).map((_, i) => `COLUNA_${i + 5}`)];
+    }
+  },
+  RN: {
+    guideline: 'Tabelas do estado do Rio Grande do Norte (RN) possuem 7 colunas estruturadas: ID, FABRICANTE, EMBALAGEM, TIPO EMB., VOLUME (ML), MARCA e PMPF.',
+    getTableHeaders: (numCols: number) => {
+      if (numCols >= 7) {
+        const standard = ['ID', 'FABRICANTE', 'EMBALAGEM', 'TIPO_EMB', 'VOLUME_ML', 'MARCA', 'PMPF'];
+        if (numCols === 7) return standard;
+        return [...standard, ...Array.from({ length: numCols - 7 }).map((_, i) => `COLUNA_${i + 8}`)];
+      }
+      const standard6 = ['ID', 'FABRICANTE', 'EMBALAGEM', 'TIPO_E_VOLUME', 'MARCA', 'PMPF'];
+      if (numCols <= 6) return standard6.slice(0, numCols);
+      return [...standard6, ...Array.from({ length: numCols - 6 }).map((_, i) => `COLUNA_${i + 7}`)];
+    }
+  },
+  RO: {
+    guideline: 'Tabelas do estado de Rondônia (RO) possuem 9 colunas estruturadas: FABRICANTE, DESCRIÇÃO, EMBALAGEM, CAPACIDADE (ml), EAN / GTIN (unitário), NCM, CEST, PMPF (R$) e VIGÊNCIA.',
+    getTableHeaders: (numCols: number) => {
+      const standard = [
+        'FABRICANTE',
+        'DESCRICAO',
+        'EMBALAGEM',
+        'CAPACIDADE_ML',
+        'EAN_GTIN',
+        'NCM',
+        'CEST',
+        'PMPF_RS',
+        'VIGENCIA'
+      ];
+      if (numCols <= 9) return standard.slice(0, numCols);
+      return [...standard, ...Array.from({ length: numCols - 9 }).map((_, i) => `COLUNA_${i + 10}`)];
+    }
   }
 };
 

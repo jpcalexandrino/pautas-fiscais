@@ -128,11 +128,24 @@ export class TextractCompactor {
       const rawRows = xlsx.utils.sheet_to_json<any[]>(sheet, { header: 1, defval: '', raw: true });
 
       if (rawRows.length > 0) {
+        const priceRegex = /(?:R\$\s*)?\d+[.,]\d{2}/i;
         const headerIndex = rawRows.findIndex(row => row.some(cell => String(cell).trim() !== ''));
-        const headers = headerIndex !== -1 ? rawRows[headerIndex].map(h => String(h || '').trim()) : [];
-        const rows = headerIndex !== -1
-          ? rawRows.slice(headerIndex + 1).map(row => row.map(cell => String(cell === null || cell === undefined ? '' : cell).trim()))
-          : [];
+
+        let headers: string[] = [];
+        let rows: string[][] = [];
+
+        if (headerIndex !== -1) {
+          const candidateHeader = rawRows[headerIndex];
+          const isFirstRowData = candidateHeader.some(cell => priceRegex.test(String(cell).trim()));
+
+          if (isFirstRowData) {
+            headers = [];
+            rows = rawRows.slice(headerIndex).map(row => row.map(cell => String(cell === null || cell === undefined ? '' : cell).trim()));
+          } else {
+            headers = candidateHeader.map(h => String(h || '').trim());
+            rows = rawRows.slice(headerIndex + 1).map(row => row.map(cell => String(cell === null || cell === undefined ? '' : cell).trim()));
+          }
+        }
 
         const compactor = getCompactorForUF(ufUpper);
         const state: CompactorState = { currentSubheader: '', isBeerSection: true };
@@ -143,7 +156,7 @@ export class TextractCompactor {
           const layout = getLayoutForUF(ufUpper);
           const customHeaders = layout.getTableHeaders(headers.length);
           if (customHeaders && customHeaders.length > 0 && !customHeaders[0].startsWith('COLUNA_')) {
-            finalHeaders = headers.map((h, i) => (h && !h.toUpperCase().startsWith('COLUNA') && h.toUpperCase() !== 'VALOR' ? h : (customHeaders[i] || h)));
+            finalHeaders = customHeaders;
           }
         }
 
@@ -219,7 +232,97 @@ export class TextractCompactor {
       }
     }
 
+    // Recupera produtos soltos no texto OCR que não foram tabulados no grid do Textract
+    if (typeof nestedData.text === 'string' && resultados.length > 0) {
+      const extraRows = this._extractUnmappedProductsFromText(nestedData.text, resultados);
+      if (extraRows.length > 0) {
+        resultados[0].rows.unshift(...extraRows);
+      }
+    }
+
     return resultados;
+  }
+
+  private static _extractUnmappedProductsFromText(text: string | undefined, existingTables: EstruturaTabela[]): string[][] {
+    if (!text || typeof text !== 'string') return [];
+
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    const extraRows: string[][] = [];
+
+    const existingKeys = new Set<string>();
+    existingTables.forEach(t => {
+      t.rows.forEach(r => {
+        existingKeys.add(r.join(' ').toLowerCase());
+      });
+    });
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+
+      if (isRowRelevant(line)) {
+        const windowLines = lines.slice(Math.max(0, i - 3), i + 12);
+        const windowStr = windowLines.join(' ');
+
+        let priceLineIdx = -1;
+        let priceMatch: RegExpMatchArray | null = null;
+        for (let w = 0; w < windowLines.length; w++) {
+          const m = windowLines[w].match(/^R\$\s*(\d+[.,]\d{2})$/i);
+          if (m) {
+            priceMatch = m;
+            priceLineIdx = Math.max(0, i - 3) + w;
+            break;
+          }
+        }
+
+        const volumeMatch = windowLines.map(l => l.match(/^(\d+\s*ml|\d+\s*l)$/i)).find(Boolean);
+
+        if (priceMatch && volumeMatch && priceLineIdx !== -1) {
+          const priceStr = `R$ ${priceMatch[1].replace('.', ',')}`;
+          const volumeStr = volumeMatch[1].toUpperCase();
+
+          const codePrefixMatch = windowLines.map(l => l.match(/^(CER\d{2}\.\d{2})$/i)).find(Boolean);
+          const codeSuffixLine = lines[priceLineIdx + 1];
+          const codeSuffix = (codeSuffixLine && /^\d{1,2}$/.test(codeSuffixLine)) ? codeSuffixLine : '';
+
+          let codeStr = codePrefixMatch ? codePrefixMatch[1].toUpperCase() : '';
+          if (codeStr && codeSuffix) {
+            codeStr += ` ${codeSuffix}`;
+          }
+
+          const gtinPrefixMatch = windowLines.map(l => l.match(/^(789\d{7})$/)).find(Boolean);
+          const gtinSuffixLine = lines[priceLineIdx + 2];
+          const gtinSuffix = (gtinSuffixLine && /^\d{3,4}$/.test(gtinSuffixLine)) ? gtinSuffixLine : '';
+          let gtinStr = gtinPrefixMatch ? (gtinPrefixMatch[1] + (gtinSuffix ? ` ${gtinSuffix}` : '')) : '';
+
+          let embalagemStr = 'GARRAFA VIDRO DESCARTÁVEL';
+          if (/retorn[aá]vel/i.test(windowStr)) embalagemStr = 'GARRAFA VIDRO RETORNÁVEL';
+          else if (/lata/i.test(windowStr)) embalagemStr = 'LATA';
+          else if (/pet/i.test(windowStr)) embalagemStr = 'GARRAFA PET';
+
+          let isAlreadyMapped = false;
+          for (const k of existingKeys) {
+            if (k.includes(line.toLowerCase()) && (k.includes(volumeStr.toLowerCase()) || k.includes(priceMatch[1]))) {
+              isAlreadyMapped = true;
+              break;
+            }
+          }
+
+          if (!isAlreadyMapped) {
+            extraRows.push([
+              codeStr,
+              line.toUpperCase(),
+              volumeStr,
+              gtinStr,
+              embalagemStr,
+              priceStr
+            ]);
+            existingKeys.add(`${codeStr} ${line} ${volumeStr} ${gtinStr} ${priceStr}`.toLowerCase());
+          }
+        }
+      }
+    }
+
+    return extraRows;
   }
 
   // =========================================================================
