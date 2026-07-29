@@ -332,10 +332,10 @@ export function OcrTableCard({
                               variant="ghost"
                               size="xs"
                               onClick={() => onCellClick(tabela.tabelaIndex, rIdx, cIdx, cell, row, tabela.headers)}
-                              className={`font-semibold px-2 h-6 text-[11px] transition-all inline-flex items-center gap-1 cursor-pointer border shadow-2xs ${
+                              className={`font-semibold px-2.5 h-6.5 text-[11px] transition-all inline-flex items-center gap-1 cursor-pointer border shadow-2xs rounded-lg ${
                                 isConfirmed
                                   ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/25 hover:bg-emerald-500/20'
-                                  : 'bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 hover:border-primary/40'
+                                  : 'bg-primary/30 text-primary-foreground hover:bg-primary hover:text-primary-foreground border-primary/35 hover:border-primary font-bold'
                               }`}
                             >
                               {isConfirmed ? (
