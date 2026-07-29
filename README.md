@@ -1,16 +1,68 @@
-# React + Vite
+# Pricer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Monorepo com frontend e API separados, prontos para extrair em repositórios independentes.
 
-Currently, two official plugins are available:
+```
+CLIENT/
+├── client/                 # @pricer/client — Vite/React
+├── server/                 # @pricer/server — Express/API
+│   ├── src/
+│   │   ├── app/            # createApp + registerRoutes
+│   │   ├── bootstrap/      # initDatabase
+│   │   ├── config/         # env, db
+│   │   ├── modules/        # domínios (auth, users, produtos, pautas, …)
+│   │   ├── infrastructure/ # OCR (Textract) + PDF
+│   │   └── shared/         # middleware, utils
+│   └── .env.*
+├── deploy/                 # nginx (exemplos)
+├── scripts/                # deploy-homolog.sh
+├── ecosystem.config.cjs    # PM2 (homolog + prod)
+└── package.json
+```
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Desenvolvimento local
 
-## React Compiler
+```bash
+npm run dev:server
+npm run dev:client
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Homologação (Lightsail + PM2 + nginx)
 
-## Expanding the ESLint configuration
+1. Na VM, clone/pull o repo (ex.: `/var/www/pricer`).
+2. Crie envs:
+   - `server/.env.homologation` (a partir de `server/.env.homologation.example`)
+   - `client/.env.homologation` com `VITE_API_URL=/api`
+3. Configure nginx com `deploy/nginx.homolog.conf.example` (`root` → `client/dist`, `/api` → `127.0.0.1:3001`).
+4. Deploy:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+bash scripts/deploy-homolog.sh
+# ou manualmente:
+npm run build:all
+APP_ENV=homologation pm2 start ecosystem.config.cjs --only pricer-homolog
+```
+
+Variáveis importantes no server:
+
+| Variável | Homolog |
+|----------|---------|
+| `APP_ENV` | `homologation` |
+| `SERVE_CLIENT` | `false` (nginx serve o SPA) |
+| `CORS_ORIGIN` | URL pública da homolog |
+| `PORT` | `3001` (só localhost; nginx faz proxy) |
+
+## Produção
+
+Mesmo fluxo, app PM2 `pricer` e `server/.env.production`.
+
+```bash
+npm run build:all
+pm2 start ecosystem.config.cjs --only pricer
+```
+
+## Separação futura client / API
+
+1. Extrair `client/` e `server/` em repos.
+2. Manter nginx: static do client + proxy `/api`.
+3. `CORS_ORIGIN` + `VITE_API_URL` absolutos se forem hosts diferentes.

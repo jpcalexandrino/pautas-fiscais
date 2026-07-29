@@ -1,19 +1,29 @@
 import dotenv from 'dotenv';
 import path from 'path';
 
-const isProduction = process.env.NODE_ENV === 'production';
+/**
+ * APP_ENV: development | homologation | production
+ * NODE_ENV continua sendo usado por libs (pg ssl, etc.)
+ */
+const appEnv = process.env.APP_ENV || process.env.NODE_ENV || 'development';
 
-if (isProduction) {
-  // Em produção, tenta carregar do arquivo .env.production primeiro
-  // e depois do .env genérico, caso exista.
-  dotenv.config({ path: path.join(__dirname, '../../.env.production') });
-  dotenv.config({ path: path.join(__dirname, '../../.env') });
-} else {
-  // Em desenvolvimento, carrega as variáveis do .env.development
-  dotenv.config({ path: path.join(__dirname, '../../.env.development') });
+const envFiles: Record<string, string[]> = {
+  production: ['.env.production', '.env'],
+  homologation: ['.env.homologation', '.env.homolog', '.env'],
+  development: ['.env.development', '.env'],
+};
+
+const files = envFiles[appEnv] || envFiles.development;
+const serverRoot = path.join(__dirname, '../..');
+
+for (const file of files) {
+  dotenv.config({ path: path.join(serverRoot, file) });
 }
 
-// VALIDAÇÃO DAS VARIÁVEIS DE AMBIENTE OBRIGATÓRIAS
+if (!process.env.APP_ENV) {
+  process.env.APP_ENV = appEnv;
+}
+
 const requiredEnv = [
   'JWT_SECRET',
   'SYNAPSE_API_URL',
@@ -22,7 +32,6 @@ const requiredEnv = [
 
 const missingEnv = requiredEnv.filter((key) => !process.env[key]);
 
-// O banco de dados pode ser configurado por DATABASE_URL ou variáveis individuais
 const hasDatabaseConfig = !!(
   process.env.DATABASE_URL ||
   (process.env.DB_USER && process.env.DB_HOST && process.env.DB_NAME && process.env.DB_PASSWORD)
@@ -37,4 +46,3 @@ if (missingEnv.length > 0) {
   missingEnv.forEach((key) => console.error('\x1b[31m%s\x1b[0m', `   - ${key}`));
   process.exit(1);
 }
-

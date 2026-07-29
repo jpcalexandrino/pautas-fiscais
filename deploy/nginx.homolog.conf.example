@@ -1,0 +1,73 @@
+# Exemplo nginx — Homologação Pricer (Ubuntu / Lightsail)
+#
+# Instalar:
+#   sudo cp deploy/nginx.homolog.conf.example /etc/nginx/sites-available/pricer-homolog
+#   sudo ln -sf /etc/nginx/sites-available/pricer-homolog /etc/nginx/sites-enabled/
+#   sudo nginx -t && sudo systemctl reload nginx
+#
+# Ajuste root, server_name e certificados conforme o ambiente.
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name homolog.seudominio.com.br;
+
+    # Redirecionar HTTP → HTTPS (descomente se tiver certificado)
+    # return 301 https://$host$request_uri;
+
+    # --- Ou servir em HTTP durante testes ---
+    root /var/www/pricer/client/dist;
+    index index.html;
+
+    client_max_body_size 25M;
+
+    # Frontend (SPA)
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # API → Node/PM2
+    location /api/ {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+    }
+
+    # Assets com cache
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff2?)$ {
+        expires 7d;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+}
+
+# Exemplo HTTPS (Let's Encrypt)
+# server {
+#     listen 443 ssl http2;
+#     server_name homolog.seudominio.com.br;
+#     ssl_certificate     /etc/letsencrypt/live/homolog.seudominio.com.br/fullchain.pem;
+#     ssl_certificate_key /etc/letsencrypt/live/homolog.seudominio.com.br/privkey.pem;
+#
+#     root /var/www/pricer/client/dist;
+#     index index.html;
+#     client_max_body_size 25M;
+#
+#     location / {
+#         try_files $uri $uri/ /index.html;
+#     }
+#
+#     location /api/ {
+#         proxy_pass http://127.0.0.1:3001;
+#         proxy_http_version 1.1;
+#         proxy_set_header Host $host;
+#         proxy_set_header X-Real-IP $remote_addr;
+#         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#         proxy_set_header X-Forwarded-Proto $scheme;
+#         proxy_read_timeout 300s;
+#     }
+# }

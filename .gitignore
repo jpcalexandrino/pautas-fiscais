@@ -15,8 +15,21 @@ dist-ssr
 .env.*
 *.env
 
-# Server build output
+# Package build outputs
+client/dist
 server/dist
+client/.tanstack
+client/.env.production.local
+
+# Keep env examples
+/.env.example
+/.env.*
+/**/.env.example
+/**/.env.*
+/client/.env.*
+/server/.env.*
+/server/.env.*.*
+/client/.env.*.*
 
 # Editor directories and files
 .vscode/*
