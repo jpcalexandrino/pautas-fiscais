@@ -132,30 +132,27 @@ export function OcrAssociationDialog({
           ? '!w-screen !h-screen !max-w-none !max-h-none !left-0 !top-0 !translate-x-0 !translate-y-0 !rounded-none !border-none p-6 gap-4' 
           : 'sm:max-w-6xl max-w-6xl w-[95vw] h-[85vh] rounded-xl border border-border/60 gap-4'
       }`}>
-        <DialogHeader className="border-b border-border/40 pb-3 flex flex-row items-center justify-between">
-          <div>
-            <DialogTitle className="flex items-center gap-2.5 text-lg font-bold text-foreground">
-              <span className="p-1.5 rounded-xl bg-primary/10 text-primary">
-                <Layers className="w-5 h-5" />
-              </span>
-              {title}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-              Associe a descrição capturada na pauta do estado ao produto correspondente do catálogo no contexto <strong className="text-foreground capitalize">{contexto}</strong>.
-            </DialogDescription>
-          </div>
-          <div className="flex items-center gap-2 mr-6">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsFullScreen(!isFullScreen)}
-              className="h-8 w-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
-              title={isFullScreen ? "Minimizar" : "Maximizar"}
-            >
-              {isFullScreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            </Button>
-          </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => setIsFullScreen(!isFullScreen)}
+          className="absolute top-2 right-10 h-8 w-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer shrink-0 z-50"
+          title={isFullScreen ? "Minimizar" : "Maximizar"}
+        >
+          {isFullScreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+        </Button>
+
+        <DialogHeader className="border-b border-border/40 pb-3">
+          <DialogTitle className="flex items-center gap-2.5 text-lg font-bold text-foreground">
+            <span className="p-1.5 rounded-xl bg-primary/10 text-primary">
+              <Layers className="w-5 h-5" />
+            </span>
+            {title}
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+            Associe a descrição capturada na pauta do estado ao produto correspondente do catálogo no contexto <strong className="text-foreground capitalize">{contexto}</strong>.
+          </DialogDescription>
         </DialogHeader>
 
         {selectedCellData && (
