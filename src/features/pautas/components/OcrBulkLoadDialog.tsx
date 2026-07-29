@@ -62,7 +62,7 @@ export function OcrBulkLoadDialog({
                 <span className="p-1.5 rounded-xl bg-primary/10 text-primary">
                   <Check className="w-5 h-5" />
                 </span>
-                Carga em Lote - Tabela {tabela?.tabelaIndex}
+                Carga em Lote - Tabela {tabela?.tabelaIndex} ({bulkItems.items.length} {bulkItems.items.length === 1 ? 'item' : 'itens'})
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5">
                 Mapeie múltiplos preços de uma vez. O sistema tentará sugerir o produto com base no catálogo e De-Para do estado.
