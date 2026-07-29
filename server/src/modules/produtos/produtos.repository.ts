@@ -18,7 +18,7 @@ class ProdutoRepository {
       CREATE TABLE IF NOT EXISTS dim_produto (
         sk_produto SERIAL PRIMARY KEY,
         nk_codigo_interno VARCHAR(50),
-        gtin_13 VARCHAR(13) UNIQUE,
+        gtin_13 VARCHAR(13),
         descricao_interna VARCHAR(255) NOT NULL,
         embalagem VARCHAR(50),
         conteudo_volume INT,
@@ -26,7 +26,13 @@ class ProdutoRepository {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `;
-    return db.query(queryText);
+    const res = await db.query(queryText);
+    try {
+      await db.query(`ALTER TABLE dim_produto DROP CONSTRAINT IF EXISTS dim_produto_gtin_13_key`);
+    } catch (err) {
+      console.error('Error dropping dim_produto_gtin_13_key constraint:', err);
+    }
+    return res;
   }
 
   async getAll(): Promise<QueryResult> {
@@ -58,6 +64,46 @@ class ProdutoRepository {
        WHERE sk_produto <> $1 AND regexp_replace(gtin_13, '[^0-9]', '', 'g') = $2`,
       [id, normalized]
     );
+  }
+
+  async findByGtinAndCodigoInterno(gtin: string, codigo: string | null): Promise<QueryResult> {
+    const normalized = normalizeGtin(gtin);
+    if (!normalized) {
+      return db.query('SELECT * FROM dim_produto WHERE false');
+    }
+    if (codigo) {
+      return db.query(
+        `SELECT * FROM dim_produto
+         WHERE regexp_replace(gtin_13, '[^0-9]', '', 'g') = $1 AND nk_codigo_interno = $2`,
+        [normalized, codigo]
+      );
+    } else {
+      return db.query(
+        `SELECT * FROM dim_produto
+         WHERE regexp_replace(gtin_13, '[^0-9]', '', 'g') = $1 AND (nk_codigo_interno IS NULL OR nk_codigo_interno = '')`,
+        [normalized]
+      );
+    }
+  }
+
+  async findByGtinAndCodigoInternoExcludingId(id: number, gtin: string, codigo: string | null): Promise<QueryResult> {
+    const normalized = normalizeGtin(gtin);
+    if (!normalized) {
+      return db.query('SELECT * FROM dim_produto WHERE false');
+    }
+    if (codigo) {
+      return db.query(
+        `SELECT * FROM dim_produto
+         WHERE sk_produto <> $1 AND regexp_replace(gtin_13, '[^0-9]', '', 'g') = $2 AND nk_codigo_interno = $3`,
+        [id, normalized, codigo]
+      );
+    } else {
+      return db.query(
+        `SELECT * FROM dim_produto
+         WHERE sk_produto <> $1 AND regexp_replace(gtin_13, '[^0-9]', '', 'g') = $2 AND (nk_codigo_interno IS NULL OR nk_codigo_interno = '')`,
+        [id, normalized]
+      );
+    }
   }
 
   async findByCodigoInterno(codigo: string): Promise<QueryResult> {

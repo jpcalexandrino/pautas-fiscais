@@ -54,9 +54,12 @@ export async function create(req: Request, res: Response) {
       return res.status(400).json({ error: 'Descrição interna é obrigatória' });
     }
     if (mapped.gtin_13) {
-      const existing = await ProdutoRepository.findByGtin(mapped.gtin_13);
+      const existing = await ProdutoRepository.findByGtinAndCodigoInterno(
+        mapped.gtin_13,
+        mapped.nk_codigo_interno || null
+      );
       if (existing.rows.length > 0) {
-        return res.status(409).json({ error: 'GTIN já cadastrado' });
+        return res.status(409).json({ error: 'Produto com este GTIN e Código ERP já cadastrado' });
       }
     }
     const result = await ProdutoRepository.create(mapped);
@@ -71,9 +74,13 @@ export async function update(req: Request, res: Response) {
     const id = Number(req.params.id);
     const mapped = mapToDb(req.body);
     if (mapped.gtin_13) {
-      const existing = await ProdutoRepository.findByGtinExcludingId(id, mapped.gtin_13);
+      const existing = await ProdutoRepository.findByGtinAndCodigoInternoExcludingId(
+        id,
+        mapped.gtin_13,
+        mapped.nk_codigo_interno || null
+      );
       if (existing.rows.length > 0) {
-        return res.status(409).json({ error: 'GTIN já cadastrado em outro produto' });
+        return res.status(409).json({ error: 'Produto com este GTIN e Código ERP já cadastrado em outro produto' });
       }
     }
     const result = await ProdutoRepository.update(id, mapped);
@@ -168,17 +175,22 @@ export async function bulkImport(req: Request, res: Response) {
         // Buscar se já existe produto cadastrado
         let existingProduct: any = null;
 
-        if (gtin) {
-          const resGtin = await ProdutoRepository.findByGtin(gtin);
-          if (resGtin.rows.length > 0) {
-            existingProduct = resGtin.rows[0];
-          }
-        }
-
-        if (!existingProduct && codigo) {
+        if (codigo) {
           const resCod = await ProdutoRepository.findByCodigoInterno(codigo);
           if (resCod.rows.length > 0) {
             existingProduct = resCod.rows[0];
+          }
+        }
+
+        if (!existingProduct && gtin) {
+          const resGtin = await ProdutoRepository.findByGtinAndCodigoInterno(gtin, codigo || null);
+          if (resGtin.rows.length > 0) {
+            existingProduct = resGtin.rows[0];
+          } else if (!codigo) {
+            const resGtinAny = await ProdutoRepository.findByGtin(gtin);
+            if (resGtinAny.rows.length > 0) {
+              existingProduct = resGtinAny.rows[0];
+            }
           }
         }
 
@@ -195,11 +207,15 @@ export async function bulkImport(req: Request, res: Response) {
         };
 
         if (existingProduct) {
-          // Se o novo gtin for diferente do atual, validar se não colide com outro produto
-          if (gtin && gtin !== existingProduct.gtin_13) {
-            const conflictGtin = await ProdutoRepository.findByGtinExcludingId(existingProduct.sk_produto, gtin);
+          // Se o novo gtin + codigo for diferente do atual, validar se não colide com outro produto
+          if (gtin && (gtin !== existingProduct.gtin_13 || codigo !== existingProduct.nk_codigo_interno)) {
+            const conflictGtin = await ProdutoRepository.findByGtinAndCodigoInternoExcludingId(
+              existingProduct.sk_produto,
+              gtin,
+              codigo || null
+            );
             if (conflictGtin.rows.length > 0) {
-              errors.push({ row: rowNum, error: `GTIN '${gtin}' já cadastrado em outro produto` });
+              errors.push({ row: rowNum, error: `GTIN '${gtin}' com código ERP '${codigo || ''}' já cadastrado em outro produto` });
               continue;
             }
           }
@@ -207,11 +223,11 @@ export async function bulkImport(req: Request, res: Response) {
           await ProdutoRepository.update(existingProduct.sk_produto, mapped);
           updated++;
         } else {
-          // Garantir que o GTIN não existe
+          // Garantir que a combinação GTIN + código não existe
           if (gtin) {
-            const conflictGtin = await ProdutoRepository.findByGtin(gtin);
+            const conflictGtin = await ProdutoRepository.findByGtinAndCodigoInterno(gtin, codigo || null);
             if (conflictGtin.rows.length > 0) {
-              errors.push({ row: rowNum, error: `GTIN '${gtin}' já cadastrado` });
+              errors.push({ row: rowNum, error: `GTIN '${gtin}' com código ERP '${codigo || ''}' já cadastrado` });
               continue;
             }
           }

@@ -110,17 +110,23 @@ class PautaMatchingService {
       const normalizedGtin = normalizeGtin(item.gtin);
 
       const byGtin = await ProdutoRepository.findByGtin(normalizedGtin);
-      if (byGtin.rows.length > 0 && byGtin.rows[0].sk_produto !== undefined) {
-        return { status: 'matched', fk_produtos: [byGtin.rows[0].sk_produto], matchType: 'gtin' };
+      if (byGtin.rows.length > 0) {
+        const ids = byGtin.rows.map((row) => row.sk_produto).filter((id): id is number => id !== undefined);
+        if (ids.length > 0) {
+          return { status: 'matched', fk_produtos: ids, matchType: 'gtin' };
+        }
       }
 
       const byDeParaGtin = await DeParaProdutoEstadoRepository.findByGtinEstado(uf, normalizedGtin);
-      if (byDeParaGtin.rows.length > 0 && byDeParaGtin.rows[0].fk_produto_sk !== undefined) {
-        return {
-          status: 'matched',
-          fk_produtos: [byDeParaGtin.rows[0].fk_produto_sk],
-          matchType: 'de_para_gtin',
-        };
+      if (byDeParaGtin.rows.length > 0) {
+        const ids = byDeParaGtin.rows.map((row) => row.fk_produto_sk).filter((id): id is number => id !== undefined);
+        if (ids.length > 0) {
+          return {
+            status: 'matched',
+            fk_produtos: ids,
+            matchType: 'de_para_gtin',
+          };
+        }
       }
     }
 
