@@ -78,17 +78,23 @@ export function useBulkLoadItems({
             matchType = 'de-para';
           } else {
             // Busca inteligente considerando GTIN, palavras, volume e embalagem
-            const bestMatch = produtos
+            const matches = produtos
               .map((p) => ({
                 p,
                 score: calculateProductMatchScore(inferredDesc, p, rowGtin),
               }))
               .filter((m) => m.score > 0)
-              .sort((a, b) => b.score - a.score)[0];
+              .sort((a, b) => b.score - a.score);
 
-            if (bestMatch) {
-              matchedProductIds = [bestMatch.p.id];
-              matchType = bestMatch.score >= 100 ? 'gtin' : 'fuzzy';
+            if (matches.length > 0) {
+              const bestScore = matches[0].score;
+              if (bestScore >= 100) {
+                matchedProductIds = matches.filter((m) => m.score >= 100).map((m) => m.p.id);
+                matchType = 'gtin';
+              } else {
+                matchedProductIds = [matches[0].p.id];
+                matchType = 'fuzzy';
+              }
             }
           }
 

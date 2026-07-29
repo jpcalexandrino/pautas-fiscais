@@ -90,15 +90,24 @@ export function useOcrAssociation({
       setSelectedProductIds(exactDeParaMatches.map((dp: any) => dp.fk_produto));
       setSaveDePara(false);
     } else {
-      const bestMatch = filteredCatalogProducts
+      const matches = filteredCatalogProducts
         .map((p) => ({
           p,
           score: calculateProductMatchScore(inferredDesc, p, rowGtin),
         }))
         .filter((m) => m.score > 0)
-        .sort((a, b) => b.score - a.score)[0];
+        .sort((a, b) => b.score - a.score);
 
-      setSelectedProductIds(bestMatch ? [bestMatch.p.id] : []);
+      if (matches.length > 0) {
+        const bestScore = matches[0].score;
+        if (bestScore >= 100) {
+          setSelectedProductIds(matches.filter((m) => m.score >= 100).map((m) => m.p.id));
+        } else {
+          setSelectedProductIds([matches[0].p.id]);
+        }
+      } else {
+        setSelectedProductIds([]);
+      }
       setSaveDePara(true);
     }
     setProductSearch('');
