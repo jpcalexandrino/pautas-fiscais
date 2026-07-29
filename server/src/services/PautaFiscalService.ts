@@ -2,6 +2,7 @@ import TextractGatewayService from './TextractGatewayService';
 import EstadoRepository from '../repositories/EstadoRepository';
 import DeParaProdutoEstadoRepository from '../repositories/DeParaProdutoEstadoRepository';
 import PautaFiscalRepository from '../repositories/PautaFiscalRepository';
+import UfCompactorRepository from '../repositories/UfCompactorRepository';
 import AuditRepository from '../repositories/AuditRepository';
 import CalendarioRepository from '../repositories/CalendarioRepository';
 import { TextractCompactor } from './TextractCompactor';
@@ -40,12 +41,17 @@ class PautaFiscalService {
       }
     } else {
       let finalBuffer = buffer;
-      if (['SE', 'RN'].includes(uf.toUpperCase())) {
-        try {
-          finalBuffer = await PDFSplitter.splitVertically(buffer, { splitRatio: 0.49, gutterMargin: 4 });
-        } catch (err) {
-          console.error('Failed to split PDF vertically:', err);
+      try {
+        const ufConfig = await UfCompactorRepository.getByUf(uf);
+        const shouldSplit = ufConfig
+          ? !!ufConfig.features.split_2_columns
+          : ['SE', 'RN'].includes(uf.toUpperCase());
+
+        if (shouldSplit) {
+          finalBuffer = await PDFSplitter.splitVertically(buffer, { splitRatio: 0.49, gutterMargin: 0 });
         }
+      } catch (err) {
+        console.error('Failed to check UF config or split PDF vertically:', err);
       }
 
       // Aplica otimização e pré-processamento de imagem/PDF antes de enviar para o Textract

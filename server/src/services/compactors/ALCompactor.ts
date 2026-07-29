@@ -24,13 +24,9 @@ export class ALCompactor implements UFCompactorStrategy {
     const firstRowHasPrice = firstRow.some(cell => priceRegex.test(cell.trim()));
     const firstRowHasVolume = firstRow.some(cell => /\d+\s*ml|\d+\s*l/i.test(cell.trim()));
 
-    // Se a primeira linha não for um produto, preserva-a como cabeçalho.
-    // Se a primeira linha já for um produto (ex: CER01.01 9), insere um cabeçalho fictício no topo.
-    if (!firstRowHasPrice && !firstRowHasVolume) {
-      newTable.push(table[0]);
-    } else {
-      newTable.push(['CODIGO', 'PRODUTO_MARCA_TIPO', 'VOLUME', 'GTIN', 'EMBALAGEM', 'PMPF']);
-    }
+    // Em Alagoas (AL), os PDFs contêm apenas as linhas de produtos sem linha de cabeçalho explicitada no OCR/Textract.
+    // Portanto, definimos sempre os nomes das colunas no topo da tabela.
+    newTable.push(['CODIGO', 'PRODUTO_MARCA_TIPO', 'VOLUME', 'GTIN', 'EMBALAGEM', 'PMPF']);
 
     const startIdx = (!firstRowHasPrice && !firstRowHasVolume) ? 1 : 0;
 

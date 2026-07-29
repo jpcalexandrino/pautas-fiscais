@@ -81,16 +81,16 @@ export function OcrFilesManagerDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-4xl max-w-4xl w-[95vw] h-[80vh] flex flex-col rounded-2xl gap-4 bg-background border border-muted/40 shadow-2xl">
-          <DialogHeader className="border-b border-muted/30 pb-3 flex flex-row items-center justify-between">
+        <DialogContent className="sm:max-w-4xl max-w-4xl w-[95vw] h-[80vh] flex flex-col rounded-xl gap-4 bg-background border border-border/60 shadow-xl">
+          <DialogHeader className="border-b border-border/40 pb-3 flex flex-row items-center justify-between">
             <div>
               <DialogTitle className="flex items-center gap-2.5 text-lg font-bold text-foreground">
-                <span className="p-2 rounded-xl bg-primary/10 text-primary">
+                <span className="p-1.5 rounded-xl bg-primary/10 text-primary">
                   <FileText className="w-5 h-5" />
                 </span>
                 Gerenciar Arquivos OCR Cadastrados
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground mt-1">
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
                 Visualize os PDFs processados no contexto <strong className="text-foreground capitalize">{contexto}</strong>. Arquivos sem pautas lançadas podem ser excluídos.
               </DialogDescription>
             </div>
@@ -98,17 +98,17 @@ export function OcrFilesManagerDialog({
 
           {/* Filtro de Busca */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/55" />
             <Input
               placeholder="Buscar arquivo por nome ou UF..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 text-xs h-9 bg-background/50 border-muted/50"
+              className="pl-8 text-xs h-7.5 bg-background border-border/60 rounded-xl focus-visible:ring-1 focus-visible:ring-primary px-2.5"
             />
           </div>
 
           {/* Tabela de Arquivos */}
-          <div className="flex-1 overflow-y-auto border border-muted/40 rounded-xl bg-card divide-y divide-muted/30 min-h-0 scrollbar-thin">
+          <div className="flex-1 overflow-y-auto border border-border/50 rounded-xl bg-card divide-y divide-border/30 min-h-0 scrollbar-thin">
             {filteredFiles.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
                 <AlertCircle className="w-8 h-8 text-muted-foreground/40" />
@@ -118,15 +118,15 @@ export function OcrFilesManagerDialog({
             ) : (
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-muted/15 border-b border-muted/30 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                    <th className="px-4 py-3">Arquivo</th>
-                    <th className="px-4 py-3 w-[100px]">UF</th>
-                    <th className="px-4 py-3 w-[130px]">Vigência</th>
-                    <th className="px-4 py-3 w-[150px]">Pautas Lançadas</th>
-                    <th className="px-4 py-3 w-[90px] text-center">Ações</th>
+                  <tr className="bg-muted/20 border-b border-border/40 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    <th className="px-4 py-2.5">Arquivo</th>
+                    <th className="px-4 py-2.5 w-[100px]">UF</th>
+                    <th className="px-4 py-2.5 w-[130px]">Vigência</th>
+                    <th className="px-4 py-2.5 w-[150px]">Pautas Lançadas</th>
+                    <th className="px-4 py-2.5 w-[90px] text-center">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-muted/30">
+                <tbody className="divide-y divide-border/30">
                   {filteredFiles.map((file) => {
                     const hasPautas = (file.confirmed_count || 0) > 0;
                     const isSelected = activeFilename === file.filename;
@@ -134,69 +134,69 @@ export function OcrFilesManagerDialog({
                     return (
                       <tr
                         key={file.id}
-                        className={`hover:bg-muted/10 transition-colors ${
+                        className={`hover:bg-muted/20 transition-colors ${
                           isSelected ? 'bg-primary/[0.04]' : ''
                         }`}
                       >
                         {/* Nome do Arquivo */}
-                        <td className="px-4 py-3 align-middle">
+                        <td className="px-4 py-2.5 align-middle">
                           <div className="flex items-center gap-2 max-w-[320px]">
-                            <div className="p-1.5 rounded-lg bg-red-500/10 text-red-600 dark:text-red-400 shrink-0">
-                              <FileText className="w-4 h-4" />
+                            <div className="p-1 rounded-md bg-red-500/10 text-red-600 dark:text-red-400 shrink-0">
+                              <FileText className="w-3.5 h-3.5" />
                             </div>
-                            <span className="font-semibold text-foreground truncate text-xs" title={file.filename}>
+                            <span className="font-medium text-foreground truncate text-xs" title={file.filename}>
                               {file.filename}
                             </span>
                           </div>
                         </td>
 
                         {/* UF */}
-                        <td className="px-4 py-3 align-middle">
-                          <Badge variant="outline" className="font-bold text-[11px] bg-primary/5 text-primary border-primary/20">
+                        <td className="px-4 py-2.5 align-middle">
+                          <Badge variant="outline" className="font-semibold text-[10px] bg-primary/10 text-primary border-primary/20 rounded-xl px-2">
                             {file.uf}
                           </Badge>
                         </td>
 
                         {/* Vigência */}
-                        <td className="px-4 py-3 align-middle text-muted-foreground text-[11px] font-medium">
+                        <td className="px-4 py-2.5 align-middle text-muted-foreground text-xs font-normal">
                           {file.data_pauta ? formatDateToBR(file.data_pauta) : '-'}
                         </td>
 
                         {/* Status de Pautas */}
-                        <td className="px-4 py-3 align-middle">
+                        <td className="px-4 py-2.5 align-middle">
                           {hasPautas ? (
-                            <Badge variant="outline" className="gap-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold px-2 py-0.5 text-[10px]">
+                            <Badge variant="outline" className="gap-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold px-2.5 py-0.5 text-[10px] rounded-xl">
                               <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                               {file.confirmed_count} lançadas
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="border-muted-foreground/30 bg-muted/30 text-muted-foreground font-medium px-2 py-0.5 text-[10px]">
+                            <Badge variant="outline" className="border-border/40 bg-muted/30 text-muted-foreground font-medium px-2.5 py-0.5 text-[10px] rounded-xl">
                               Sem pautas
                             </Badge>
                           )}
                         </td>
 
                         {/* Ações */}
-                        <td className="px-4 py-3 align-middle text-center">
+                        <td className="px-4 py-2.5 align-middle text-center">
                           {hasPautas ? (
                             <Button
                               variant="ghost"
                               size="icon-xs"
                               disabled
-                              className="text-muted-foreground/40 cursor-not-allowed opacity-50"
+                              className="text-muted-foreground/30 cursor-not-allowed opacity-40 h-6 w-6 rounded-lg"
                               title="Não é possível excluir o arquivo pois ele possui pautas lançadas no sistema."
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </Button>
                           ) : (
                             <Button
                               variant="ghost"
                               size="icon-xs"
                               onClick={() => setFileToDelete(file)}
-                              className="text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer transition-colors"
+                              className="text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer transition-colors h-6 w-6 rounded-lg"
                               title="Excluir Arquivo PDF do OCR"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </Button>
                           )}
                         </td>
@@ -208,11 +208,11 @@ export function OcrFilesManagerDialog({
             )}
           </div>
 
-          <DialogFooter className="border-t border-muted/30 pt-3 flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">
-              Total de arquivos em <strong className="capitalize">{contexto}</strong>: {ocrFiles.length}
+          <DialogFooter className="border-t border-border/40 flex items-center justify-between">
+            <span className="text-xs text-muted-foreground font-medium">
+              Total de arquivos em <strong className="capitalize text-foreground">{contexto}</strong>: {ocrFiles.length}
             </span>
-            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="cursor-pointer">
+            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="h-7 px-2.5 text-xs cursor-pointer">
               Fechar
             </Button>
           </DialogFooter>
@@ -221,31 +221,31 @@ export function OcrFilesManagerDialog({
 
       {/* Modal de Confirmação de Exclusão de Arquivo */}
       <Dialog open={!!fileToDelete} onOpenChange={(val) => !val && setFileToDelete(null)}>
-        <DialogContent className="sm:max-w-xl rounded-2xl gap-4 bg-background border border-destructive/30 shadow-2xl z-[60]">
-          <DialogHeader className="border-b border-muted/30 pb-3">
+        <DialogContent className="sm:max-w-xl rounded-xl gap-4 bg-background border border-destructive/30 shadow-xl z-[60]">
+          <DialogHeader className="border-b border-border/40 pb-3">
             <DialogTitle className="flex items-center gap-2 text-base font-bold text-destructive">
-              <span className="p-2 rounded-xl bg-destructive/10 text-destructive">
-                <ShieldAlert className="w-5 h-5" />
+              <span className="p-1.5 rounded-xl bg-destructive/10 text-destructive">
+                <ShieldAlert className="w-4 h-4" />
               </span>
               Excluir Arquivo PDF do OCR
             </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground mt-1">
+            <DialogDescription className="text-xs text-muted-foreground mt-0.5">
               Confirme a exclusão do arquivo PDF cadastrado no banco de dados do OCR.
             </DialogDescription>
           </DialogHeader>
 
           {fileToDelete && (
             <div className="space-y-3 py-1">
-              <div className="p-3.5 bg-muted/30 border border-muted/50 rounded-xl space-y-2 text-xs">
+              <div className="p-3.5 bg-muted/20 border border-border/40 rounded-xl space-y-2 text-xs">
                 <div className="flex items-start gap-2.5">
-                  <div className="p-1.5 rounded-lg bg-red-500/10 text-red-600 dark:text-red-400 shrink-0 mt-0.5">
-                    <FileText className="w-4 h-4" />
+                  <div className="p-1 rounded-md bg-red-500/10 text-red-600 dark:text-red-400 shrink-0 mt-0.5">
+                    <FileText className="w-3.5 h-3.5" />
                   </div>
-                  <div className="font-bold text-foreground text-xs leading-snug break-all">
+                  <div className="font-semibold text-foreground text-xs leading-snug break-all">
                     {fileToDelete.filename}
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-muted/30 text-[11px] text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-border/30 text-[11px] text-muted-foreground">
                   <span><strong>UF:</strong> {fileToDelete.uf}</span>
                   {fileToDelete.data_pauta && (
                     <span><strong>Vigência:</strong> {formatDateToBR(fileToDelete.data_pauta)}</span>
@@ -258,8 +258,8 @@ export function OcrFilesManagerDialog({
             </div>
           )}
 
-          <DialogFooter className="border-t border-muted/30 pt-3 gap-2 flex items-center justify-end">
-            <Button variant="outline" size="sm" onClick={() => setFileToDelete(null)} disabled={isDeleting} className="cursor-pointer">
+          <DialogFooter className="border-t border-border/40 gap-1.5 flex items-center justify-end">
+            <Button variant="outline" size="sm" onClick={() => setFileToDelete(null)} disabled={isDeleting} className="h-7 px-2.5 text-xs cursor-pointer">
               Cancelar
             </Button>
             <Button
@@ -267,16 +267,16 @@ export function OcrFilesManagerDialog({
               size="sm"
               onClick={handleConfirmDelete}
               disabled={isDeleting}
-              className="gap-1.5 cursor-pointer shadow-md font-semibold"
+              className="h-7 px-2.5 text-xs font-semibold gap-1 cursor-pointer shadow-2xs"
             >
               {isDeleting ? (
                 <>
-                  <Spinner className="w-4 h-4 mr-1" />
+                  <Spinner className="w-3 h-3 mr-1 animate-spin" />
                   Excluindo...
                 </>
               ) : (
                 <>
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-3 h-3" />
                   Confirmar Exclusão
                 </>
               )}

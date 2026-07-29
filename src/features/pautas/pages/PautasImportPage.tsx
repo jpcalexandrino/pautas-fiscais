@@ -4,6 +4,7 @@ import { useProdutos } from '@/features/produtos/hooks/useProdutos';
 import { OcrTablesViewer } from '../components/OcrTablesViewer';
 import { OcrFilesManagerDialog } from '../components/OcrFilesManagerDialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/shared/components/ui/separator';
 import { UploadCloud, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePautasImportFilters } from './PautasImportPage/hooks/usePautasImportFilters';
@@ -146,10 +147,13 @@ export default function PautasImportPage() {
             />
           )}
 
+          {/* Divisor / Separator entre os filtros e as tabelas */}
+          <Separator className="my-6 bg-border/40" />
+
           {/* Tabelas de Auditoria (exibidas apenas na aba Pautas Cadastradas) */}
           {filters.mode === 'select' && (
             filters.auditFilename ? (
-              <div className="pt-2">
+              <div>
                 <OcrTablesViewer
                   tabelas={tabelas}
                   isLoading={isLoadingTabelas}

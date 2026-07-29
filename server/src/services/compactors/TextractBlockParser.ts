@@ -109,6 +109,11 @@ export class TextractBlockParser {
 
     const sortedRowIndices = Object.keys(rows).map(Number).sort((a, b) => a - b);
 
+    // Coleta todos os blocos do tipo WORD para fallback espacial caso a relação CHILD da CELL omita palavras
+    const allWordBlocks = Array.from(blockMap.values()).filter(
+      (b): b is TextractBlock => !!b && b.BlockType === 'WORD' && !!b.Text
+    );
+
     for (const rIdx of sortedRowIndices) {
       const rowCells = rows[rIdx].sort((a, b) => (a.ColumnIndex || 1) - (b.ColumnIndex || 1));
 
@@ -118,20 +123,74 @@ export class TextractBlockParser {
         const rowSpan = cell.RowSpan || 1;
         const colSpan = cell.ColumnSpan || 1;
 
-        // Extrai texto da célula
+        // Extrai texto da célula pelas relações do Textract
         const childIds = cell.Relationships?.find(rel => rel.Type === 'CHILD')?.Ids || [];
+        const childBlockSet = new Set(childIds);
+        const childBlocks = childIds
+          .map(id => blockMap.get(id))
+          .filter((b): b is TextractBlock => !!b && !!b.Text);
+
+        // Fallback espacial robusto por sobreposição de área (Intersection over Word Area):
+        // Resgata palavras (como "360" ou "a") cujas caixas cruzam a borda da célula
+        if (cell.Geometry?.BoundingBox) {
+          const cBox = cell.Geometry.BoundingBox;
+          const expandedLeft = cBox.Left - 0.008;
+          const expandedRight = cBox.Left + cBox.Width + 0.008;
+          const expandedTop = cBox.Top - 0.005;
+          const expandedBottom = cBox.Top + cBox.Height + 0.005;
+
+          for (const wBlock of allWordBlocks) {
+            if (childBlockSet.has(wBlock.Id)) continue;
+            if (!wBlock.Geometry?.BoundingBox) continue;
+
+            const wBox = wBlock.Geometry.BoundingBox;
+            const wLeft = wBox.Left;
+            const wRight = wBox.Left + wBox.Width;
+            const wTop = wBox.Top;
+            const wBottom = wBox.Top + wBox.Height;
+
+            // Calcula interseção horizontal e vertical
+            const overlapX = Math.max(0, Math.min(wRight, expandedRight) - Math.max(wLeft, expandedLeft));
+            const overlapY = Math.max(0, Math.min(wBottom, expandedBottom) - Math.max(wTop, expandedTop));
+
+            const wArea = (wBox.Width || 0.001) * (wBox.Height || 0.001);
+            const overlapArea = overlapX * overlapY;
+
+            // Se mais de 30% da área da palavra estiver dentro dos limites da célula (ou se o centro estiver dentro)
+            const wCenterX = wLeft + wBox.Width / 2;
+            const wCenterY = wTop + wBox.Height / 2;
+            const centerInside = wCenterX >= expandedLeft && wCenterX <= expandedRight && wCenterY >= expandedTop && wCenterY <= expandedBottom;
+
+            if (centerInside || (wArea > 0 && overlapArea / wArea >= 0.30)) {
+              childBlocks.push(wBlock);
+              childBlockSet.add(wBlock.Id);
+              wordIdsInTables.add(wBlock.Id);
+            }
+          }
+        }
+
+        // Ordena palavras da célula por posição vertical (Top) e depois horizontal (Left)
+        // para garantir leitura sequencial perfeita em células com texto em múltiplas linhas
+        childBlocks.sort((a, b) => {
+          const topA = a.Geometry?.BoundingBox?.Top ?? 0;
+          const topB = b.Geometry?.BoundingBox?.Top ?? 0;
+          if (Math.abs(topA - topB) > 0.005) {
+            return topA - topB;
+          }
+          const leftA = a.Geometry?.BoundingBox?.Left ?? 0;
+          const leftB = b.Geometry?.BoundingBox?.Left ?? 0;
+          return leftA - leftB;
+        });
+
         const words: string[] = [];
         let minConfidence = 100;
 
-        for (const id of childIds) {
-          const wordBlock = blockMap.get(id);
-          if (!wordBlock?.Text) continue;
-
+        for (const wordBlock of childBlocks) {
           const conf = wordBlock.Confidence ?? 100;
           if (conf < minConfidence) minConfidence = conf;
 
           if (minWordConfidence > 0 && conf < minWordConfidence) continue;
-          words.push(wordBlock.Text);
+          words.push(wordBlock.Text!);
         }
 
         let cellText = words.filter(Boolean).join(' ');

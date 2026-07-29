@@ -86,11 +86,88 @@ const compactorRegistry: Record<string, UFCompactorStrategy> = {
   RO: new ROCompactor(),
 };
 
+import { isSubheaderSE, isNonBeerSubheader } from './textractNormalize';
+
+export class ConfigurableCompactor implements UFCompactorStrategy {
+  readonly uf: string;
+  private baseCompactor: UFCompactorStrategy;
+  private features: {
+    split_2_columns?: boolean;
+    parallel_tables_split?: boolean;
+    matrix_header?: boolean;
+    subheaders?: boolean;
+    ignore_noise?: boolean;
+  };
+
+  constructor(uf: string, baseCompactor: UFCompactorStrategy, features?: any) {
+    this.uf = uf;
+    this.baseCompactor = baseCompactor;
+    this.features = features || {};
+  }
+
+  get needsLineTracking(): boolean {
+    if (this.features.subheaders !== undefined) {
+      return !!this.features.subheaders;
+    }
+    return this.baseCompactor.needsLineTracking;
+  }
+
+  compactTable(table: string[][], state: CompactorState): string[][] {
+    if (!table || table.length === 0) return [];
+
+    // Se parallel_tables_split estiver explicitamente ativado e a tabela for dupla (11+ cols)
+    if (this.features.parallel_tables_split && table[0] && table[0].length >= 11) {
+      const mgCompactor = new MGCompactor();
+      return mgCompactor.compactTable(table, state);
+    }
+
+    return this.baseCompactor.compactTable(table, state);
+  }
+
+  sortPageBlocks(blocks: TextractBlock[]): TextractBlock[] {
+    return this.baseCompactor.sortPageBlocks(blocks);
+  }
+
+  processLineBlock(text: string, columnKey: 'left' | 'right', state: CompactorState): boolean {
+    if (this.features.subheaders) {
+      if (this.baseCompactor.needsLineTracking) {
+        return this.baseCompactor.processLineBlock(text, columnKey, state);
+      }
+      if (isNonBeerSubheader(text)) {
+        state.isBeerSection = false;
+        state.currentSubheader = '';
+        return true;
+      }
+      if (isSubheaderSE(text)) {
+        state.isBeerSection = true;
+        state.currentSubheader = text;
+        return true;
+      }
+    }
+    return this.baseCompactor.processLineBlock(text, columnKey, state);
+  }
+
+  createInitialState(): Record<string, CompactorState> {
+    const baseState = this.baseCompactor.createInitialState();
+    if (!baseState || typeof baseState !== 'object') {
+      return { left: { currentSubheader: '', isBeerSection: true } };
+    }
+    return baseState;
+  }
+}
+
 /**
  * Retorna a implementação de compactação adequada para o estado (UF).
- * Se não houver implementação específica, retorna o compactor genérico.
+ * Se houver configurações personalizadas (features), envelopa no ConfigurableCompactor.
  */
-export function getCompactorForUF(uf: string): UFCompactorStrategy {
-  const ufUpper = uf.toUpperCase();
-  return compactorRegistry[ufUpper] || new GenericCompactor(ufUpper);
+export function getCompactorForUF(uf: string, features?: any): UFCompactorStrategy {
+  const ufUpper = (uf || '').toUpperCase();
+  const baseCompactor = compactorRegistry[ufUpper] || new GenericCompactor(ufUpper);
+
+  if (features && typeof features === 'object' && Object.keys(features).length > 0) {
+    return new ConfigurableCompactor(ufUpper, baseCompactor, features);
+  }
+
+  return baseCompactor;
 }
+

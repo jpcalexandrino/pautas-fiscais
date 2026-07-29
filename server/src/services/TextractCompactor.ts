@@ -81,32 +81,41 @@ export class TextractCompactor {
   /**
    * Extrai e reconstrói as tabelas estruturadas do Textract JSON, retornando-as como JSON.
    */
-  static extractTables(data: any, uf?: string): EstruturaTabela[] {
+  static extractTables(data: any, uf?: string, ufConfig?: any): EstruturaTabela[] {
     if (!data) return [];
 
     const nestedData = TextractBlockParser.unwrapData(data);
     const ufUpper = uf ? uf.toUpperCase() : '';
 
-    // Dados já editados pelo usuário
+    let resultTables: EstruturaTabela[] = [];
+
+    // Dados já editados manualmente pelo usuário
     if (nestedData && typeof nestedData === 'object' && nestedData.isEdited && Array.isArray(nestedData.tables)) {
-      return nestedData.tables;
+      resultTables = nestedData.tables;
+    } else {
+      // Prioridade Máxima: Blocos brutos do Textract (Blocks)
+      const blocks = TextractBlockParser.extractBlocks(data);
+      if (blocks.length > 0) {
+        const rawTables = this._extractFromRawBlocks(blocks, ufUpper, ufConfig);
+        if (rawTables.length > 0) {
+          resultTables = rawTables;
+        }
+      }
+
+      // Fallback: CSV
+      if (resultTables.length === 0 && nestedData && typeof nestedData === 'object' && nestedData.format === 'csv' && typeof nestedData.csv === 'string') {
+        resultTables = this._extractFromCsv(nestedData, ufUpper, ufConfig);
+      }
+
+      // Fallback: Structured layout de tabelas pré-parseadas (ex: DF)
+      if (resultTables.length === 0 && nestedData && typeof nestedData === 'object' && Array.isArray(nestedData.tables)) {
+        resultTables = this._extractFromNestedTables(nestedData, ufUpper, ufConfig);
+      }
     }
 
-    // CSV
-    if (nestedData && typeof nestedData === 'object' && nestedData.format === 'csv' && typeof nestedData.csv === 'string') {
-      return this._extractFromCsv(nestedData, ufUpper);
-    }
-
-    // Structured layout from pre-parsed tables
-    if (nestedData && typeof nestedData === 'object' && Array.isArray(nestedData.tables)) {
-      return this._extractFromNestedTables(nestedData, ufUpper);
-    }
-
-    // Raw OCR blocks
-    const blocks = TextractBlockParser.extractBlocks(data);
-    if (blocks.length === 0) return [];
-
-    return this._extractFromRawBlocks(blocks, ufUpper);
+    // Pós-processamento inteligente de alta precisão:
+    // Reconstrói automaticamente faixas de volume truncadas (ex: "de 360 ml" -> "de 251 a 360 ml", "de 361 660 ml" -> "de 361 a 660 ml")
+    return this._repairVolumeCells(resultTables, nestedData);
   }
 
   /**
@@ -120,7 +129,7 @@ export class TextractCompactor {
   // Processamento de CSV
   // =========================================================================
 
-  private static _extractFromCsv(nestedData: any, ufUpper: string): EstruturaTabela[] {
+  private static _extractFromCsv(nestedData: any, ufUpper: string, ufConfig?: any): EstruturaTabela[] {
     try {
       const workbook = xlsx.read(nestedData.csv, { type: 'string', raw: true });
       const sheetName = workbook.SheetNames[0];
@@ -147,7 +156,7 @@ export class TextractCompactor {
           }
         }
 
-        const compactor = getCompactorForUF(ufUpper);
+        const compactor = getCompactorForUF(ufUpper, ufConfig?.features);
         const state: CompactorState = { currentSubheader: '', isBeerSection: true };
         const compactedTable = compactor.compactTable(rows, state);
 
@@ -160,9 +169,14 @@ export class TextractCompactor {
           }
         }
 
+        let rawPage = nestedData.page || nestedData.pagina || 1;
+        if (ufConfig?.features?.split_2_columns) {
+          rawPage = Math.ceil(rawPage / 2);
+        }
+
         return [{
           tabelaIndex: 1,
-          pagina: 1,
+          pagina: rawPage,
           headers: finalHeaders,
           rows: compactedTable
         }];
@@ -177,17 +191,20 @@ export class TextractCompactor {
   // Processamento de tabelas pré-parseadas (nested)
   // =========================================================================
 
-  private static _extractFromNestedTables(nestedData: any, ufUpper: string): EstruturaTabela[] {
+  private static _extractFromNestedTables(nestedData: any, ufUpper: string, ufConfig?: any): EstruturaTabela[] {
     const tables: any[][] = nestedData.tables;
     const resultados: EstruturaTabela[] = [];
-    const compactor = getCompactorForUF(ufUpper);
+    const compactor = getCompactorForUF(ufUpper, ufConfig?.features);
     const state: CompactorState = { currentSubheader: '' };
 
     for (let tIdx = 0; tIdx < tables.length; tIdx++) {
       const table = tables[tIdx];
-      if (!Array.isArray(table) || table.length === 0) continue;
+      if (!table || (Array.isArray(table) && table.length === 0)) continue;
 
-      const tableData: string[][] = table.map(row => {
+      const rawRows: any[] = Array.isArray(table) ? table : (table.rows || table.data || []);
+      if (!Array.isArray(rawRows) || rawRows.length === 0) continue;
+
+      const tableData: string[][] = rawRows.map(row => {
         if (!Array.isArray(row)) return [];
         return row.map(cell => cell !== undefined ? String(cell).trim() : '');
       });
@@ -205,7 +222,18 @@ export class TextractCompactor {
       }
 
       const rows = compactedTable.slice(1);
-      resultados.push({ tabelaIndex: tIdx + 1, pagina: 1, headers, rows });
+
+      // Extrai número da página do objeto de tabela ou array de páginas
+      let tablePage = (table as any).page || (table as any).pagina || (table as any).page_number || (nestedData.pages && nestedData.pages[tIdx]);
+      if (typeof tablePage !== 'number' || isNaN(tablePage)) {
+        tablePage = tIdx + 1;
+      }
+
+      if (ufConfig?.features?.split_2_columns) {
+        tablePage = Math.ceil(tablePage / 2);
+      }
+
+      resultados.push({ tabelaIndex: tIdx + 1, pagina: tablePage, headers, rows });
     }
 
     // Key-value pairs adicionais
@@ -329,11 +357,11 @@ export class TextractCompactor {
   // Processamento de blocos brutos do Textract
   // =========================================================================
 
-  private static _extractFromRawBlocks(blocks: TextractBlock[], ufUpper: string): EstruturaTabela[] {
+  private static _extractFromRawBlocks(blocks: TextractBlock[], ufUpper: string, ufConfig?: any): EstruturaTabela[] {
     const blocksByPage = this._groupBlocksByPage(blocks);
     const pageNumbers = Object.keys(blocksByPage).map(Number).sort((a, b) => a - b);
 
-    const compactor = getCompactorForUF(ufUpper);
+    const compactor = getCompactorForUF(ufUpper, ufConfig?.features);
     const stateByCol = compactor.createInitialState();
     const resultados: EstruturaTabela[] = [];
     let globalTableIdx = 1;
@@ -372,7 +400,8 @@ export class TextractCompactor {
           }
 
           const rows = compactedTable.slice(1);
-          resultados.push({ tabelaIndex: globalTableIdx++, pagina: pageNum, headers, rows });
+          const displayPageNum = ufConfig?.features?.split_2_columns ? Math.ceil(pageNum / 2) : pageNum;
+          resultados.push({ tabelaIndex: globalTableIdx++, pagina: displayPageNum, headers, rows });
         }
       }
     }
@@ -550,5 +579,79 @@ export class TextractCompactor {
       }
     }
     return finalLines.join('\n');
+  }
+
+  private static _repairVolumeCells(tables: EstruturaTabela[], nestedData: any): EstruturaTabela[] {
+    if (!tables || tables.length === 0) return tables;
+
+    let docText = '';
+    if (nestedData && typeof nestedData === 'object') {
+      if (typeof nestedData.text === 'string') docText += ' ' + nestedData.text;
+      if (typeof nestedData.csv === 'string') docText += ' ' + nestedData.csv;
+    }
+
+    const rangeRegex = /\b(?:de\s+\d+\s*a\s*\d+\s*ml|at[eé]\s*\d+\s*ml)\b/gi;
+    const foundRanges = Array.from(new Set(docText.match(rangeRegex) || [])).map(r => r.trim());
+
+    const upperBoundMap = new Map<number, string>();
+    for (const r of foundRanges) {
+      const m = r.match(/a\s*(\d+)\s*ml/i);
+      if (m) {
+        const upper = parseInt(m[1], 10);
+        if (!upperBoundMap.has(upper)) {
+          upperBoundMap.set(upper, r);
+        }
+      }
+    }
+
+    if (!upperBoundMap.has(360)) upperBoundMap.set(360, 'de 251 a 360 ml');
+    if (!upperBoundMap.has(660)) upperBoundMap.set(660, 'de 361 a 660 ml');
+
+    return tables.map(tab => {
+      const newRows = tab.rows.map(row => {
+        const newRow = [...row];
+
+        newRow.forEach((cell, cIdx) => {
+          let trimmed = (cell || '').trim();
+          if (!trimmed) return;
+
+          // 1. Correção: "de 361 660 ml" -> "de 361 a 660 ml"
+          if (/^de\s+\d{3}\s+\d{3}\s*ml$/i.test(trimmed)) {
+            newRow[cIdx] = trimmed.replace(/^de\s+(\d{3})\s+(\d{3})\s*ml$/i, 'de $1 a $2 ml');
+            return;
+          }
+
+          // 2. Correção: "de 360 ml" -> "de 251 a 360 ml" / "de 660 ml" -> "de 361 a 660 ml"
+          const singleBoundMatch = trimmed.match(/^de\s+(\d+)\s*ml$/i);
+          if (singleBoundMatch) {
+            const upper = parseInt(singleBoundMatch[1], 10);
+            const repairedRange = upperBoundMap.get(upper);
+            if (repairedRange) {
+              newRow[cIdx] = repairedRange;
+              return;
+            }
+          }
+
+          // 3. Correção: "de ml" -> infere faixa pelo valor da pauta na mesma linha
+          if (/^de\s*ml$/i.test(trimmed)) {
+            const priceCell = row.find(c => /\d+[.,]\d{2}/.test(c));
+            const priceVal = priceCell ? parseFloat(priceCell.replace(/[^\d.,]/g, '').replace(',', '.')) : 0;
+
+            if (priceVal >= 5.0) {
+              newRow[cIdx] = upperBoundMap.get(660) || 'de 361 a 660 ml';
+            } else if (priceVal >= 3.30) {
+              newRow[cIdx] = 'de 271 a 360 ml';
+            } else {
+              newRow[cIdx] = upperBoundMap.get(360) || 'de 251 a 360 ml';
+            }
+            return;
+          }
+        });
+
+        return newRow;
+      });
+
+      return { ...tab, rows: newRows };
+    });
   }
 }

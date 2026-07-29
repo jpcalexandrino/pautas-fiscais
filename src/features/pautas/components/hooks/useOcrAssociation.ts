@@ -6,6 +6,7 @@ import {
   normalizeText,
   calculateProductMatchScore,
   cleanPriceString,
+  extractGtinFromRow,
 } from '../../utils/ocrHelpers';
 
 interface Produto {
@@ -22,6 +23,7 @@ interface SelectedCellData {
   cIdx: number;
   value: string;
   inferredDesc: string;
+  gtin?: string | null;
 }
 
 interface UseOcrAssociationProps {
@@ -68,6 +70,7 @@ export function useOcrAssociation({
     }
 
     const inferredDesc = inferItemDescription(row, headers, cIdx, uf);
+    const rowGtin = extractGtinFromRow(row, headers);
 
     setSelectedCellData({
       tabelaIdx,
@@ -75,6 +78,7 @@ export function useOcrAssociation({
       cIdx,
       value,
       inferredDesc,
+      gtin: rowGtin,
     });
 
     const normInferred = normalizeText(inferredDesc);
@@ -89,7 +93,7 @@ export function useOcrAssociation({
       const bestMatch = filteredCatalogProducts
         .map((p) => ({
           p,
-          score: calculateProductMatchScore(inferredDesc, p),
+          score: calculateProductMatchScore(inferredDesc, p, rowGtin),
         }))
         .filter((m) => m.score > 0)
         .sort((a, b) => b.score - a.score)[0];

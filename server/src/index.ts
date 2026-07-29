@@ -10,6 +10,7 @@ import estadoRoutes from './routes/estadoRoutes';
 import deParaRoutes from './routes/deParaRoutes';
 import pautaRoutes from './routes/pautaRoutes';
 import termoRoutes from './routes/termoRoutes';
+import ufCompactorRoutes from './routes/ufCompactorRoutes';
 import auditRoutes from './routes/auditRoutes';
 import authMiddleware from './middleware/authMiddleware';
 
@@ -20,6 +21,7 @@ import CalendarioRepository from './repositories/CalendarioRepository';
 import DeParaProdutoEstadoRepository from './repositories/DeParaProdutoEstadoRepository';
 import PautaFiscalRepository from './repositories/PautaFiscalRepository';
 import TermoRepository from './repositories/TermoRepository';
+import UfCompactorRepository from './repositories/UfCompactorRepository';
 import AuditRepository from './repositories/AuditRepository';
 import { loadBrandSlugsFromDb } from './services/brandSlugs';
 
@@ -47,6 +49,7 @@ app.use('/api/estados', authMiddleware, estadoRoutes);
 app.use('/api/de-para', authMiddleware, deParaRoutes);
 app.use('/api/pautas', authMiddleware, pautaRoutes);
 app.use('/api/config/termos', authMiddleware, termoRoutes);
+app.use('/api/config/uf-compactors', authMiddleware, ufCompactorRoutes);
 app.use('/api/audit', authMiddleware, auditRoutes);
 
 // Em produção, servir o frontend buildado pelo Vite
@@ -70,8 +73,10 @@ async function init(): Promise<void> {
     await DeParaProdutoEstadoRepository.createTable();
     await PautaFiscalRepository.createTable();
     await TermoRepository.createTable();
+    await UfCompactorRepository.createTable();
     await AuditRepository.createTable();
     await TermoRepository.seed();
+    await UfCompactorRepository.seed();
     await loadBrandSlugsFromDb();
     await EstadoRepository.seed();
     await CalendarioRepository.seed();

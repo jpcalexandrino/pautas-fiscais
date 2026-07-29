@@ -75,10 +75,13 @@ export class PdfPreprocessorService {
           modified = true;
         }
 
-        // Garante que o MediaBox corresponda à área visível real da página
-        const { width, height } = page.getSize();
-        if (width > 0 && height > 0) {
-          page.setMediaBox(0, 0, width, height);
+        // Garante que o MediaBox corresponda à área visível real da página, preservando o offset se já existir (ex: após split)
+        const mediaBox = page.getMediaBox();
+        if (mediaBox.x === 0 && mediaBox.y === 0) {
+          const { width, height } = page.getSize();
+          if (width > 0 && height > 0) {
+            page.setMediaBox(0, 0, width, height);
+          }
         }
       }
 

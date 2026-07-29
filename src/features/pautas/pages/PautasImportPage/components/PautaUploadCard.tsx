@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { UploadCloud, X, Check } from 'lucide-react';
+import { UploadCloud, X, Check, Layers, MapPin, Calendar, FileText } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -101,12 +101,22 @@ export function PautaUploadCard({
     }
   };
 
-  return (
-    <Card className="border-border/50 shadow-xs rounded-xl p-5 space-y-5 animate-fade-in">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+   return (
+    <Card className="border border-border/50 shadow-2xs rounded-xl p-4 sm:p-5 space-y-3.5 bg-card animate-fade-in">
+      {/* Título e Ícone do Container */}
+      <div className="flex items-center justify-between border-b border-border/30 pb-2.5">
+        <span className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+          <UploadCloud className="size-3.5 text-primary" />
+          Carregar Novo PDF de Pauta
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end pt-0.5">
         {/* PDF Dropzone */}
-        <div className="md:col-span-5 space-y-1.5">
-          <Label className="text-xs font-semibold text-muted-foreground">Arquivo PDF *</Label>
+        <div className="lg:col-span-5 space-y-1.5">
+          <Label className="text-xs font-medium text-muted-foreground">
+            Arquivo PDF *
+          </Label>
           <input
             ref={fileInputRef}
             type="file"
@@ -121,16 +131,16 @@ export function PautaUploadCard({
             onDrop={handleDrop}
             onClick={() => !isUploading && fileInputRef.current?.click()}
             className={cn(
-              'border border-dashed rounded-xl p-4 text-center cursor-pointer transition-colors min-h-[102px] flex flex-col items-center justify-center gap-1 bg-muted/10 hover:bg-muted/30 border-muted-foreground/20 hover:border-primary/50',
+              'border border-dashed rounded-xl p-3 text-center cursor-pointer transition-all h-20 flex flex-col items-center justify-center gap-1 bg-muted/10 hover:bg-muted/30 border-border/60 hover:border-primary/50',
               isDragging && 'border-primary bg-primary/5',
-              selectedFile && 'border-primary/30 bg-primary/5',
+              selectedFile && 'border-primary/40 bg-primary/5',
               isUploading && 'pointer-events-none opacity-60'
             )}
           >
             {selectedFile ? (
               <div className="flex items-center justify-between w-full px-2">
-                <div className="flex items-center gap-2 truncate">
-                  <img src={pdfLogo} alt="PDF" className="size-7 shrink-0 object-contain" />
+                <div className="flex items-center gap-2.5 truncate">
+                  <img src={pdfLogo} alt="PDF" className="size-5 shrink-0 object-contain" />
                   <div className="text-left truncate">
                     <p className="text-xs font-semibold text-foreground truncate max-w-[140px] sm:max-w-[180px]">
                       {selectedFile.name}
@@ -143,44 +153,43 @@ export function PautaUploadCard({
                 <Button
                   type="button"
                   variant="ghost"
-                  size="icon-xs"
+                  size="xs"
                   onClick={(e) => {
                     e.stopPropagation();
                     setSelectedFile(null);
                     if (fileInputRef.current) fileInputRef.current.value = '';
                   }}
-                  className="text-muted-foreground hover:text-destructive p-1 rounded-md transition-colors shrink-0 cursor-pointer h-6 w-6"
+                  className="text-muted-foreground hover:text-destructive p-1 rounded-lg transition-colors shrink-0 cursor-pointer h-6 w-6"
                 >
-                  <X className="size-4" />
+                  <X className="size-3.5" />
                 </Button>
               </div>
             ) : (
-              <>
-                <UploadCloud className="size-6 text-muted-foreground/60" />
+              <div className="flex items-center gap-2">
+                <UploadCloud className="size-4 text-muted-foreground/60 shrink-0" />
                 <p className="text-xs text-muted-foreground font-medium">
-                  Arraste o PDF ou{' '}
-                  <span className="text-primary hover:underline font-semibold">
-                    procure no dispositivo
-                  </span>
+                  Arraste o PDF ou <span className="text-primary font-semibold hover:underline">procure no dispositivo</span>
                 </p>
-              </>
+              </div>
             )}
           </div>
         </div>
 
         {/* Form Fields + Button */}
-        <div className="md:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-3.5 items-end">
+        <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-muted-foreground">Contexto *</Label>
+            <Label className="text-xs font-medium text-muted-foreground">
+              Contexto *
+            </Label>
             <Select value={contexto} onValueChange={(val: any) => onContextoChange(val)} disabled={isUploading}>
-              <SelectTrigger className="bg-background text-xs h-10">
+              <SelectTrigger className="bg-background text-xs h-7.5 rounded-xl border-border/60 hover:border-border transition-all px-2.5">
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="proprio" className="text-xs">
+              <SelectContent className="rounded-xl">
+                <SelectItem value="proprio" className="text-xs rounded-lg">
                   Produtos Próprios
                 </SelectItem>
-                <SelectItem value="terceiros" className="text-xs">
+                <SelectItem value="terceiros" className="text-xs rounded-lg">
                   Produtos de Terceiros
                 </SelectItem>
               </SelectContent>
@@ -188,14 +197,16 @@ export function PautaUploadCard({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-muted-foreground">Estado (UF) *</Label>
+            <Label className="text-xs font-medium text-muted-foreground">
+              Estado (UF) *
+            </Label>
             <Select value={uploadUf} onValueChange={setUploadUf} disabled={isUploading}>
-              <SelectTrigger className="bg-background text-xs h-10">
+              <SelectTrigger className="bg-background text-xs h-7.5 rounded-xl border-border/60 hover:border-border transition-all px-2.5">
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
-              <SelectContent className="max-h-56">
+              <SelectContent className="max-h-56 rounded-xl">
                 {estados.map((e: any) => (
-                  <SelectItem key={e.uf} value={e.uf} className="text-xs">
+                  <SelectItem key={e.uf} value={e.uf} className="text-xs rounded-lg">
                     {e.uf} - {e.nome}
                   </SelectItem>
                 ))}
@@ -204,31 +215,34 @@ export function PautaUploadCard({
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-muted-foreground">Vigência *</Label>
+            <Label className="text-xs font-medium text-muted-foreground">
+              Vigência *
+            </Label>
             <DatePicker
               value={uploadVigenciaDate}
               onChange={setUploadVigenciaDate}
               disabled={isUploading}
               placeholder="Selecione"
+              className="h-7.5 rounded-xl border-border/60 hover:border-border transition-all px-2.5"
             />
           </div>
 
-          <div className="sm:col-span-3 pt-2">
+          <div className="sm:col-span-3 pt-0.5">
             <Button
               variant="default"
-              size="lg"
-              className="w-full"
+              size="sm"
+              className="w-full h-7.5 rounded-xl font-semibold gap-1 shadow-2xs cursor-pointer text-xs"
               onClick={handleSubmit}
               disabled={!selectedFile || !uploadUf || !uploadVigenciaDate || isUploading}
             >
               {isUploading ? (
                 <>
-                  <Spinner className="size-4 animate-spin" />
+                  <Spinner className="size-3 animate-spin" />
                   Processando...
                 </>
               ) : (
                 <>
-                  <Check className="size-4" />
+                  <Check className="size-3" />
                   Processar e Auditar
                 </>
               )}

@@ -191,8 +191,8 @@ export function OcrTablesViewer({
 
     const normHeader = (header || '').toUpperCase();
     const nonPriceHeaders = [
-      'ITEM', 'CHAVE', 'CODIGO', 'CÓDIGO', 'COD', 'NCM', 'CEST',
-      'CNPJ', 'GTIN', 'EAN', 'Nº', 'NO', 'NUMERO', 'NÚMERO',
+      'ITEM', 'CHAVE', 'CODIGO', 'CÓDIGO', 'COD', 'CÓD', 'NCM', 'CEST',
+      'CNPJ', 'GTIN', 'EAN', 'Nº', 'NO', 'NUMERO', 'NÚMERO', 'FISCAL',
       'DESCRICAO', 'DESCRIÇÃO', 'PRODUTO', 'MARCA', 'EMBALAGEM', 'VOLUME', 'TIPO',
     ];
 
@@ -278,15 +278,15 @@ export function OcrTablesViewer({
       />
 
       {filteredTabelas.length === 0 ? (
-        <div className="text-center py-12 border rounded-lg bg-muted/10 border-dashed space-y-2">
-          <HelpCircle className="w-8 h-8 text-muted-foreground mx-auto" />
-          <p className="text-sm font-medium text-foreground">Nenhuma correspondência encontrada</p>
+        <div className="text-center py-12 border rounded-xl bg-card border-dashed space-y-2">
+          <HelpCircle className="w-8 h-8 text-muted-foreground/60 mx-auto" />
+          <p className="text-sm font-semibold text-foreground">Nenhuma correspondência encontrada</p>
           <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-            Nenhuma linha nas tabelas do arquivo corresponde aos filtros.
+            Nenhuma linha nas tabelas do arquivo corresponde aos filtros ativos.
           </p>
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-6">
           {filteredTabelas.map((tabela) => (
             <OcrTableCard
               key={tabela.tabelaIndex}

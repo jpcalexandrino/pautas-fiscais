@@ -20,7 +20,8 @@ export interface BulkItem {
   value: string;
   valorNum: number;
   matchedProductIds: number[];
-  matchType: 'de-para' | 'fuzzy' | 'none';
+  matchType: 'de-para' | 'gtin' | 'fuzzy' | 'none';
+  gtin?: string | null;
   selected: boolean;
   confirmed: boolean;
 }

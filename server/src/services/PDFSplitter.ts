@@ -87,10 +87,12 @@ export class PDFSplitter {
 
       // Crop Left Column: Keep left half (x=0, width=leftWidth)
       leftPage.setMediaBox(0, 0, leftWidth, height);
+      leftPage.setCropBox(0, 0, leftWidth, height);
       splitPdfDoc.addPage(leftPage);
 
       // Crop Right Column: Keep right half (x=rightStart, width=rightWidth)
       rightPage.setMediaBox(rightStart, 0, rightWidth, height);
+      rightPage.setCropBox(rightStart, 0, rightWidth, height);
       splitPdfDoc.addPage(rightPage);
     }
 

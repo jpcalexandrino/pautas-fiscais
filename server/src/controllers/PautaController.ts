@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/authMiddleware';
 import PautaFiscalService from '../services/PautaFiscalService';
 import PautaFiscalRepository from '../repositories/PautaFiscalRepository';
+import UfCompactorRepository from '../repositories/UfCompactorRepository';
 import AuditRepository from '../repositories/AuditRepository';
 import ProdutoRepository from '../repositories/ProdutoRepository';
 import { TextractCompactor } from '../services/TextractCompactor';
@@ -183,9 +184,10 @@ export async function getTabelasOcr(req: AuthRequest, res: Response) {
       return res.status(404).json({ error: 'Arquivo não encontrado' });
     }
     const { textract_json, uf, confirmed_cells } = result.rows[0];
-    const tabelas = TextractCompactor.extractTables(textract_json, uf);
+    const ufConfig = await UfCompactorRepository.getByUf(uf);
+    const tabelas = TextractCompactor.extractTables(textract_json, uf, ufConfig);
     const sugestoesDatas = TextractCompactor.extractDates(textract_json);
-    res.json({ tabelas, sugestoesDatas, confirmedCells: confirmed_cells || [], uf });
+    res.json({ tabelas, sugestoesDatas, confirmedCells: confirmed_cells || [], uf, ufConfig });
   } catch (error: unknown) {
     res.status(500).json({ error: (error as Error).message });
   }
@@ -400,9 +402,9 @@ export async function excluirArquivoOcr(req: AuthRequest, res: Response) {
       contexto,
       userId
     });
-
     res.json(result);
   } catch (error: unknown) {
     res.status(400).json({ error: (error as Error).message });
   }
-}
+};
+

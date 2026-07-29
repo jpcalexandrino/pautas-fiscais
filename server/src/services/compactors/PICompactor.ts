@@ -45,8 +45,9 @@ export class PICompactor implements UFCompactorStrategy {
       const priceRegex = /(?:R\$\s*)?\d+[.,]\d{2}/i;
       const hasPrice = row.some(cell => priceRegex.test(cell.trim()));
 
-      // Detecta subcabeçalhos como "TABELA 2 - REFRIGERANTE"
-      const isSubheader = /tabela\s*\d+\s*-|anexo\s*i/i.test(rowText) && !hasPrice;
+      // Detecta subcabeçalhos como "TABELA 2 - REFRIGERANTE", ignorando títulos de atos normativos (ex: "ANEXO I DO ATO NORMATIVO UNATRI...")
+      const isNormativeHeader = /ato\s+normativo|unatri|portaria|secretaria|governo|dispõe|diário\s+oficial/i.test(rowText);
+      const isSubheader = !isNormativeHeader && /tabela\s*\d+\s*-/i.test(rowText) && !hasPrice;
 
       if (isSubheader) {
         currentSubheader = rowText;
@@ -58,12 +59,15 @@ export class PICompactor implements UFCompactorStrategy {
         const newRow = [...row];
         const activeSub = currentSubheader || state.currentSubheader || '';
 
-        // Se a coluna de produto (geralmente col 1 ou 0) existir, anexa a seção se relevante
+        // Se a coluna de produto (geralmente col 1 ou 0) existir, anexa a seção se relevante e não for título de ato normativo
         if (activeSub && newRow.length >= 2) {
-          const prodColIdx = newRow.length >= 4 ? 1 : 0;
-          const originalProd = newRow[prodColIdx] || '';
-          if (originalProd && !originalProd.toLowerCase().includes(activeSub.toLowerCase())) {
-            newRow[prodColIdx] = `${originalProd} - ${activeSub}`;
+          const isNormative = /ato\s+normativo|unatri|portaria|secretaria|governo|dispõe|anexo\s+[i|v|x\d]+\s+do/i.test(activeSub);
+          if (!isNormative) {
+            const prodColIdx = newRow.length >= 4 ? 1 : 0;
+            const originalProd = newRow[prodColIdx] || '';
+            if (originalProd && !originalProd.toLowerCase().includes(activeSub.toLowerCase())) {
+              newRow[prodColIdx] = `${originalProd} - ${activeSub}`;
+            }
           }
         }
 
@@ -90,7 +94,8 @@ export class PICompactor implements UFCompactorStrategy {
   processLineBlock(text: string, _columnKey: 'left' | 'right', state: CompactorState): boolean {
     if (!text) return false;
 
-    if (/tabela\s*\d+\s*-|anexo\s*i/i.test(text) && !/\d+[.,]\d{2}/.test(text)) {
+    const isNormativeHeader = /ato\s+normativo|unatri|portaria|secretaria|governo|dispõe|diário\s+oficial/i.test(text);
+    if (!isNormativeHeader && /tabela\s*\d+\s*-/i.test(text) && !/\d+[.,]\d{2}/.test(text)) {
       state.currentSubheader = text.trim();
       return true;
     }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { BulkItem, Produto, DeParaItem } from '../types';
-import { normalizeText, cleanPriceString } from '../../../utils/ocrHelpers';
+import { normalizeText, cleanPriceString, calculateProductMatchScore, extractGtinFromRow } from '../../../utils/ocrHelpers';
 
 interface UseBulkLoadItemsProps {
   open: boolean;
@@ -53,6 +53,8 @@ export function useBulkLoadItems({
 
     tabela.indexedRows.forEach((rowObj) => {
       const { data: row, originalIndex: rIdx } = rowObj;
+      const rowGtin = extractGtinFromRow(row, tabela.headers);
+
       row.forEach((cell, cIdx) => {
         const header = tabela.headers[cIdx] || '';
         if (isPriceCell(cell, header, cIdx)) {
@@ -69,30 +71,24 @@ export function useBulkLoadItems({
           );
 
           let matchedProductIds: number[] = [];
-          let matchType: 'de-para' | 'fuzzy' | 'none' = 'none';
+          let matchType: 'de-para' | 'gtin' | 'fuzzy' | 'none' = 'none';
 
           if (exactDeParaMatches.length > 0) {
             matchedProductIds = exactDeParaMatches.map((dp) => dp.fk_produto);
             matchType = 'de-para';
           } else {
-            // Fuzzy search contra catálogo de produtos
+            // Busca inteligente considerando GTIN, palavras, volume e embalagem
             const bestMatch = produtos
-              .map((p) => {
-                const normInternal = normalizeText(p.descricao_interna);
-                const score = normInferred.split(/\s+/).reduce((acc, word) => {
-                  if (word.length >= 3 && normInternal.includes(word)) {
-                    return acc + 1;
-                  }
-                  return acc;
-                }, 0);
-                return { p, score };
-              })
+              .map((p) => ({
+                p,
+                score: calculateProductMatchScore(inferredDesc, p, rowGtin),
+              }))
               .filter((m) => m.score > 0)
               .sort((a, b) => b.score - a.score)[0];
 
             if (bestMatch) {
               matchedProductIds = [bestMatch.p.id];
-              matchType = 'fuzzy';
+              matchType = bestMatch.score >= 100 ? 'gtin' : 'fuzzy';
             }
           }
 
@@ -105,6 +101,7 @@ export function useBulkLoadItems({
             valorNum,
             matchedProductIds,
             matchType,
+            gtin: rowGtin,
             confirmed: isConfirmed,
             selected: !isConfirmed && matchedProductIds.length > 0,
           });

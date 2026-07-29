@@ -1,19 +1,20 @@
 import { useState, useEffect } from 'react';
-import { Users, Tag } from 'lucide-react';
+import { Users, Tag, Sliders } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTerms } from '../hooks/useTerms';
 import UsersPage from '@features/users/pages/UsersPage';
 import { TermsConfigCard } from '../components/TermsConfigCard';
+import { UfCompactorConfigCard } from '../components/UfCompactorConfigCard';
 import { cn } from '@/lib/utils';
 
-type ActiveTab = 'users' | 'terms';
+type ActiveTab = 'users' | 'terms' | 'compactors';
 
 export default function SettingsPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const { terms } = useTerms();
 
-  // If not admin, the only option is 'terms'
+  // If not admin, default options
   const [activeTab, setActiveTab] = useState<ActiveTab>('terms');
 
   useEffect(() => {
@@ -49,6 +50,21 @@ export default function SettingsPage() {
             <span className="text-sm font-medium">Controle de Usuários</span>
           </button>
         )}
+
+        {/* 
+        <button
+          onClick={() => setActiveTab('compactors')}
+          className={cn(
+            "flex items-center gap-3 px-4 py-3 rounded-lg border text-left transition-colors duration-150 cursor-pointer w-full sm:w-[220px]",
+            activeTab === 'compactors'
+              ? "border-primary bg-primary/5 dark:bg-primary/10 text-primary shadow-sm"
+              : "border-muted bg-card hover:bg-muted/40 text-foreground"
+          )}
+        >
+          <Sliders className="w-4 h-4 shrink-0" />
+          <span className="text-sm font-medium">Configurações por UF</span>
+        </button>
+        */}
 
         <button
           onClick={() => setActiveTab('terms')}
