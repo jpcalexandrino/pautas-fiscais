@@ -89,7 +89,7 @@ export function inferItemDescription(row: string[], headers: string[], colIdx: n
   }
 
   if (!result) {
-    // 3. Busca por colunas explícitas de produto (NOME, PRODUTO, DESCRICAO, ESPECIFICACAO) e Marca
+    // 3. Busca por colunas explícitas de produto (NOME, PRODUTO, DESCRICAO, ESPECIFICACAO)
     const prodIdx = safeHeaders.findIndex(h => /PRODUTO|DESCRICAO|DESCRIÇÃO|NOME|ESPECIFICAÇÃO|ESPECIFICACAO|DISCRIMINAÇÃO|DISCRIMINACAO/i.test(h) && !/NCM|COD|CÓD|CODIGO|CÓDIGO|ID|ITEM|CHAVE|FISCAL|MARCA/i.test(h));
     const marcaIdx = safeHeaders.findIndex(h => /\bMARCA\b|FABRICANTE/i.test(h) && !/PRODUTO|DESCRICAO|DESCRIÇÃO|NOME|NCM|COD|CÓD|CODIGO|CÓDIGO|ID|ITEM|CHAVE|FISCAL/i.test(h));
     const embalagemIdx = safeHeaders.findIndex(h => /EMBALAGEM|RECIPIENTE|TIPO/i.test(h) && !/PRODUTO|MARCA|PRECO|PREÇO|VALOR|COD|CÓD|CODIGO|CÓDIGO|FISCAL/i.test(h));
@@ -101,17 +101,6 @@ export function inferItemDescription(row: string[], headers: string[], colIdx: n
     if (prodIdx !== -1 && row[prodIdx] && prodIdx !== colIdx) {
       const val = row[prodIdx].trim();
       if (val && !isCodeOrPrice(val, prodIdx)) explicitParts.push(val);
-    }
-
-    // Se temos marca separada e ela não está contida no nome do produto, acrescenta
-    if (marcaIdx !== -1 && row[marcaIdx] && marcaIdx !== colIdx && marcaIdx !== prodIdx) {
-      const marcaVal = row[marcaIdx].trim();
-      if (marcaVal && !isCodeOrPrice(marcaVal, marcaIdx)) {
-        const prodValNorm = (explicitParts[0] || '').toLowerCase();
-        if (!prodValNorm.includes(marcaVal.toLowerCase())) {
-          explicitParts.unshift(marcaVal); // Coloca a marca antes se não estiver inclusa
-        }
-      }
     }
 
     if (embalagemIdx !== -1 && row[embalagemIdx] && embalagemIdx !== colIdx && embalagemIdx !== prodIdx && embalagemIdx !== marcaIdx) {
@@ -137,7 +126,7 @@ export function inferItemDescription(row: string[], headers: string[], colIdx: n
       if (i === colIdx) continue; // Ignora a coluna de preço clicada
 
       const header = (safeHeaders[i] || '').toUpperCase();
-      if (/NCM|CEST|CNPJ|GTIN|EAN|CHAVE|CODIGO|CÓDIGO|\bCOD\b|\bCÓD\b|FISCAL|ITEM|VALOR|PRECO|PREÇO|PMPF|PAUTA/i.test(header)) {
+      if (/NCM|CEST|CNPJ|GTIN|EAN|CHAVE|CODIGO|CÓDIGO|\bCOD\b|\bCÓD\b|FISCAL|ITEM|VALOR|PRECO|PREÇO|PMPF|PAUTA|MARCA|FABRICANTE/i.test(header)) {
         continue;
       }
 
