@@ -144,10 +144,9 @@ export function OcrBulkLoadDialog({
                         </td>
                         <td className="p-3 font-medium text-foreground">
                           <div className="break-words whitespace-normal" title={item.inferredDesc}>{item.inferredDesc}</div>
-                          {extractGtin(item.inferredDesc) && (
-                            <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.25 rounded-md border border-emerald-500/20 mt-0.5">
-                              <Barcode className="w-2.5 h-2.5 shrink-0" />
-                              GTIN: {extractGtin(item.inferredDesc)}
+                          {(item.gtin || extractGtin(item.inferredDesc)) && (
+                            <span className="block text-[10px] text-muted-foreground font-normal mt-0.5">
+                              GTIN: {item.gtin || extractGtin(item.inferredDesc)}
                             </span>
                           )}
                         </td>
@@ -159,13 +158,29 @@ export function OcrBulkLoadDialog({
                             type="button"
                             variant="outline"
                             onClick={() => !item.confirmed && bulkItems.setActiveItemIdx(idx)}
-                            className={`w-full text-left justify-start px-3 py-1.5 h-auto text-xs border border-border/60 rounded-xl hover:bg-accent transition-all font-medium truncate block max-w-md ${
+                            className={`w-full text-left justify-start px-3 py-1.5 h-auto text-xs border border-border/60 rounded-xl hover:bg-accent transition-all font-medium block max-w-md ${
                               item.confirmed ? 'cursor-not-allowed bg-muted/10' : 'cursor-pointer'
                             }`}
                           >
-                            {matchedProds.length > 0
-                              ? matchedProds.map((p) => p.descricao_interna).join(', ')
-                              : '(Selecione um ou mais Produtos)'}
+                            {matchedProds.length > 0 ? (
+                              <span className="flex flex-col gap-0.5 w-full">
+                                {matchedProds.map((p, pIdx) => (
+                                  <span key={p.id} className="block">
+                                    <span className="block truncate font-medium text-foreground">{p.descricao_interna}</span>
+                                    {p.gtin_13 && (
+                                      <span className="block text-[10px] text-muted-foreground font-normal">
+                                        GTIN: {p.gtin_13}
+                                      </span>
+                                    )}
+                                    {pIdx < matchedProds.length - 1 && (
+                                      <span className="block border-b border-border/30 my-1" />
+                                    )}
+                                  </span>
+                                ))}
+                              </span>
+                            ) : (
+                              '(Selecione um ou mais Produtos)'
+                            )}
                           </Button>
                         </td>
                         <td className="p-3 text-center">
