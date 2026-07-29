@@ -142,8 +142,8 @@ export function OcrBulkLoadDialog({
                             disabled={item.confirmed}
                           />
                         </td>
-                        <td className="p-3 font-medium max-w-xs text-foreground">
-                          <div className="truncate" title={item.inferredDesc}>{item.inferredDesc}</div>
+                        <td className="p-3 font-medium text-foreground">
+                          <div className="break-words whitespace-normal" title={item.inferredDesc}>{item.inferredDesc}</div>
                           {extractGtin(item.inferredDesc) && (
                             <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.25 rounded-md border border-emerald-500/20 mt-0.5">
                               <Barcode className="w-2.5 h-2.5 shrink-0" />
