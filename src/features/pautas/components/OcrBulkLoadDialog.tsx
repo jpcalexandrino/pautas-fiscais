@@ -1,4 +1,5 @@
-import { Check, Loader2, Info, Barcode } from 'lucide-react';
+import { useState } from 'react';
+import { Check, Loader2, Info, Barcode, Maximize2, Minimize2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -25,6 +26,7 @@ export function OcrBulkLoadDialog({
   isPriceCell,
   inferItemDescription,
 }: OcrBulkLoadDialogProps) {
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const bulkItems = useBulkLoadItems({
     open,
     tabela,
@@ -49,17 +51,35 @@ export function OcrBulkLoadDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-[95vw] w-[95vw] sm:max-w-[75vw] flex flex-col max-h-[95vh] border border-border/60 rounded-xl bg-background shadow-xl">
-          <DialogHeader className="pb-3 border-b border-border/40">
-            <DialogTitle className="text-lg font-bold flex items-center gap-2.5 text-foreground">
-              <span className="p-1.5 rounded-xl bg-primary/10 text-primary">
-                <Check className="w-5 h-5" />
-              </span>
-              Carga em Lote - Tabela {tabela?.tabelaIndex}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-              Mapeie múltiplos preços de uma vez. O sistema tentará sugerir o produto com base no catálogo e De-Para do estado.
-            </DialogDescription>
+        <DialogContent className={`flex flex-col bg-background shadow-xl transition-all duration-200 ${
+          isFullScreen 
+            ? '!w-screen !h-screen !max-w-none !max-h-none !left-0 !top-0 !translate-x-0 !translate-y-0 !rounded-none !border-none p-6' 
+            : 'max-w-[95vw] w-[95vw] sm:max-w-[75vw] max-h-[95vh] border border-border/60 rounded-xl'
+        }`}>
+          <DialogHeader className="pb-3 border-b border-border/40 flex flex-row items-center justify-between">
+            <div>
+              <DialogTitle className="text-lg font-bold flex items-center gap-2.5 text-foreground">
+                <span className="p-1.5 rounded-xl bg-primary/10 text-primary">
+                  <Check className="w-5 h-5" />
+                </span>
+                Carga em Lote - Tabela {tabela?.tabelaIndex}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                Mapeie múltiplos preços de uma vez. O sistema tentará sugerir o produto com base no catálogo e De-Para do estado.
+              </DialogDescription>
+            </div>
+            <div className="flex items-center gap-2 mr-6">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsFullScreen(!isFullScreen)}
+                className="h-8 w-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
+                title={isFullScreen ? "Minimizar" : "Maximizar"}
+              >
+                {isFullScreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </Button>
+            </div>
           </DialogHeader>
 
           {/* Alert Informação */}

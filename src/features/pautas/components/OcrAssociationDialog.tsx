@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Check, Package, Layers, SlidersHorizontal, ArrowRight, Info, AlertCircle, X, Barcode } from 'lucide-react';
+import { Search, Check, Package, Layers, SlidersHorizontal, ArrowRight, Info, AlertCircle, X, Barcode, Maximize2, Minimize2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -67,6 +67,7 @@ export function OcrAssociationDialog({
   // Filtros adicionais
   const [embalagemFilter, setEmbalagemFilter] = useState<string>('all');
   const [volumeFilter, setVolumeFilter] = useState<string>('');
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   const detectedGtin = useMemo(() => {
     return selectedCellData ? ((selectedCellData as any).gtin || extractGtin(selectedCellData.inferredDesc)) : null;
@@ -126,7 +127,11 @@ export function OcrAssociationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-6xl max-w-6xl w-[95vw] h-[85vh] flex flex-col rounded-xl gap-4 bg-background border border-border/60 shadow-xl">
+      <DialogContent className={`flex flex-col bg-background shadow-xl transition-all duration-200 ${
+        isFullScreen 
+          ? '!w-screen !h-screen !max-w-none !max-h-none !left-0 !top-0 !translate-x-0 !translate-y-0 !rounded-none !border-none p-6 gap-4' 
+          : 'sm:max-w-6xl max-w-6xl w-[95vw] h-[85vh] rounded-xl border border-border/60 gap-4'
+      }`}>
         <DialogHeader className="border-b border-border/40 pb-3 flex flex-row items-center justify-between">
           <div>
             <DialogTitle className="flex items-center gap-2.5 text-lg font-bold text-foreground">
@@ -138,6 +143,18 @@ export function OcrAssociationDialog({
             <DialogDescription className="text-xs text-muted-foreground mt-0.5">
               Associe a descrição capturada na pauta do estado ao produto correspondente do catálogo no contexto <strong className="text-foreground capitalize">{contexto}</strong>.
             </DialogDescription>
+          </div>
+          <div className="flex items-center gap-2 mr-6">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsFullScreen(!isFullScreen)}
+              className="h-8 w-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
+              title={isFullScreen ? "Minimizar" : "Maximizar"}
+            >
+              {isFullScreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </Button>
           </div>
         </DialogHeader>
 
