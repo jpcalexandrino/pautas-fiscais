@@ -229,18 +229,24 @@ export function OcrTablesViewer({
 
   const filteredTabelas = activeTabelas
     .map((tabela) => {
+      const originalTabela = tabelas.find((t) => t.tabelaIndex === tabela.tabelaIndex);
+
       let indexedRows = tabela.rows.map((row, originalIndex) => ({
         data: row,
         originalIndex,
       }));
 
       if (filterBrandOnly) {
-        indexedRows = indexedRows.filter((rowObj) => rowMatchesBrand(rowObj.data));
+        indexedRows = indexedRows.filter((rowObj) => {
+          const originalRow = originalTabela?.rows[rowObj.originalIndex] || rowObj.data;
+          return rowMatchesBrand(originalRow);
+        });
       }
       if (normalizedSearch) {
-        indexedRows = indexedRows.filter((rowObj) =>
-          rowObj.data.some((cell) => normalizeForSearch(cell).includes(normalizedSearch))
-        );
+        indexedRows = indexedRows.filter((rowObj) => {
+          const originalRow = originalTabela?.rows[rowObj.originalIndex] || rowObj.data;
+          return originalRow.some((cell) => normalizeForSearch(cell).includes(normalizedSearch));
+        });
       }
       return {
         tabelaIndex: tabela.tabelaIndex,
@@ -253,7 +259,10 @@ export function OcrTablesViewer({
       (tabela) =>
         tabela.indexedRows.length > 0 &&
         (!filterBrandOnly ||
-          tableHasBrand(activeTabelas.find((t) => t.tabelaIndex === tabela.tabelaIndex) || ({ rows: [] } as any)))
+          (() => {
+            const originalTabela = tabelas.find((t) => t.tabelaIndex === tabela.tabelaIndex);
+            return originalTabela ? tableHasBrand(originalTabela) : false;
+          })())
     );
 
   const totalLinesFound = filteredTabelas.reduce((acc, tab) => acc + tab.indexedRows.length, 0);
